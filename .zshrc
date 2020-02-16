@@ -26,9 +26,5 @@ function _rm()
 }
 alias rm='_rm'
 
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-export NODE_OPTIONS=--max_old_space_size=8192
-
-# deno
-export DENO_INSTALL="/home/egahika/.local"
-export PATH="$DENO_INSTALL/bin:$PATH"
+# export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+# export NODE_OPTIONS=--max_old_space_size=8192
