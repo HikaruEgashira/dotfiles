@@ -2,7 +2,8 @@
 # curl gitがない場合はworkflow/main.ymlを参考にインストールしてください
 
 # nix
-curl https://nixos.org/nix/install | sh
+# curl https://nixos.org/nix/install | sh
+sh <(curl https://nixos.org/nix/install) --daemon
 source $HOME/.nix-profile/etc/profile.d/nix.sh
 nix-channel --add https://nixos.org/channels/nixpkgs-unstable
 nix-channel --update
