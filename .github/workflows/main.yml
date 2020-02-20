@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install required packages
-        run: apt update && apt upgrade -y && apt install -y git sudo curl
+        run: apt update && apt install -y git sudo curl
       - name: Install dotfiles
         run: bash install.sh
 
@@ -48,6 +48,6 @@ jobs:
       - name: Update packages
         run: pacman -Syu --noconfirm
       - name: Install required packages
-        run: pacman -S --noconfirm git sudo curl tar
+        run: pacman -S --noconfirm git sudo curl
       - name: Install dotfiles
         run: bash install.sh
