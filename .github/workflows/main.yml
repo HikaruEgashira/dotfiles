@@ -13,7 +13,7 @@ jobs:
       - name: Install dotfiles
         run: .bin/install.sh install
 
-  ubuntu:
+  macos:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v1
