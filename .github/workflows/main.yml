@@ -11,14 +11,14 @@ jobs:
       - name: Install required packages
         run: apt-get update && apt-get install -y git sudo
       - name: Install dotfiles
-        run: install.sh
+        run: sh install.sh
 
   macos:
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v1
       - name: Install dotfiles
-        run: install.sh
+        run: sh install.sh
 
   centos:
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
       - name: Install required packages
         run: yum install -y git sudo curl
       - name: Install dotfiles
-        run: install.sh
+        run: sh install.sh
 
   alpine:
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
       - name: Install required packages
         run: apk add git sudo bash curl
       - name: Install dotfiles
-        run: install.sh
+        run: sh install.sh
 
   arch:
     runs-on: ubuntu-latest
@@ -50,4 +50,4 @@ jobs:
       - name: Install required packages
         run: pacman -S --noconfirm git sudo curl
       - name: Install dotfiles
-        run: install.sh
+        run: sh install.sh
