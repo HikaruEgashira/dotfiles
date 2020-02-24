@@ -51,3 +51,10 @@ jobs:
         run: pacman -S --noconfirm git sudo curl tar
       - name: Install dotfiles
         run: bash install.sh
+
+  windows:
+    runs-on: windows
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install chocolatery
+        run: install.bat
