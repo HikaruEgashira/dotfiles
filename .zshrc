@@ -3,16 +3,16 @@ compinit
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 source "${ZDOTDIR:-$HOME}/.nix-profile/etc/profile.d/nix.sh"
 
-function peco-src () {
-  local selected_dir=$(ghq list -p | peco --query "$LBUFFER")
+function fzf-src () {
+  local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
   if [ -n "$selected_dir" ]; then
     BUFFER="cd ${selected_dir}"
     zle accept-line
   fi
   zle clear-screen
 }
-zle -N peco-src
-bindkey '^]' peco-src
+zle -N fzf-src
+bindkey '^]' fzf-src
 
 function _cd()
 {
