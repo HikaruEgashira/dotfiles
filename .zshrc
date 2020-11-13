@@ -1,8 +1,12 @@
+# app config
 autoload -Uz compinit
 compinit
 source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 source "${ZDOTDIR:-$HOME}/.nix-profile/etc/profile.d/nix.sh"
+source "${ZDOTDIR:-$HOME}/.fzf.zsh"
+eval "$(direnv hook zsh)"
 
+# function
 function fzf-src () {
   local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
   if [ -n "$selected_dir" ]; then
@@ -18,13 +22,20 @@ function _cd()
 {
   \cd $@ && ls
 }
-alias cd='_cd'
 
 function _rm()
 {
   \rm $@ && ls
 }
-alias rm='_rm'
 
-# export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-# export NODE_OPTIONS=--max_old_space_size=8192
+# alias
+alias cd='_cd'
+alias rm='_rm'
+alias c="code ."
+alias cr="c -r"
+alias zshrc="source ~/.zshrc"
+alias fd=fdfind
+
+# path
+export N_PREFIX="$HOME/n"
+export PATH="$N_PREFIX/bin:$PATH"
