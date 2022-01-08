@@ -14,10 +14,6 @@ nix-channel --update
 export NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH
 nix-shell '<home-manager>' -A install
 
-# node
-# nix-env -iA nixpkgs.yarn
-# curl -L https://git.io/n-install | bash
-
 # config
 cp -f .zshrc $HOME
 

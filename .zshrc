@@ -1,10 +1,5 @@
 # app config
-autoload -Uz compinit
-compinit
-source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-source "${ZDOTDIR:-$HOME}/.nix-profile/etc/profile.d/nix.sh"
-source "${ZDOTDIR:-$HOME}/.fzf.zsh"
-eval "$(direnv hook zsh)"
+source "$HOME/.nix-profile/etc/profile.d/nix.sh"
 
 # function
 function fzf-src () {
@@ -31,9 +26,10 @@ function _rm()
 # alias
 alias cd='_cd'
 alias rm='_rm'
+alias ls='lsd'
 alias c="code ."
 alias cr="c -r"
-alias zshrc="source ~/.zshrc"
+alias rel="source ~/.zshrc"
 alias fd=fdfind
 
 # path
