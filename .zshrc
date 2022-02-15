@@ -11,7 +11,7 @@ function fzf-src () {
   zle clear-screen
 }
 zle -N fzf-src
-bindkey '^]' fzf-src
+bindkey '^g' fzf-src
 
 function _cd()
 {
@@ -28,10 +28,10 @@ alias cd='_cd'
 alias rm='_rm'
 alias ls='lsd'
 alias c="code ."
-alias cr="c -r"
 alias rel="source ~/.zshrc"
 alias fd=fdfind
 
 # path
 export N_PREFIX="$HOME/n"
 export PATH="$N_PREFIX/bin:$PATH"
+export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}

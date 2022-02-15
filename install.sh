@@ -13,6 +13,9 @@ nix-channel --add https://github.com/nix-community/home-manager/archive/master.t
 nix-channel --update
 export NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH
 nix-shell '<home-manager>' -A install
+cp ./.config/nixpkgs/home.nix ~/.config/nixpkgs/home.nix
+nix-env --set-flag priority 10 nix
+nix-env --set-flag priority 10 home-manager-path
 
 # config
 cp -f .zshrc $HOME
