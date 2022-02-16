@@ -6,7 +6,7 @@
   home.username = "egahika";
   home.homeDirectory = "/home/egahika";
   home.stateVersion = "21.11";
-  home.packages = with pkgs; [ lsd bat ghq fzf starship fd ];
+  home.packages = with pkgs; [ lsd fd bat ghq fzf starship ];
 
   programs.git = {
     enable = true;
@@ -29,6 +29,10 @@
     shellAliases =
     {
       c = "code .";
+      rel = "source ~/.zshrc";
+      ls = "lsd";
+      fd = "fdfind";
+      cat = "bat";
     };
     initExtra = ''
 function fzf-src () {
@@ -41,12 +45,8 @@ function fzf-src () {
 }
 zle -N fzf-src
 bindkey '^g' fzf-src
-
-alias cd='_cd'
-alias rm='_rm'
-alias ls='lsd'
-alias rel="source ~/.zshrc"
-alias fd=fdfind
+source $HOME/.nix-profile/etc/profile.d/nix.sh
+export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels''${NIX_PATH:+:$NIX_PATH}
     '';
   };
 }

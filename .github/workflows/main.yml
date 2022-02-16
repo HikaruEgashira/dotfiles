@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install required packages
-        run: apt update && apt install -y git sudo curl zsh
+        run: apt update && apt install -y git sudo curl xz-utils
       - name: Install dotfiles
-        run: zsh install.sh
+        run: sh install.sh
 
   # macos:
   #   runs-on: macOS-latest
