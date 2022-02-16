@@ -11,14 +11,12 @@ nix-channel --update
 echo "✔ install home-manager"
 nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
 nix-channel --update
-export NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH
-nix-shell '<home-manager>' -A install
+export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
 cp ./.config/nixpkgs/home.nix ~/.config/nixpkgs/home.nix
 nix-env --set-flag priority 10 nix
 nix-env --set-flag priority 10 home-manager-path
+nix-shell '<home-manager>' -A install
 
-# config
-cp -f .zshrc $HOME
-
-nix-collect-garbage
+# end
+# nix-collect-garbage
 echo "✔ installed"

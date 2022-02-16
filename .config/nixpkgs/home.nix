@@ -12,7 +12,6 @@
     enable = true;
     userName = "HikaruEgashira";
     userEmail = "s1811320@gmail.com";
-    coreEditor = "code --wait"
   };
   programs.lsd = {
     enable = true;
@@ -25,19 +24,29 @@
     autocd = true;
     enableCompletion = true;
     enableAutosuggestions = true;
-    plugins = [
-      {
-        name = "fast-syntax-highlighting";
-        src = pkgs.zsh-fast-syntax-highlighting.src;
-      }
-      {
-        name = "zsh-completions";
-        src = pkgs.zsh-completions.src;
-      }
-      {
-        name = "nix-zsh-completions";
-        src = pkgs.nix-zsh-completions.src;
-      }
-    ];
+    enableSyntaxHighlighting = true;
+    dotDir = ".config/zsh";
+    shellAliases =
+    {
+      c = "code .";
+    };
+    initExtra = ''
+function fzf-src () {
+  local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
+  if [ -n "$selected_dir" ]; then
+    BUFFER="cd ''${selected_dir}"
+    zle accept-line
+  fi
+  zle clear-screen
+}
+zle -N fzf-src
+bindkey '^g' fzf-src
+
+alias cd='_cd'
+alias rm='_rm'
+alias ls='lsd'
+alias rel="source ~/.zshrc"
+alias fd=fdfind
+    '';
   };
 }
