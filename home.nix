@@ -6,7 +6,7 @@
   home.username = "egahika";
   home.homeDirectory = "/home/egahika";
   home.stateVersion = "21.11";
-  home.packages = with pkgs; [ lsd fd bat ghq fzf starship zsh nodejs ];
+  home.packages = with pkgs; [ lsd fd bat ghq fzf starship zsh nodejs direnv ];
 
   programs.git = {
     enable = true;
@@ -46,6 +46,9 @@ function fzf-src () {
 zle -N fzf-src
 bindkey '^g' fzf-src
 source $HOME/.nix-profile/etc/profile.d/nix.sh
+export PATH=$HOME/.docker/cli-plugins:$PATH
+export NODE_OPTIONS=--max_old_space_size=8192
+eval "$(direnv hook zsh)"
     '';
   };
 }
