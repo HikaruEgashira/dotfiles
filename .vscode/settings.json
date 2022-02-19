@@ -1,5 +1,0 @@
-{
-  "dotfiles.repository": "https://github.com/HikaruEgashira/dotfiles.git",
-  "dotfiles.targetPath": "~/dotfiles",
-  "dotfiles.installCommand": "~/dotfiles/install.sh"
-}
