@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   programs.home-manager.enable = true;
@@ -43,9 +43,9 @@ function fzf-src () {
 zle -N fzf-src
 bindkey '^g' fzf-src
 source $HOME/.nix-profile/etc/profile.d/nix.sh
-export PATH=$HOME/.docker/cli-plugins:$PATH
+export PATH=$HOME/.docker/cli-plugins:$PATH # Rancher desktop
 export NODE_OPTIONS=--max_old_space_size=8192
-export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin"
+export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin" # if n installed on your machine
     '';
   };
 }
