@@ -14,7 +14,7 @@ export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/
 nix-shell '<home-manager>' -A install
 . $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
 
-ln -f ./home.nix ~/.config/nixpkgs # cp -f ./home.nix ~/.config/nixpkgs
+ln -f ./home.nix ~/.config/nixpkgs/home.nix # cp -f ./home.nix ~/.config/nixpkgs
 nix-env --set-flag priority 10 nix
 home-manager switch
 
