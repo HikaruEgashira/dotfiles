@@ -25,6 +25,8 @@ curl -L https://git.io/n-install | bash # WIP install node
 
 # font list
 
+WSLメインなのでHome-managerで管理しない
+
+- English: [Lato](https://fonts.google.com/specimen/Lato) # エディタには入れない
 - Code: [MesloLGS NF](https://github.com/romkatv/powerlevel10k#fonts)
-- English: [Lato](https://fonts.google.com/specimen/Lato)
 - JP: [Zen Kaku Gothic New](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)
