@@ -1,0 +1,28 @@
+{
+  "terminal.integrated.fontFamily": "'MesloLGS NF', 'Zen Kaku Gothic New', monospace",
+  "editor.fontFamily": "'MesloLGS NF', 'Zen Kaku Gothic New', monospace",
+  "workbench.startupEditor": "none",
+  "workbench.colorTheme": "Nord",
+  "workbench.iconTheme": "vscode-icons",
+  "workbench.sideBar.location": "right",
+  "editor.inlineSuggest.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.suggestSelection": "first",
+  "editor.formatOnSave": true,
+  "editor.multiCursorModifier": "alt",
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.pullTags": false,
+  "git.enableSmartCommit": true,
+  "git.suggestSmartCommit": true,
+  "git.allowForcePush": true,
+  "explorer.confirmDelete": false,
+  "files.associations": {
+    ".env": "dotenv",
+    ".postcssrc": "json",
+    ".prettierrc": "json",
+    ".stylelintrc": "json"
+  },
+  "files.autoSave": "onFocusChange"
+}

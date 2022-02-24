@@ -1,6 +1,18 @@
-## usage
+# dotfiles
 
-https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH#how-to-install-zsh-on-many-platforms
+## Requirements
+
+- [Nix](https://nixos.org/)
+- [Home Manager](https://github.com/nix-community/home-manager)
+
+## Setup
+
+```bash
+ln -f ./home.nix ~/.config/nixpkgs/home.nix
+home-manager switch
+```
+
+### (WIP) install nix home-manager
 
 ```bash
 if [ ! -d /nix ]; then
@@ -10,17 +22,10 @@ chmod -x *.sh
 . ./install.sh
 ```
 
-## enter zsh
-
-```bash
-. $HOME/.nix-profile/etc/profile.d/nix.sh
-zsh
-```
-
 # (optional) install n
 
 ```
-curl -L https://git.io/n-install | bash # WIP install node
+curl -L https://git.io/n-install | bash
 ```
 
 # font list

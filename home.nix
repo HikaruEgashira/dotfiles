@@ -9,16 +9,25 @@
   home.stateVersion = "21.11";
   home.packages = with pkgs; [ ghq ];
 
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
+  programs.direnv.nix-direnv.enableFlakes = true;
+
   programs.git = {
     enable = true;
     userName = "hikae";
     userEmail = "contact@egahika.dev";
+    extraConfig = {
+      core = {
+        whitespace = "trailing-space,space-before-tab";
+        editor = "code --wait";
+      };
+    };
   };
-  programs.direnv.enable = true;
   programs.fzf.enable = true;
   programs.lsd.enable = true;
-  programs.bat.enable = true;
   programs.starship.enable = true;
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
@@ -45,7 +54,7 @@ bindkey '^g' fzf-src
 source $HOME/.nix-profile/etc/profile.d/nix.sh
 export PATH=$HOME/.docker/cli-plugins:$PATH # Rancher desktop
 export NODE_OPTIONS=--max_old_space_size=8192
-export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin" # if n installed on your machine
+export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin"  # Added by n-install (see http://git.io/n-install-repo).
     '';
   };
 }
