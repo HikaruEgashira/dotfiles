@@ -41,16 +41,16 @@
       cat = "bat";
     };
     initExtra = ''
-function fzf-src () {
+function fzf-ghq () {
   local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
   if [ -n "$selected_dir" ]; then
-    BUFFER="cd ''${selected_dir}"
+    BUFFER="code -r ''${selected_dir}"
     zle accept-line
   fi
   zle clear-screen
 }
-zle -N fzf-src
-bindkey '^g' fzf-src
+zle -N fzf-ghq
+bindkey '^g' fzf-ghq
 source $HOME/.nix-profile/etc/profile.d/nix.sh
 export PATH=$HOME/.docker/cli-plugins:$PATH # Rancher desktop
 export NODE_OPTIONS=--max_old_space_size=8192
