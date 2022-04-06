@@ -19,10 +19,7 @@
   "git.allowForcePush": true,
   "explorer.confirmDelete": false,
   "files.associations": {
-    ".env": "dotenv",
-    ".postcssrc": "json",
-    ".prettierrc": "json",
-    ".stylelintrc": "json"
+    ".env": "dotenv"
   },
   "files.autoSave": "onFocusChange"
 }
