@@ -10,13 +10,11 @@ echo "✔ install home-manager"
 nix-channel --add https://nixos.org/channels/nixpkgs-unstable
 nix-channel --add https://github.com/nix-community/home-manager/archive/release-21.11.tar.gz home-manager
 nix-channel --update
-export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
-nix-shell '<home-manager>' -A install
-. $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
 
-ln -f ./home.nix ~/.config/nixpkgs/home.nix # cp -f ./home.nix ~/.config/nixpkgs
-nix-env --set-flag priority 10 nix
-home-manager switch
+mkdir -p $HOME/.config/nixpkgs
+ln -s ./home.nix $HOME/.config/nixpkgs/home.nix
+# nix-env --set-flag priority 10 nix
+nix-shell -I $HOME/.nix-defexpr/channels '<home-manager>' -A install # home-manager switch
 
 # end
 nix-collect-garbage
