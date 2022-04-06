@@ -25,6 +25,7 @@
     };
   };
   programs.fzf.enable = true;
+  programs.bat.enable = true;
   programs.lsd.enable = true;
   programs.starship.enable = true;
 
