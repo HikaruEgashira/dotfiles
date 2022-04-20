@@ -9,10 +9,11 @@
 
 ```bash
 mkdir -p $HOME/.config/nixpkgs
-ln -s ./home.nix $HOME/.config/nixpkgs/home.nix
+ln ./home.nix $HOME/.config/nixpkgs/home.nix
 
 nix-channel --add https://github.com/nix-community/home-manager/archive/release-21.11.tar.gz home-manager
 nix-channel --update
+export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
 nix-shell -I $HOME/.nix-defexpr/channels '<home-manager>' -A install # home-manager switch
 ```
 

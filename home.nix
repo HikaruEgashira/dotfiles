@@ -2,12 +2,11 @@
 
 {
   programs.home-manager.enable = true;
-  services.lorri.enable = true;
 
   home.username = "egahika";
   home.homeDirectory = "/home/egahika";
   home.stateVersion = "21.11";
-  home.packages = with pkgs; [ ghq ];
+  home.packages = with pkgs; [ ghq cachix ripgrep ];
 
   programs.direnv.enable = true;
   programs.direnv.nix-direnv.enable = true;
@@ -23,6 +22,7 @@
       };
     };
   };
+  programs.aria2.enable = true;
   programs.fzf.enable = true;
   programs.bat.enable = true;
   programs.lsd.enable = true;
@@ -44,7 +44,7 @@
 function fzf-ghq () {
   local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
   if [ -n "$selected_dir" ]; then
-    BUFFER="code -r ''${selected_dir}"
+    BUFFER="cd ''${selected_dir}"
     zle accept-line
   fi
   zle clear-screen
