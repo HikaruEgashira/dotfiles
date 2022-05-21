@@ -54,6 +54,8 @@ bindkey '^g' fzf-ghq
 source $HOME/.nix-profile/etc/profile.d/nix.sh
 export PATH=$HOME/.docker/cli-plugins:$PATH # Rancher desktop
 export NODE_OPTIONS=--max_old_space_size=8192
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
 export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin"  # Added by n-install (see http://git.io/n-install-repo).
     '';
   };
