@@ -15,5 +15,11 @@
   "git.suggestSmartCommit": true,
   "git.allowForcePush": true,
   "explorer.confirmDelete": false,
-  "files.autoSave": "onFocusChange"
+  "files.autoSave": "onFocusChange",
+  "terminal.integrated.profiles.linux": {
+    "zsh": {
+      "path": "/root/.nix-profile/bin/zsh",
+    },
+  },
+  "terminal.integrated.defaultLocation": "editor",
 }
