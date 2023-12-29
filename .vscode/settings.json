@@ -1,9 +1,7 @@
 {
-  "terminal.integrated.fontFamily": "'MesloLGS NF', 'Zen Kaku Gothic New', monospace",
-  "editor.fontFamily": "'MesloLGS NF', 'Zen Kaku Gothic New', monospace",
-  "workbench.startupEditor": "none",
+  "terminal.integrated.fontFamily": "'Cica', monospace",
+  "editor.fontFamily": "'Cica', monospace",
   "workbench.colorTheme": "Nord Light",
-  "workbench.iconTheme": "vscode-icons",
   "editor.inlineSuggest.enabled": true,
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": "active",
@@ -17,8 +15,5 @@
   "git.suggestSmartCommit": true,
   "git.allowForcePush": true,
   "explorer.confirmDelete": false,
-  "files.associations": {
-    ".env": "dotenv"
-  },
   "files.autoSave": "onFocusChange"
 }
