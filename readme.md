@@ -8,8 +8,8 @@
 ## Setup
 
 ```bash
-mkdir -p $HOME/.config/nixpkgs
-ln ./home.nix $HOME/.config/nixpkgs/home.nix
+mkdir -p $HOME/.config/home-manager
+ln ./home.nix $HOME/.config/home-manager/home.nix
 
 nix-channel --add https://github.com/nix-community/home-manager/archive/release-23.11.tar.gz home-manager
 nix-channel --update
@@ -32,7 +32,7 @@ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 NOTICE: remove `. "\$HOME/.nix-profile/etc/profile.d/nix.sh"` line in your `~/.zshrc`
 
 ```bash
-rm -rf $HOME/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs}
+rm -rf $HOME/{.nix-channels,.nix-defexpr,.nix-profile,.config/home-manager}
 sudo rm -rf /nix
 ```
 

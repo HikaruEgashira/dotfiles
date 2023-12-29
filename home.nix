@@ -5,6 +5,7 @@
 
   home.username = "root";
   home.homeDirectory = "/root";
+  home.stateVersion = "23.11";
   home.packages = with pkgs; [ ghq cachix ripgrep ];
 
   programs.direnv.enable = true;
@@ -31,7 +32,7 @@
     enable = true;
     enableCompletion = true;
     enableAutosuggestions = true;
-    enableSyntaxHighlighting = true;
+    syntaxHighlighting.enable = true;
     shellAliases =
     {
       c = "code .";
@@ -50,11 +51,6 @@ function fzf-ghq () {
 }
 zle -N fzf-ghq
 bindkey '^g' fzf-ghq
-source $HOME/.nix-profile/etc/profile.d/nix.sh
-export NODE_OPTIONS=--max_old_space_size=8192
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-export N_PREFIX="$HOME/n"; [[ :$PATH: == *":$N_PREFIX/bin:"* ]] || PATH+=":$N_PREFIX/bin"  # Added by n-install (see http://git.io/n-install-repo).
     '';
   };
 }
