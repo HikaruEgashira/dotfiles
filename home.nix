@@ -51,6 +51,9 @@ function fzf-ghq () {
 }
 zle -N fzf-ghq
 bindkey '^g' fzf-ghq
+source <(nerdctl completion zsh)
+alias docker='nerdctl -n=k8s.io'
+complete -o default -F __start_nerdctl docker
     '';
   };
 }
