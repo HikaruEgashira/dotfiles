@@ -11,7 +11,7 @@
 mkdir -p $HOME/.config/nixpkgs
 ln ./home.nix $HOME/.config/nixpkgs/home.nix
 
-nix-channel --add https://github.com/nix-community/home-manager/archive/release-21.11.tar.gz home-manager
+nix-channel --add https://github.com/nix-community/home-manager/archive/release-23.11.tar.gz home-manager
 nix-channel --update
 export NIX_PATH=$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}
 nix-shell -I $HOME/.nix-defexpr/channels '<home-manager>' -A install # home-manager switch
@@ -34,6 +34,16 @@ NOTICE: remove `. "\$HOME/.nix-profile/etc/profile.d/nix.sh"` line in your `~/.z
 ```bash
 rm -rf $HOME/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs}
 sudo rm -rf /nix
+```
+
+# install nerdctl
+
+https://github.com/containerd/nerdctl/releases
+
+```sh
+curl -sSL https://github.com/containerd/nerdctl/releases/download/v1.7.2/nerdctl-full-1.7.2-linux-amd64.tar.gz | sudo tar Cxzv /usr/local/
+sudo systemctl enable --now containerd
+sudo nerdctl run -d --name nginx -p 80:80 nginx:alpine
 ```
 
 # (optional) install n
