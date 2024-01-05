@@ -10,6 +10,7 @@
 ```bash
 mkdir -p $HOME/.config/home-manager
 ln -f ./home.nix $HOME/.config/home-manager/home.nix
+# edit home.nix
 
 nix-channel --add https://github.com/nix-community/home-manager/archive/release-23.11.tar.gz home-manager
 nix-channel --update
