@@ -47,12 +47,6 @@ sudo systemctl enable --now containerd
 sudo nerdctl run -d --name nginx -p 80:80 nginx:alpine
 ```
 
-# (optional) install n
-
-```
-curl -L https://git.io/n-install | bash
-```
-
 # font list
 
 WSLメインなのでHome-managerで管理しない

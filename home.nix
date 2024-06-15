@@ -6,7 +6,8 @@
   home.username = "root";
   home.homeDirectory = "/root";
   home.stateVersion = "23.11";
-  home.packages = with pkgs; [ ghq cachix ripgrep ];
+  home.packages = with pkgs; [ ghq cachix ripgrep asdf-vm mise ];
+  home.enableNixpkgsReleaseCheck = false;
 
   programs.direnv.enable = true;
   programs.direnv.nix-direnv.enable = true;
@@ -35,24 +36,30 @@
     syntaxHighlighting.enable = true;
     shellAliases =
     {
-      c = "code .";
+      c = "cursor .";
       rel = "source ~/.zshrc";
       ls = "lsd";
-      cat = "bat";
-      docker = "nerdctl -n=k8s.io";
     };
     initExtra = ''
-function fzf-ghq () {
-  local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
-  if [ -n "$selected_dir" ]; then
-    BUFFER="cd ''${selected_dir}"
-    zle accept-line
-  fi
-  zle clear-screen
-}
-zle -N fzf-ghq
-bindkey '^g' fzf-ghq
-source <(nerdctl completion zsh)
+      function fzf-ghq () {
+        local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
+        if [ -n "$selected_dir" ]; then
+          BUFFER="cd ''${selected_dir}"
+          zle accept-line
+        fi
+        zle clear-screen
+      }
+      zle -N fzf-ghq
+      bindkey '^g' fzf-ghq
+      # source <(nerdctl completion zsh)
+      . "$HOME/.nix-profile/share/asdf-vm/asdf.sh"
+
+      alias "??"="gh copilot suggest -t shell"
+      alias "git?"="gh copilot suggest -t git"
+      alias "gh?"="gh copilot suggest -t gh"
+      alias "?"="gh copilot explain"
+      eval "$(mise activate zsh)"
+      eval "$(gh copilot alias zsh)"
     '';
   };
 }
