@@ -21,6 +21,15 @@
         whitespace = "trailing-space,space-before-tab";
         editor = "code --wait";
       };
+      user = {
+        signingkey = "/Users/hikae/.ssh/id_ed25519.pub";
+      };
+      commit = {
+        gpgsign = true;
+      };
+      gpg = {
+        format = "ssh";
+      };
     };
   };
   programs.aria2.enable = true;
@@ -36,9 +45,8 @@
     syntaxHighlighting.enable = true;
     shellAliases =
     {
-      c = "cursor .";
+      c = "code .";
       rel = "source ~/.zshrc";
-      ls = "lsd";
     };
     initExtra = ''
       function fzf-ghq () {
