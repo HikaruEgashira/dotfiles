@@ -3,10 +3,10 @@
 {
   programs.home-manager.enable = true;
 
-  home.username = "root";
-  home.homeDirectory = "/root";
+  home.username = "hikae";
+  home.homeDirectory = "/Users/hikae";
   home.stateVersion = "23.11";
-  home.packages = with pkgs; [ ghq cachix ripgrep asdf-vm mise ];
+  home.packages = with pkgs; [ ghq cachix ripgrep asdf-vm mise gh ];
   home.enableNixpkgsReleaseCheck = false;
 
   programs.direnv.enable = true;
@@ -15,7 +15,7 @@
   programs.git = {
     enable = true;
     userName = "hikae";
-    userEmail = "contact@egahika.dev";
+    userEmail = "account@egahika.dev";
     extraConfig = {
       core = {
         whitespace = "trailing-space,space-before-tab";
@@ -49,16 +49,6 @@
       rel = "source ~/.zshrc";
     };
     initExtra = ''
-      function fzf-ghq () {
-        local selected_dir=$(ghq list -p | fzf --query "$LBUFFER")
-        if [ -n "$selected_dir" ]; then
-          BUFFER="cd ''${selected_dir}"
-          zle accept-line
-        fi
-        zle clear-screen
-      }
-      zle -N fzf-ghq
-      bindkey '^g' fzf-ghq
       # source <(nerdctl completion zsh)
       . "$HOME/.nix-profile/share/asdf-vm/asdf.sh"
 

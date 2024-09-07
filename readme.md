@@ -54,3 +54,13 @@ WSLメインなのでHome-managerで管理しない
 - English: [Lato](https://fonts.google.com/specimen/Lato) # エディタには入れない
 - Code: [MesloLGS NF](https://github.com/romkatv/powerlevel10k#fonts)
 - JP: [Zen Kaku Gothic New](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)
+
+# トラブルシュート
+
+- nixが見つからなくなった
+
+```sh
+if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
+```
