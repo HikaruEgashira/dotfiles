@@ -76,3 +76,8 @@ if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 ```
+
+# Docker
+
+https://zenn.dev/sqer/articles/644bb456c56c0f
+https://docs.docker.com/compose/install/linux/#install-the-plugin-manually
