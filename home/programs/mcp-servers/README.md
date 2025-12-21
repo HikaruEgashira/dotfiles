@@ -6,8 +6,7 @@ MCP（Model Context Protocol）サーバーのNix設定ファイル。
 
 ## ファイル構成
 
-- `flake.nix` - Nix Flakesベースの統合設定（推奨）
-- `claude-code-config.nix` - Claude Code用の静的設定（代替）
+- `flake.nix` - Nix Flakesベースの統合設定
 - `mcp-servers.nix` - home-managerモジュール
 
 ## セットアップ
@@ -46,23 +45,16 @@ chmod 600 .env.keys
 }
 ```
 
-### 3. Claude Code用の設定
+### 3. アプリケーションでの使用
 
-Claude Codeで使用する場合：
+`flake.nix`をホームディレクトリにリンクして、各アプリケーションで参照：
 
 ```bash
-# 方法1: flake.nixをホームディレクトリにリンク（推奨）
 ln -sf ~/dotfiles/home/programs/mcp-servers/flake.nix ~/flake.nix
 nix flake update
-
-# 方法2: claude-code-config.nixから設定を生成
-nix eval --raw "$(cat ~/dotfiles/home/programs/mcp-servers/claude-code-config.nix)" > ~/.claude/mcp.json
 ```
 
-### 4. その他のアプリケーション用
-
-`flake.nix`はClaude Code以外のアプリケーション（Claude Desktop等）でも使用可能です。
-各アプリケーションのMCP設定で参照してください。
+Claude Code、Claude Desktop等のアプリケーションで使用可能です。
 
 ## セキュリティ
 
