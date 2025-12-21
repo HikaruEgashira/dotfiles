@@ -16,5 +16,11 @@
     xdg.configFile."mcp-servers".source =
       config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/dotfiles/home/programs/mcp-servers";
+
+    # Copy the generated .mcp.json from the mcp-servers directory
+    # This is symlinked to ~/dotfiles/home/programs/mcp-servers which contains the flake
+    home.file.".mcp.json".source =
+      config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/dotfiles/home/programs/mcp-servers/.mcp.json";
   };
 }
