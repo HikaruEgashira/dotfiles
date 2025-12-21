@@ -1,11 +1,14 @@
 # MCP Servers Configuration
 
-Claude Code用のMCP（Model Context Protocol）サーバー設定ファイル。
+MCP（Model Context Protocol）サーバーのNix設定ファイル。
+
+複数のMCPサーバー（Tavily、OpenMemory、Cerebras等）を統合管理します。
 
 ## ファイル構成
 
 - `flake.nix` - Nix Flakesベースの統合設定（推奨）
-- `claude-code-config.nix` - 従来の方法での設定（代替）
+- `claude-code-config.nix` - Claude Code用の静的設定（代替）
+- `mcp-servers.nix` - home-managerモジュール
 
 ## セットアップ
 
@@ -43,24 +46,23 @@ chmod 600 .env.keys
 }
 ```
 
-### 3. Claude Codeに統合
+### 3. Claude Code用の設定
 
-#### 方法1: Flakes（推奨）
+Claude Codeで使用する場合：
 
 ```bash
-# リポジトリの flake.nix をホームディレクトリにリンク
+# 方法1: flake.nixをホームディレクトリにリンク（推奨）
 ln -sf ~/dotfiles/home/programs/mcp-servers/flake.nix ~/flake.nix
-
-# Claude Codeの設定
 nix flake update
-```
 
-#### 方法2: Static config
-
-```bash
-# claude-code-config.nixを生成
+# 方法2: claude-code-config.nixから設定を生成
 nix eval --raw "$(cat ~/dotfiles/home/programs/mcp-servers/claude-code-config.nix)" > ~/.claude/mcp.json
 ```
+
+### 4. その他のアプリケーション用
+
+`flake.nix`はClaude Code以外のアプリケーション（Claude Desktop等）でも使用可能です。
+各アプリケーションのMCP設定で参照してください。
 
 ## セキュリティ
 
@@ -89,6 +91,7 @@ home-manager switch -b backup
 
 ## 参照
 
-- [dotenvx Documentation](https://dotenvx.com)
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
+- [dotenvx - Secrets Management](https://dotenvx.com)
 - [natsukium/mcp-servers-nix](https://github.com/natsukium/mcp-servers-nix)
-- [Anthropic MCP](https://modelcontextprotocol.io)
+- [Anthropic Claude](https://www.anthropic.com)

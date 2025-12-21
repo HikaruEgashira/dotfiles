@@ -1,4 +1,0 @@
-# Encrypted secrets - keep private
-.env
-.env.keys
-.env.*.local
