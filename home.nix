@@ -13,4 +13,5 @@
   nixpkgs.config.allowUnfree = true;
 
   programs.home-manager.enable = true;
+  programs.mcp-servers.enable = false;
 }
