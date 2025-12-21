@@ -31,13 +31,18 @@
           # Configure MCP servers
           # API keys are loaded from ~/.config/secrets/.env via envFile
           mcp-servers = {
-            envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
-
             programs = {
-              tavily.enable = true;
-              context7.enable = true;
+              tavily = {
+                enable = true;
+                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
+              };
+              context7 = {
+                enable = true;
+                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
+              };
               memory = {
                 enable = true;
+                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
                 env.CLIENT_NAME = "kiro";
               };
             };
