@@ -49,6 +49,29 @@ rm -rf $HOME/{.nix-channels,.nix-defexpr,.nix-profile,.config/home-manager}
 sudo rm -rf /nix
 ```
 
+# font list
+
+- Mono: [Cica](https://github.com/miiton/Cica)
+- English: [Lato](https://fonts.google.com/specimen/Lato)
+- JP: [Zen Kaku Gothic New](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)
+
+# トラブルシュート
+
+- nixが見つからなくなった
+```sh
+. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+```
+
+- home-managerが失敗する
+```sh
+nix-channel --remove home-manager && nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager && nix-channel --update
+```
+
+# Docker
+
+https://zenn.dev/sqer/articles/644bb456c56c0f
+https://docs.docker.com/compose/install/linux/#install-the-plugin-manually
+
 # install nerdctl
 
 https://github.com/containerd/nerdctl/releases
@@ -58,26 +81,3 @@ curl -sSL https://github.com/containerd/nerdctl/releases/download/v1.7.2/nerdctl
 sudo systemctl enable --now containerd
 sudo nerdctl run -d --name nginx -p 80:80 nginx:alpine
 ```
-
-# font list
-
-WSLメインなのでHome-managerで管理しない
-
-- English: [Lato](https://fonts.google.com/specimen/Lato) # エディタには入れない
-- Code: [MesloLGS NF](https://github.com/romkatv/powerlevel10k#fonts)
-- JP: [Zen Kaku Gothic New](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)
-
-# トラブルシュート
-
-- nixが見つからなくなった
-
-```sh
-if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
-    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-fi
-```
-
-# Docker
-
-https://zenn.dev/sqer/articles/644bb456c56c0f
-https://docs.docker.com/compose/install/linux/#install-the-plugin-manually
