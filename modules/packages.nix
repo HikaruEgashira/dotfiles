@@ -3,7 +3,6 @@
 {
   home.packages = [
     # Version managers
-    pkgs.asdf-vm
     pkgs.mise
 
     # Development tools
