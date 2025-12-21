@@ -20,7 +20,6 @@ This is a personal dotfiles repository managed using Nix and Home Manager for de
   - `files.nix`: Home files managed by Home Manager (including Claude Code settings)
   - `programs/`: Additional programs (MCP servers integration)
 - `configs/`: Shell configuration scripts loaded by zsh
-- `scanner/`: Separate project directory (scanner application)
 
 ### Configuration Flow
 
