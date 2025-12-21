@@ -26,7 +26,7 @@
 
     lsd = {
       enable = true;
-      enableAliases = true;
+      enableZshIntegration = true;
     };
 
     aria2.enable = true;

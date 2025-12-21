@@ -3,16 +3,18 @@
 {
   programs.git = {
     enable = true;
-    userName = "hikae";
-    userEmail = "account@egahika.dev";
 
     signing = {
       key = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
       signByDefault = true;
-      gpgPath = "ssh";
+      signer = "ssh";
     };
 
-    extraConfig = {
+    settings = {
+      user = {
+        name = "hikae";
+        email = "account@egahika.dev";
+      };
       core = {
         whitespace = "trailing-space,space-before-tab";
         editor = "code --wait";
@@ -21,6 +23,12 @@
       init.defaultBranch = "main";
       pull.rebase = true;
       fetch.prune = true;
+      alias = {
+        st = "status -sb";
+        co = "checkout";
+        br = "branch";
+        ci = "commit";
+      };
     };
 
     ignores = [
@@ -29,12 +37,5 @@
       ".envrc"
       ".direnv"
     ];
-
-    aliases = {
-      st = "status -sb";
-      co = "checkout";
-      br = "branch";
-      ci = "commit";
-    };
   };
 }

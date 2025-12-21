@@ -12,7 +12,7 @@
       rel = "source ~/.zshrc";
     };
 
-    initExtra = builtins.concatStringsSep "\n" [
+    initContent = builtins.concatStringsSep "\n" [
       (builtins.readFile ../../configs/zsh/completions.zsh)
       (builtins.readFile ../../configs/zsh/aliases.zsh)
       (builtins.readFile ../../configs/zsh/path.zsh)
