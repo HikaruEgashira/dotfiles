@@ -1,5 +1,9 @@
 { config, ... }:
 
+let
+  zshConfig = import ../settings/zsh-config.nix;
+in
+
 {
   programs.zsh = {
     enable = true;
@@ -13,10 +17,10 @@
     };
 
     initExtra = builtins.concatStringsSep "\n" [
-      (builtins.readFile ../../configs/zsh/completions.zsh)
-      (builtins.readFile ../../configs/zsh/aliases.zsh)
-      (builtins.readFile ../../configs/zsh/path.zsh)
-      (builtins.readFile ../../configs/zsh/secrets.zsh)
+      zshConfig.completions
+      zshConfig.aliases
+      zshConfig.path
+      zshConfig.secrets
     ];
   };
 }

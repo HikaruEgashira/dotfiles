@@ -11,16 +11,16 @@
       nodejs
     ];
 
-    # Store MCP servers configuration in ~/dotfiles/home/programs/mcp-servers/
+    # Store MCP servers configuration in ~/dotfiles/modules/settings/mcp-servers/
     # Encrypted API keys are loaded from ~/.config/secrets/.env via dotenvx
     xdg.configFile."mcp-servers".source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/home/programs/mcp-servers";
+      "${config.home.homeDirectory}/dotfiles/modules/settings/mcp-servers";
 
     # Copy the generated .mcp.json from the mcp-servers directory
-    # This is symlinked to ~/dotfiles/home/programs/mcp-servers which contains the flake
+    # This is symlinked to ~/dotfiles/modules/settings/mcp-servers which contains the flake
     home.file.".mcp.json".source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/home/programs/mcp-servers/.mcp.json";
+      "${config.home.homeDirectory}/dotfiles/modules/settings/mcp-servers/.mcp.json";
   };
 }
