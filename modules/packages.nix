@@ -2,22 +2,17 @@
 
 {
   home.packages = [
-    # Version managers
-    pkgs.mise
+    # Utilities
+    pkgs.cachix
+    pkgs.pinentry-curses
+    pkgs.lato
 
     # Development tools
+    pkgs.mise
     pkgs.devenv
     pkgs.ghq
     pkgs.gh
     pkgs.ripgrep
-
-    # Nix tools
-    pkgs.cachix
-
-    # GPG tools
-    pkgs.pinentry-curses
-
-    # Fonts
-    pkgs.lato
+    pkgs.fd
   ];
 }
