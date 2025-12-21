@@ -4,17 +4,10 @@
   programs.git = {
     enable = true;
 
-    signing = {
-      key = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
-      signByDefault = true;
-      signer = "ssh";
-    };
+    userName = "hikae";
+    userEmail = "account@egahika.dev";
 
-    settings = {
-      user = {
-        name = "hikae";
-        email = "account@egahika.dev";
-      };
+    extraConfig = {
       core = {
         whitespace = "trailing-space,space-before-tab";
         editor = "code --wait";

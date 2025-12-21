@@ -4,7 +4,7 @@
   programs.zsh = {
     enable = true;
     enableCompletion = true;
-    autosuggestion.enable = true;
+    enableAutosuggestions = true;
     syntaxHighlighting.enable = true;
 
     shellAliases = {
@@ -12,7 +12,7 @@
       rel = "source ~/.zshrc";
     };
 
-    initContent = builtins.concatStringsSep "\n" [
+    initExtra = builtins.concatStringsSep "\n" [
       (builtins.readFile ../../configs/zsh/completions.zsh)
       (builtins.readFile ../../configs/zsh/aliases.zsh)
       (builtins.readFile ../../configs/zsh/path.zsh)

@@ -14,6 +14,9 @@
     # Nix tools
     pkgs.cachix
 
+    # GPG tools
+    pkgs.pinentry-curses
+
     # Fonts
     pkgs.lato
   ];
