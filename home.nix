@@ -1,6 +1,10 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
+  imports = [
+    ./home/programs/mcp-servers.nix
+  ];
+
   programs.home-manager.enable = true;
 
   home.username = "hikae";
@@ -39,6 +43,8 @@
    programs.bat.enable = true;
    programs.lsd.enable = true;
    programs.starship.enable = true;
+
+   programs.mcp-servers.enable = true;
 
    programs.zsh = {
      enable = true;
