@@ -7,7 +7,7 @@ let
 
     src = pkgs.fetchzip {
       url = "https://github.com/miiton/Cica/releases/download/v${version}/Cica_v${version}.zip";
-      hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+      hash = "sha256-BtDnfWCfD9NE8tcWSmk8ciiInsspNPTPmAdGzpg62SM=";
       stripRoot = false;
     };
 
