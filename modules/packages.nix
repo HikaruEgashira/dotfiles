@@ -6,6 +6,7 @@
     pkgs.mise
 
     # Development tools
+    pkgs.devenv
     pkgs.ghq
     pkgs.gh
     pkgs.ripgrep
