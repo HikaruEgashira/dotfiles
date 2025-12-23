@@ -6,6 +6,7 @@
       - 不可逆な操作でない限りは確認を求めず自律的にタスクを完遂してください。
       - 動作確認し期待通りの動作が確認できるまでがあなたのタスクです。
       - use fd, rg instead of find, grep
+      - dotenvx run -f ~/.config/secrets/.env -- commands で認証情報付きのコマンドを実行できます。
     '';
 
     ".claude/settings.json".text = builtins.toJSON {

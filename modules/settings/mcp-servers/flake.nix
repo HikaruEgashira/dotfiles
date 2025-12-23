@@ -31,22 +31,6 @@
           # Configure MCP servers
           # API keys are loaded from ~/.config/secrets/.env via envFile
           mcp-servers = {
-            programs = {
-              tavily = {
-                enable = true;
-                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
-              };
-              context7 = {
-                enable = true;
-                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
-              };
-              memory = {
-                enable = true;
-                envFile = "${builtins.getEnv "HOME"}/.config/secrets/.env";
-                env.CLIENT_NAME = "kiro";
-              };
-            };
-
             # Custom servers not available as modules
             settings.servers = {
               deepwiki = {
@@ -56,11 +40,6 @@
                   "mcp-remote"
                   "https://mcp.deepwiki.com/sse"
                 ];
-              };
-              cerebras-mcp = {
-                command = "${pkgs.nodejs}/bin/node";
-                args = [];
-                env.CEREBRAS_MCP_IDE = "kiro";
               };
             };
 
