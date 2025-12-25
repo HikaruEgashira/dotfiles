@@ -8,8 +8,7 @@
 ## Setup
 
 ```bash
-# clone
-gh repo clone HikaruEgashira/dotfiles
+gh repo clone HikaruEgashira/dotfiles ~/dotfiles
 nix run home-manager -- -f ~/dotfiles/home.nix switch
 ```
 
