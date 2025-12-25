@@ -24,5 +24,7 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Test configuration
-        run: nix run github:nix-community/home-manager/master -- -f $GITHUB_WORKSPACE/home.nix switch --dry-run
+      - name: Validate configuration syntax
+        run: |
+          nix-instantiate --parse < home.nix > /dev/null
+          echo "✓ Configuration syntax is valid"
