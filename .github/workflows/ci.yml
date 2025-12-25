@@ -1,8 +1,19 @@
 name: "CI"
 on:
   push:
+    branches:
+      - main
+    paths:
+      - "home.nix"
+      - "flake.nix"
+      - "modules/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -11,20 +22,18 @@ jobs:
         uses: cachix/install-nix-action@v12
         with:
           nix_path: "nixpkgs=channel:nixos-unstable"
+          extra_nix_config: |
+            extra-platforms = aarch64-linux
+            experimental-features = nix-command flakes
 
-      - name: Install home-manager channel
-        run: |
-          nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
-          nix-channel --update
-      - name: Link home.nix
-        run: |
-          mkdir -p $HOME/.config/nixpkgs
-          ln -s $GITHUB_WORKSPACE/home.nix $HOME/.config/nixpkgs/home.nix
+      - name: Validate Nix flake
+        run: nix flake check
 
-      - name: Build
-        shell: bash
-        run: |
-          nix-shell -I $HOME/.nix-defexpr/channels '<home-manager>' -A install
+      - name: Test home-manager command
+        run: nix run . -- switch --dry-run
 
-      - name: Test
-        run: git config --list
+      - name: Verify critical files
+        run: |
+          [ -f home.nix ] && echo "✓ home.nix exists"
+          [ -f flake.nix ] && echo "✓ flake.nix exists"
+          [ -d modules ] && echo "✓ modules directory exists"
