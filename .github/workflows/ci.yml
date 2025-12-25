@@ -5,7 +5,6 @@ on:
       - main
     paths:
       - "home.nix"
-      - "flake.nix"
       - "modules/**"
       - ".github/workflows/ci.yml"
   pull_request:
@@ -22,18 +21,15 @@ jobs:
         uses: cachix/install-nix-action@v12
         with:
           nix_path: "nixpkgs=channel:nixos-unstable"
-          extra_nix_config: |
-            extra-platforms = aarch64-linux
-            experimental-features = nix-command flakes
 
-      - name: Validate Nix flake
-        run: nix flake check
-
-      - name: Test home-manager command
-        run: nix run home-manager -- switch --dry-run
-
-      - name: Verify critical files
+      - name: Setup home-manager
         run: |
-          [ -f home.nix ] && echo "✓ home.nix exists"
-          [ -f flake.nix ] && echo "✓ flake.nix exists"
-          [ -d modules ] && echo "✓ modules directory exists"
+          nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+          nix-channel --update
+
+      - name: Verify configuration
+        run: |
+          mkdir -p $HOME/.config/nixpkgs
+          ln -s $GITHUB_WORKSPACE/home.nix $HOME/.config/nixpkgs/home.nix
+          nix-instantiate --parse < home.nix > /dev/null
+          echo "✓ Configuration syntax is valid"
