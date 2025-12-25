@@ -28,10 +28,7 @@
           ...
         }:
         {
-          # Configure MCP servers
-          # API keys are loaded from ~/.config/secrets/.env via envFile
           mcp-servers = {
-            # Custom servers not available as modules
             settings.servers = {
               deepwiki = {
                 command = "${pkgs.nodejs}/bin/npx";
@@ -43,11 +40,9 @@
               };
             };
 
-            # Generate Claude Code configuration
             flavors.claude-code.enable = true;
           };
 
-          # Use the generated devShell
           devShells.default = config.mcp-servers.devShell;
         };
     };

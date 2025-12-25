@@ -32,8 +32,6 @@
 
     starship = {
       enable = true;
-      # Additional starship configuration can go here
-      # settings = builtins.fromTOML (builtins.readFile ../configs/starship.toml);
     };
   };
 }
