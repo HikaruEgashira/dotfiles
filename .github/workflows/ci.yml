@@ -26,5 +26,5 @@ jobs:
 
       - name: Validate configuration syntax
         run: |
-          nix-instantiate --parse < home.nix > /dev/null
+          nix-instantiate --parse home.nix > /dev/null
           echo "✓ Configuration syntax is valid"
