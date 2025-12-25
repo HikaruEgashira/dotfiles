@@ -22,7 +22,7 @@ jobs:
         with:
           nix_path: "nixpkgs=channel:nixos-unstable"
           extra_nix_config: |
-            experimental-features = nix-command
+            experimental-features = nix-command flakes
 
       - name: Test configuration
         run: nix run github:nix-community/home-manager/master -- -f $GITHUB_WORKSPACE/home.nix switch --dry-run
