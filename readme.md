@@ -1,4 +1,4 @@
-# dotfiles
+### dotfiles
 
 Prerequisites
 - [Nix](https://nixos.org/)
