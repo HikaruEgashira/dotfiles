@@ -30,7 +30,7 @@ jobs:
         run: nix flake check
 
       - name: Test home-manager command
-        run: nix run . -- switch --dry-run
+        run: nix run home-manager -- switch --dry-run
 
       - name: Verify critical files
         run: |
