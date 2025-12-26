@@ -27,8 +27,6 @@
     ignores = [
       ".DS_Store"
       "*.swp"
-      ".envrc"
-      ".direnv"
     ];
   };
 }

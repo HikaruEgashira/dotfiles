@@ -2,11 +2,6 @@
 
 {
   programs = {
-    direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-    };
-
     fzf = {
       enable = true;
       defaultCommand = "${pkgs.ripgrep}/bin/rg --files --hidden";
