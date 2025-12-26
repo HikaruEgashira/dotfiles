@@ -6,11 +6,9 @@
     ./modules/programs/git.nix
     ./modules/programs/cli-tools.nix
     ./modules/programs/zsh.nix
-    ./modules/programs/mcp-servers.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
 
   programs.home-manager.enable = true;
-  programs.mcp-servers.enable = false;
 }
