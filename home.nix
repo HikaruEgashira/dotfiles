@@ -7,7 +7,6 @@
     ./modules/programs/cli-tools.nix
     ./modules/programs/zsh.nix
     ./modules/programs/mcp-servers.nix
-    ./modules/settings/claude.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
