@@ -13,6 +13,8 @@ in
 
     shellAliases = {
       c = "code .";
+      con = "claude -c continue";
+      q = "gh q --";
       rel = "source ~/.zshrc";
     };
 
