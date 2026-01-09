@@ -22,7 +22,6 @@ in
   fonts.fontconfig.enable = true;
 
   home.packages = with pkgs; [
-    google-fonts # includes Lato, Zen Kaku Gothic New
     cica
   ];
 }

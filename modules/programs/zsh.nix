@@ -19,7 +19,6 @@ in
     };
 
     initContent = builtins.concatStringsSep "\n" [
-      zshConfig.completions
       zshConfig.aliases
       zshConfig.path
       zshConfig.secrets
