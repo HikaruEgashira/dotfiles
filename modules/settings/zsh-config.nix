@@ -2,9 +2,9 @@
   aliases = ''
     alias c="code ."
     alias rel="source ~/.zshrc"
+    alias ghq="gh q"
 
-    watch() { claude "/watch-pr $1"; }
-    review() { claude "/review-pr $1"; }
+    review() { claude "/review-flow $1"; }
     current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
   '';
 

@@ -26,6 +26,7 @@
 
     ignores = [
       ".DS_Store"
+      "environment.toml"
       "*.swp"
     ];
   };
