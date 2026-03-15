@@ -1,9 +1,7 @@
 {
-  aliases = ''
-    alias c="code ."
-    alias rel="source ~/.zshrc"
-    alias ghq="gh q"
+  sendClaude = builtins.readFile ./send-claude.zsh;
 
+  aliases = ''
     review() { claude "/review-flow $1"; }
     current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
   '';
