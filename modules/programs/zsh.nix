@@ -1,9 +1,5 @@
 { config, ... }:
 
-let
-  zshConfig = import ../settings/zsh-config.nix;
-in
-
 {
   programs.zsh = {
     enable = true;
@@ -28,16 +24,44 @@ in
       q = "gh q --";
       rel = "source ~/.zshrc";
       ghq = "gh q";
-
       say = "mise exec github:HikaruEgashira/say -- say";
     };
 
     initContent = builtins.concatStringsSep "\n" [
-      zshConfig.aliases
-      zshConfig.rust
-      zshConfig.path
-      zshConfig.secrets
-      zshConfig.sendClaude
+      # aliases
+      ''
+        review() { claude "/review-flow $1"; }
+        current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
+      ''
+
+      # rust
+      ''
+        export CARGO_TARGET_DIR="$HOME/.cargo-target"
+        export RUSTC_WRAPPER=sccache
+      ''
+
+      # path
+      ''
+        export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
+        export PATH=$PATH:$HOME/.spicetify
+        export PATH=$PATH:$HOME/.local/bin
+        export PATH=$PATH:$HOME/.pdtm/go/bin
+        export PATH=$HOME/.opencode/bin:$PATH
+
+        command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
+      ''
+
+      # secrets
+      ''
+        if [ -f "$HOME/.config/secrets/.env.keys" ]; then
+          export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
+          eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c 'echo OPENAI_API_KEY=$OPENAI_API_KEY; echo NPM_TOKEN=$NPM_TOKEN; echo GH_PKG_TOKEN=$GH_PKG_TOKEN; echo FLATT_GUARD_TOKEN=$FLATT_GUARD_TOKEN')"
+          export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
+        fi
+      ''
+
+      # send-claude
+      (builtins.readFile ../settings/send-claude.zsh)
     ];
   };
 }

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, dotfilesPath, ... }:
 
 {
   options.programs.mcp-servers = {
@@ -13,7 +13,7 @@
 
     xdg.configFile."mcp-servers".source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/modules/settings/mcp-servers";
+      "${dotfilesPath}/modules/settings/mcp-servers";
 
     home.file.".mcp.json".source =
       config.lib.file.mkOutOfStoreSymlink

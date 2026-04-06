@@ -18,4 +18,4 @@ home-manager switch --flake ~/dotfiles
 
 ## シェルエイリアスの追加
 
-`modules/settings/zsh-config.nix` の `aliases` ブロックに追記する。
+`modules/programs/zsh.nix` の `shellAliases` に追記する。

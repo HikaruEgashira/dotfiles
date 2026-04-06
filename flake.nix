@@ -9,12 +9,13 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { self, nixpkgs, home-manager, ... }:
     let
       forSystem = system:
         let pkgs = nixpkgs.legacyPackages.${system};
         in home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
+          extraSpecialArgs = { dotfilesPath = self; };
           modules = [ ./home.nix ];
         };
     in
