@@ -4,6 +4,8 @@ on:
     branches:
       - main
     paths:
+      - "flake.nix"
+      - "flake.lock"
       - "home.nix"
       - "modules/**"
       - ".github/workflows/ci.yml"
@@ -20,11 +22,8 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v12
         with:
-          nix_path: "nixpkgs=channel:nixos-unstable"
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Validate configuration syntax
-        run: |
-          nix-instantiate --parse home.nix > /dev/null
-          echo "✓ Configuration syntax is valid"
+      - name: Build home-manager configuration
+        run: nix flake check

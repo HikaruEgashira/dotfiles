@@ -15,13 +15,5 @@
       '';
       force = true;
     };
-
-    file.".config/pip/pip.conf" = {
-      text = ''
-        [global]
-        index-url = https://token:''${FLATT_GUARD_TOKEN}@pypi.flatt.tech/simple/
-      '';
-      force = true;
-    };
   };
 }

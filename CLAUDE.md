@@ -7,7 +7,7 @@
 export PATH="/nix/var/nix/profiles/default/bin:$PATH"
 
 # home-managerの適用
-nix run home-manager -- -f ~/dotfiles/home.nix switch
+home-manager switch --flake ~/dotfiles
 ```
 
 ## 構成
