@@ -28,7 +28,7 @@ in
       q = "gh q --";
       rel = "source ~/.zshrc";
       ghq = "gh q";
-      npm = "echo 'Use pnpm' && false";
+
       say = "mise exec github:HikaruEgashira/say -- say";
     };
 

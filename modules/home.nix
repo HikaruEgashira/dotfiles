@@ -11,6 +11,15 @@
         @NAMESPACE:registry=https://npm.pkg.github.com
         //registry.npmjs.org/:_authToken=''${NPM_TOKEN}
         registry=https://npm.flatt.tech/
+        //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
+      '';
+      force = true;
+    };
+
+    file.".config/pip/pip.conf" = {
+      text = ''
+        [global]
+        index-url = https://token:''${FLATT_GUARD_TOKEN}@pypi.flatt.tech/simple/
       '';
       force = true;
     };
