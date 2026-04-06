@@ -34,6 +34,7 @@ in
 
     initContent = builtins.concatStringsSep "\n" [
       zshConfig.aliases
+      zshConfig.rust
       zshConfig.path
       zshConfig.secrets
       zshConfig.sendClaude

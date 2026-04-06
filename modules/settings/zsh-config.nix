@@ -6,6 +6,11 @@
     current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
   '';
 
+  rust = ''
+    export CARGO_TARGET_DIR="$HOME/.cargo-target"
+    export RUSTC_WRAPPER=sccache
+  '';
+
   path = ''
     export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
     export PATH=$PATH:$HOME/.spicetify
