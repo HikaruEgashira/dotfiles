@@ -57,7 +57,7 @@
       ''
         if [ -f "$HOME/.config/secrets/.env.keys" ]; then
           export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
-          eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c 'echo OPENAI_API_KEY=$OPENAI_API_KEY; echo NPM_TOKEN=$NPM_TOKEN; echo GH_PKG_TOKEN=$GH_PKG_TOKEN; echo FLATT_GUARD_TOKEN=$FLATT_GUARD_TOKEN')"
+          eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c 'echo export OPENAI_API_KEY=$OPENAI_API_KEY; echo export NPM_TOKEN=$NPM_TOKEN; echo export GH_PKG_TOKEN=$GH_PKG_TOKEN; echo export FLATT_GUARD_TOKEN=$FLATT_GUARD_TOKEN; echo export ZAI_API_KEY=$ZAI_API_KEY')"
           export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
         fi
       ''
