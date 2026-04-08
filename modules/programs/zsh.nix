@@ -19,8 +19,10 @@
     '';
 
     shellAliases = {
-      c = "code .";
+      c = "claude";
       con = "claude -c continue";
+      o = "opencode";
+      z = "zod .";
       q = "gh q --";
       rel = "source ~/.zshrc";
       ghq = "gh q";

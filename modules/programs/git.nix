@@ -14,6 +14,7 @@
       };
 
       gpg.format = "ssh";
+      signing.format = "ssh";
       init.defaultBranch = "main";
       pull.rebase = true;
       fetch.prune = true;
