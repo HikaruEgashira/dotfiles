@@ -77,8 +77,7 @@ dotenvx run -- printenv | grep -E "TAVILY|OPENMEMORY|CEREBRAS"
 ### home-managerが失敗する
 
 ```bash
-# home-manager再実行
-home-manager switch -b backup
+nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
 ```
 
 ## 参照
