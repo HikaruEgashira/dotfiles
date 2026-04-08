@@ -48,8 +48,6 @@
         export PATH=$PATH:$HOME/.spicetify
         export PATH=$PATH:$HOME/.local/bin
         export PATH=$PATH:$HOME/.pdtm/go/bin
-        export PATH=$HOME/.opencode/bin:$PATH
-
         command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
       ''
 
