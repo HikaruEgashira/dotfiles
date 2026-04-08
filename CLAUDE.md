@@ -3,5 +3,5 @@
 ## 適用
 
 ```bash
-nix run home-manager -- switch --flake ~/dotfiles
+nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
 ```
