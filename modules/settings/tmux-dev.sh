@@ -2,11 +2,17 @@
 # Claude Code オーケストレーター レイアウト
 # Usage: tmux-dev [project-dir]
 #
-# ┌────────┬──────┬──────┬──────┬──────┐
-# │        │ cc1  │ cc2  │ cc3  │ cc4  │
-# │ shell  │      │      │      │      │
-# │        │      │      │      │      │
-# └────────┴──────┴──────┴──────┴──────┘
+# ┌──────────────────────────────┐
+# │  shell 確認用                │
+# ├──────────────────────────────┤
+# │  Claude Code 1               │
+# ├──────────────────────────────┤
+# │  Claude Code 2               │
+# ├──────────────────────────────┤
+# │  Claude Code 3               │
+# ├──────────────────────────────┤
+# │  Claude Code 4               │
+# └──────────────────────────────┘
 
 dir="${1:-.}"
 dir="$(cd "$dir" && pwd)"
@@ -19,26 +25,28 @@ if tmux has-session -t "$session" 2>/dev/null; then
   exit 0
 fi
 
-# 左: 手元確認用shell
+# pane 1: shell
 tmux new-session -d -s "$session" -c "$dir"
 
-# 右: Claude Code 1
-tmux split-window -h -t "$session" -c "$dir" -l 80%
-tmux send-keys -t "$session:.2" "claude" Enter
+# pane 2: Claude Code 1
+tmux split-window -v -t "$session:1.1" -c "$dir" -l 80%
 
-# Claude Code 2
-tmux split-window -h -t "$session:.2" -c "$dir" -l 75%
-tmux send-keys -t "$session:.3" "claude" Enter
+# pane 3: Claude Code 2
+tmux split-window -v -t "$session:1.2" -c "$dir" -l 75%
 
-# Claude Code 3
-tmux split-window -h -t "$session:.3" -c "$dir" -l 66%
-tmux send-keys -t "$session:.4" "claude" Enter
+# pane 4: Claude Code 3
+tmux split-window -v -t "$session:1.3" -c "$dir" -l 66%
 
-# Claude Code 4
-tmux split-window -h -t "$session:.4" -c "$dir" -l 50%
-tmux send-keys -t "$session:.5" "claude" Enter
+# pane 5: Claude Code 4
+tmux split-window -v -t "$session:1.4" -c "$dir" -l 50%
 
-# 左ペインにフォーカス
-tmux select-pane -t "$session:.1"
+# Claude Code を各ペインで起動
+tmux send-keys -t "$session:1.2" "claude" Enter
+tmux send-keys -t "$session:1.3" "claude" Enter
+tmux send-keys -t "$session:1.4" "claude" Enter
+tmux send-keys -t "$session:1.5" "claude" Enter
+
+# shellペインにフォーカス
+tmux select-pane -t "$session:1.1"
 
 tmux attach -t "$session"
