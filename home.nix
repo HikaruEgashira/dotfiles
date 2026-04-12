@@ -7,6 +7,7 @@
     ./modules/programs/cli-tools.nix
     ./modules/programs/zsh.nix
     ./modules/programs/tmux.nix
+    ./modules/programs/ghostty.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
