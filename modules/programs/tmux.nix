@@ -33,6 +33,7 @@
       # ターミナルタイトルをセッション名に
       set -g set-titles on
       set -g set-titles-string "#S"
+      set -g allow-passthrough on
 
       # ステータスバー
       set -g status-position top
