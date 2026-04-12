@@ -10,8 +10,6 @@
       maximize = true
       macos-titlebar-style = tabs
       window-inherit-working-directory = true
-      background-opacity = 0.8
-
       # Font settings
       font-family = PlemolJP35 Console NF
       font-size = 13

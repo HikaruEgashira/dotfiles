@@ -38,6 +38,7 @@
         ];
         defaultMode = "acceptEdits";
       };
+      theme = "tokyonight";
       model = "haiku";
       enabledPlugins = {
         "freee-api@freee-api-marketplace" = false;
