@@ -6,6 +6,7 @@
     ./modules/programs/git.nix
     ./modules/programs/cli-tools.nix
     ./modules/programs/zsh.nix
+    ./modules/programs/tmux.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
