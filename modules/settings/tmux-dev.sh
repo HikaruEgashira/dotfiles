@@ -2,13 +2,12 @@
 # Claude Code オーケストレーター レイアウト
 # Usage: tmux-dev [project-dir]
 #
-# ┌──────────────────────────────┐
-# │                              │
-# │  Claude Code (orchestrator)  │
-# │                              │
-# ├──────────────────────────────┤
-# │  手元確認用 shell (20%)      │
-# └──────────────────────────────┘
+# ┌────────────┬─────────────────┐
+# │            │                 │
+# │  shell     │  Claude Code    │
+# │  確認用    │  (orchestrator) │
+# │            │                 │
+# └────────────┴─────────────────┘
 
 dir="${1:-.}"
 dir="$(cd "$dir" && pwd)"
@@ -21,14 +20,14 @@ if tmux has-session -t "$session" 2>/dev/null; then
   exit 0
 fi
 
-# 上: Claude Code
+# 左: 手元確認用shell
 tmux new-session -d -s "$session" -c "$dir"
 
-# 下: 手元確認用
-tmux split-window -v -t "$session" -c "$dir" -l 20%
+# 右: Claude Code
+tmux split-window -h -t "$session" -c "$dir" -l 60%
+tmux send-keys -t "$session:.2" "claude" Enter
 
-# 上ペインにフォーカスしてClaude Code起動
+# 左ペインにフォーカス（手元操作用）
 tmux select-pane -t "$session:.1"
-tmux send-keys -t "$session:.1" "claude" Enter
 
 tmux attach -t "$session"
