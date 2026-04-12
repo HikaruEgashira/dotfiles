@@ -4,12 +4,8 @@
 #
 # ┌────────┬─────────────────────┐
 # │        │  Claude Code 1      │
-# │        ├─────────────────────┤
-# │ shell  │  Claude Code 2      │
-# │        ├─────────────────────┤
-# │        │  Claude Code 3      │
-# │        ├─────────────────────┤
-# │        │  Claude Code 4      │
+# │ shell  ├─────────────────────┤
+# │        │  Claude Code 2      │
 # └────────┴─────────────────────┘
 
 dir="${1:-.}"
@@ -30,19 +26,11 @@ tmux new-session -d -s "$session" -c "$dir"
 tmux split-window -h -t "$session:1.1" -c "$dir" -l 80%
 
 # pane 3: 右を縦分割
-tmux split-window -v -t "$session:1.2" -c "$dir" -l 75%
-
-# pane 4: 右を縦分割
-tmux split-window -v -t "$session:1.3" -c "$dir" -l 66%
-
-# pane 5: 右を縦分割
-tmux split-window -v -t "$session:1.4" -c "$dir" -l 50%
+tmux split-window -v -t "$session:1.2" -c "$dir" -l 50%
 
 # Claude Code を各ペインで起動
 tmux send-keys -t "$session:1.2" "claude" Enter
 tmux send-keys -t "$session:1.3" "claude" Enter
-tmux send-keys -t "$session:1.4" "claude" Enter
-tmux send-keys -t "$session:1.5" "claude" Enter
 
 # shellペインにフォーカス
 tmux select-pane -t "$session:1.1"
