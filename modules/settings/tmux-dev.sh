@@ -39,10 +39,10 @@ tmux split-window -v -t "$session:1.3" -c "$dir" -l 66%
 tmux split-window -v -t "$session:1.4" -c "$dir" -l 50%
 
 # Claude Code を各ペインで起動
-tmux send-keys -t "$session:1.2" "claude --bare" Enter
-tmux send-keys -t "$session:1.3" "claude --bare" Enter
-tmux send-keys -t "$session:1.4" "claude --bare" Enter
-tmux send-keys -t "$session:1.5" "claude --bare" Enter
+tmux send-keys -t "$session:1.2" "claude" Enter
+tmux send-keys -t "$session:1.3" "claude" Enter
+tmux send-keys -t "$session:1.4" "claude" Enter
+tmux send-keys -t "$session:1.5" "claude" Enter
 
 # shellペインにフォーカス
 tmux select-pane -t "$session:1.1"
