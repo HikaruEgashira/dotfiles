@@ -27,6 +27,7 @@
       rel = "source ~/.zshrc";
       ghq = "gh q";
       say = "mise exec github:HikaruEgashira/say -- say";
+      tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
       tmux-new = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
       tmux-kill = "tmux kill-session -t";
     };
