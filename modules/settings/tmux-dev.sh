@@ -2,17 +2,15 @@
 # Claude Code オーケストレーター レイアウト
 # Usage: tmux-dev [project-dir]
 #
-# ┌──────────────────────────────┐
-# │  shell 確認用                │
-# ├──────────────────────────────┤
-# │  Claude Code 1               │
-# ├──────────────────────────────┤
-# │  Claude Code 2               │
-# ├──────────────────────────────┤
-# │  Claude Code 3               │
-# ├──────────────────────────────┤
-# │  Claude Code 4               │
-# └──────────────────────────────┘
+# ┌────────┬─────────────────────┐
+# │        │  Claude Code 1      │
+# │        ├─────────────────────┤
+# │ shell  │  Claude Code 2      │
+# │        ├─────────────────────┤
+# │        │  Claude Code 3      │
+# │        ├─────────────────────┤
+# │        │  Claude Code 4      │
+# └────────┴─────────────────────┘
 
 dir="${1:-.}"
 dir="$(cd "$dir" && pwd)"
@@ -25,19 +23,19 @@ if tmux has-session -t "$session" 2>/dev/null; then
   exit 0
 fi
 
-# pane 1: shell
+# pane 1: shell（左）
 tmux new-session -d -s "$session" -c "$dir"
 
-# pane 2: Claude Code 1
-tmux split-window -v -t "$session:1.1" -c "$dir" -l 80%
+# pane 2: 右側を作る
+tmux split-window -h -t "$session:1.1" -c "$dir" -l 80%
 
-# pane 3: Claude Code 2
+# pane 3: 右を縦分割
 tmux split-window -v -t "$session:1.2" -c "$dir" -l 75%
 
-# pane 4: Claude Code 3
+# pane 4: 右を縦分割
 tmux split-window -v -t "$session:1.3" -c "$dir" -l 66%
 
-# pane 5: Claude Code 4
+# pane 5: 右を縦分割
 tmux split-window -v -t "$session:1.4" -c "$dir" -l 50%
 
 # Claude Code を各ペインで起動
