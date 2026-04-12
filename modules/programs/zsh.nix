@@ -19,14 +19,15 @@
     '';
 
     shellAliases = {
-      c = "claude";
-      con = "claude -c continue";
-      o = "opencode";
+      claude = "claudex";
+      c = "claudex";
+      con = "claudex -c continue";
       z = "zod .";
       q = "gh q --";
       rel = "source ~/.zshrc";
       ghq = "gh q";
       say = "mise exec github:HikaruEgashira/say -- say";
+      tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
     };
 
     initContent = builtins.concatStringsSep "\n" [
