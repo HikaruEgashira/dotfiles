@@ -28,8 +28,6 @@
       ghq = "gh q";
       say = "mise exec github:HikaruEgashira/say -- say";
       tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
-      tnew = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
-      tkill = "tmux kill-session -t";
     };
 
     initContent = builtins.concatStringsSep "\n" [
