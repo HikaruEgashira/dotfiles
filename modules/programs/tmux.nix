@@ -30,6 +30,10 @@
       # ウィンドウを閉じたとき番号を詰める
       set -g renumber-windows on
 
+      # ターミナルタイトルをセッション名に
+      set -g set-titles on
+      set -g set-titles-string "#S"
+
       # ステータスバー
       set -g status-position top
       set -g status-style "bg=default,fg=white"
