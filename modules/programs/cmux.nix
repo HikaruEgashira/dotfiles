@@ -33,5 +33,15 @@
     /usr/bin/defaults write com.cmuxterm.app sidebarMaterial -string "sidebar"
     /usr/bin/defaults write com.cmuxterm.app sidebarPreset -string "nativeSidebar"
     /usr/bin/defaults write com.cmuxterm.app sidebarState -string "followWindow"
+    /usr/bin/defaults write com.cmuxterm.app sidebarTintHex -string "#000000"
+    /usr/bin/defaults write com.cmuxterm.app sidebarTintHexDark -string "#1A1B26"
+    /usr/bin/defaults write com.cmuxterm.app sidebarSelectionColorHex -string "#33467C"
+    /usr/bin/defaults write com.cmuxterm.app sidebarNotificationBadgeColorHex -string "#7AA2F7"
+    /usr/bin/defaults write com.cmuxterm.app sidebarMatchTerminalBackground -bool true
+    /usr/bin/defaults write com.cmuxterm.app browserThemeMode -string "system"
+    /usr/bin/defaults write com.cmuxterm.app notificationSound -string "Pop"
+    /usr/bin/defaults write com.cmuxterm.app preferredEditorCommand -string "zed"
+    /usr/bin/defaults write com.cmuxterm.app sendAnonymousTelemetry -bool false
+    /usr/bin/defaults write com.cmuxterm.app workspacePresentationMode -string "minimal"
   '';
 }
