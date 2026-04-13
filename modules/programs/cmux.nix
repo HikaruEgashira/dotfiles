@@ -11,13 +11,13 @@
       };
 
       workspaceColors = {
-        selectionColor = "#33467c";
+        selectionColor = "#283457";
         notificationBadgeColor = "#7aa2f7";
       };
 
       sidebarAppearance = {
         matchTerminalBackground = true;
-        tintColor = "#000000";
+        tintColor = "#1a1b26";
         darkModeTintColor = "#1a1b26";
         tintOpacity = 0.5;
       };
@@ -33,9 +33,9 @@
     /usr/bin/defaults write com.cmuxterm.app sidebarMaterial -string "sidebar"
     /usr/bin/defaults write com.cmuxterm.app sidebarPreset -string "nativeSidebar"
     /usr/bin/defaults write com.cmuxterm.app sidebarState -string "followWindow"
-    /usr/bin/defaults write com.cmuxterm.app sidebarTintHex -string "#000000"
+    /usr/bin/defaults write com.cmuxterm.app sidebarTintHex -string "#1A1B26"
     /usr/bin/defaults write com.cmuxterm.app sidebarTintHexDark -string "#1A1B26"
-    /usr/bin/defaults write com.cmuxterm.app sidebarSelectionColorHex -string "#33467C"
+    /usr/bin/defaults write com.cmuxterm.app sidebarSelectionColorHex -string "#283457"
     /usr/bin/defaults write com.cmuxterm.app sidebarNotificationBadgeColorHex -string "#7AA2F7"
     /usr/bin/defaults write com.cmuxterm.app sidebarMatchTerminalBackground -bool true
     /usr/bin/defaults write com.cmuxterm.app browserThemeMode -string "system"
