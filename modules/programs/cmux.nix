@@ -28,7 +28,7 @@
   # plist-only settings (not available in settings.json schema)
   home.activation.cmuxDefaults = ''
     /usr/bin/defaults write com.cmuxterm.app sidebarBlendMode -string "withinWindow"
-    /usr/bin/defaults write com.cmuxterm.app sidebarBlurOpacity -float 1
+    /usr/bin/defaults write com.cmuxterm.app sidebarBlurOpacity -float 0
     /usr/bin/defaults write com.cmuxterm.app sidebarCornerRadius -float 0
     /usr/bin/defaults write com.cmuxterm.app sidebarMaterial -string "sidebar"
     /usr/bin/defaults write com.cmuxterm.app sidebarPreset -string "nativeSidebar"
