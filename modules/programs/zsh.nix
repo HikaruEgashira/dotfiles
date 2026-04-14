@@ -28,6 +28,8 @@
       ghq = "gh q";
       say = "mise exec github:HikaruEgashira/say -- say";
       tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
+      up = "claude-compose up";
+      down = "claude-compose down";
     };
 
     initContent = builtins.concatStringsSep "\n" [
