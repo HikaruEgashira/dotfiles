@@ -30,6 +30,7 @@
       tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
       up = "claude-compose up";
       down = "claude-compose down";
+      log = "claude-compose log -f";
     };
 
     initContent = builtins.concatStringsSep "\n" [
