@@ -46,6 +46,12 @@
         export RUSTC_WRAPPER=sccache
       ''
 
+      # terraform
+      ''
+        export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+        mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
+      ''
+
       # path
       ''
         export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
