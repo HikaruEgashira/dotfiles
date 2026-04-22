@@ -11,5 +11,6 @@
     pkgs.gh
     pkgs.ripgrep
     pkgs.fd
+    pkgs.gitleaks
   ];
 }

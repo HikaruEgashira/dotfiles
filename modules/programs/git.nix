@@ -1,5 +1,21 @@
-{ config, ... }:
+{ config, pkgs, lib, ... }:
 
+let
+  hooksDir = "${config.xdg.configHome}/git/hooks";
+
+  preCommit = pkgs.writeShellScript "global-pre-commit" ''
+    set -eu
+
+    if command -v gitleaks >/dev/null 2>&1; then
+      gitleaks git --staged --redact --verbose --no-banner
+    fi
+
+    local_hook="$(git rev-parse --git-path hooks/pre-commit)"
+    if [ -x "$local_hook" ] && [ "$local_hook" != "${hooksDir}/pre-commit" ]; then
+      exec "$local_hook" "$@"
+    fi
+  '';
+in
 {
   programs.git = {
     enable = true;
@@ -12,6 +28,7 @@
       core = {
         whitespace = "trailing-space,space-before-tab";
         editor = "code --wait";
+        hooksPath = hooksDir;
       };
 
       gpg.format = "ssh";
@@ -35,4 +52,6 @@
       "*.swp"
     ];
   };
+
+  xdg.configFile."git/hooks/pre-commit".source = preCommit;
 }
