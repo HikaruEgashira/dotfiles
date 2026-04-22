@@ -10,8 +10,8 @@ let
       gitleaks git --staged --redact --verbose --no-banner
     fi
 
-    local_hook="$(git rev-parse --git-path hooks/pre-commit)"
-    if [ -x "$local_hook" ] && [ "$local_hook" != "${hooksDir}/pre-commit" ]; then
+    local_hook="$(git rev-parse --git-dir)/hooks/pre-commit"
+    if [ -x "$local_hook" ]; then
       exec "$local_hook" "$@"
     fi
   '';
