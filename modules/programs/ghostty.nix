@@ -10,14 +10,15 @@
       maximize = true
       macos-titlebar-style = tabs
       window-inherit-working-directory = true
+      window-vsync = true
       # Font settings
       font-family = PlemolJP35 Console NF
       font-size = 13
       font-thicken = true
       adjust-cell-height = 2
 
-      # Shell integration
-      shell-integration = detect
+      # Shell integration (none: avoid ZDOTDIR hijacking that can prevent .zshrc from loading)
+      shell-integration = none
 
       # Initial working directory
       working-directory = /Users/hikae/ghq/github.com/HikaruEgashira

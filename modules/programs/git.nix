@@ -25,6 +25,7 @@
         co = "checkout";
         br = "branch";
         ci = "commit";
+        sync = "!git switch \"$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's@^origin/@@')\" && git pull";
       };
     };
 
