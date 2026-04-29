@@ -101,6 +101,9 @@
     pkgs.radare2
     pkgs.sn0int
 
+    # LLM token reduction proxy (rtk-ai/rtk)
+    pkgs.rtk
+
     # Misc
     pkgs.ollama
     # pkgs.mole は nixpkgs で broken。Brewfile 維持
