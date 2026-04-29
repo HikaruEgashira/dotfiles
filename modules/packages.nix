@@ -104,5 +104,24 @@
     # Misc
     pkgs.ollama
     # pkgs.mole は nixpkgs で broken。Brewfile 維持
+
+    # 追加移行: tap → nixpkgs
+    pkgs.crush
+    pkgs.wishlist
+    pkgs.nextdns
+    pkgs.reviewdog
+    pkgs.stripe-cli
+    pkgs.supabase-cli
+    pkgs.tinygo
+    pkgs.powerpipe
+    pkgs.steampipe
+
+    # build / lib deps (brew leaves に出ていた一般ツール)
+    pkgs.ffmpeg
+    pkgs.gnupg
+    pkgs.librsvg
+    pkgs.protobuf
+    pkgs.autoconf
+    pkgs.gts
   ];
 }
