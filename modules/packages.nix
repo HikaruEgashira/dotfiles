@@ -116,6 +116,9 @@
     pkgs.powerpipe
     pkgs.steampipe
 
+    # Mobile dev (cask 移行)
+    pkgs.android-tools
+
     # build / lib deps (brew leaves に出ていた一般ツール)
     pkgs.ffmpeg
     pkgs.gnupg

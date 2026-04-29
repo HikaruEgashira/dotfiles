@@ -23,5 +23,6 @@ in
 
   home.packages = with pkgs; [
     cica
+    plemoljp-nf
   ];
 }
