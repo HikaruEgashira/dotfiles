@@ -21,6 +21,7 @@ tap "suzuki-shunsuke/ghir"
 tap "tw93/tap"                  # mole
 
 # === Formulae (nixpkgs に存在しない / broken のみ) ===
+brew "checkov"                  # nixpkgs ≥ 2026-04-27 の python313-av で aarch64-darwin import check が SIGKILL
 brew "cliclick"
 brew "ripgrep"                  # codex (cask) が依存
 brew "kreuzwerker/taps/m1-terraform-provider-helper"

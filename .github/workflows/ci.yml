@@ -26,6 +26,12 @@ jobs:
       - name: Run formatter check
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
-      - name: Build home-manager configuration
-        timeout-minutes: 25
-        run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.build'
+      - name: Evaluate home-manager configuration
+        # 完全ビルドは crush 等の go テスト走行で 25min を超える上、
+        # 実際にデプロイされるのは aarch64-darwin。eval だけでも cocoapods
+        # のような platform-mismatch は捕捉できるので CI ではここで止める。
+        timeout-minutes: 10
+        run: |
+          nix eval --raw '.#checks.x86_64-linux.build.drvPath'
+          echo
+          echo "evaluated successfully"

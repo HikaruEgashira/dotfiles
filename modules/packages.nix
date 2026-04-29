@@ -22,28 +22,19 @@ let
     pkgs.mise
     pkgs.devenv
 
-    # 既存維持
-    pkgs.ghq
+    # Devflow
     pkgs.gh
     pkgs.ripgrep
     pkgs.fd
     pkgs.gitleaks
-
-    # CI / GitHub Actions
-    pkgs.act
-    pkgs.actionlint
     pkgs.pinact
-    pkgs.wrkflw
-    pkgs.github-mcp-server
 
     # Cloud / Infra / Security
     pkgs.awscli2
-    pkgs.aws-sam-cli
     pkgs.cloudflared
     pkgs.flyctl
-    pkgs.terraformer
-    pkgs.driftctl
-    pkgs.checkov
+    # pkgs.checkov: nixpkgs ≥ 2026-04-27 で python313Packages.av の
+    # pythonImportsCheck が aarch64-darwin で SIGKILL → Brewfile に逃がす
     pkgs.trivy
     pkgs.trufflehog
     pkgs.sops
@@ -59,9 +50,6 @@ let
     pkgs.cmake
     pkgs.automake
     pkgs.pkg-config
-    pkgs.deno
-    pkgs.zig
-    pkgs.opam
     pkgs.golangci-lint
     pkgs.ast-grep
     pkgs.tree-sitter
@@ -85,60 +73,27 @@ let
     pkgs.nushell
     pkgs.pueue
     pkgs.rclone
-    pkgs.bitwarden-cli
     pkgs.git-lfs
     pkgs.inetutils
     pkgs.sshpass
-    pkgs.mosh
     pkgs.nmap
-    pkgs.openvpn
     pkgs.ngrok
     pkgs.mitmproxy
-
-    # Media / docs
-    pkgs.pandoc
-    pkgs.graphviz
-    pkgs.marp-cli
-    pkgs.vhs
-    pkgs.frogmouth
-    pkgs.poppler
-    pkgs.sox
-    pkgs.yt-dlp
-
-    # Reverse / security research
-    pkgs.radare2
-    pkgs.sn0int
-
-    # LLM token reduction proxy (rtk-ai/rtk)
     pkgs.rtk
+    pkgs.vhs
 
     # Misc
     pkgs.ollama
-    # pkgs.mole は nixpkgs で broken。Brewfile 維持
-
-    # 追加移行: tap → nixpkgs
-    pkgs.crush
-    pkgs.wishlist
-    pkgs.nextdns
-    pkgs.reviewdog
-    pkgs.stripe-cli
-    pkgs.supabase-cli
-    pkgs.tinygo
-    pkgs.powerpipe
-    pkgs.steampipe
 
     # Mobile dev (cask 移行)
-    pkgs.android-tools
+    # pkgs.android-tools
 
     # GUI applications (cask 移行・darwin 対応確認済み)
-    pkgs.vscode
-    pkgs.code-cursor
+    # pkgs.vscode
+    # pkgs.code-cursor
     pkgs.slack
     pkgs.discord
-    pkgs.spotify
     pkgs.google-chrome
-    # pkgs.calibre は nixpkgs で broken
-    pkgs.bitwarden-desktop
 
     # build / lib deps (brew leaves に出ていた一般ツール)
     pkgs.ffmpeg
