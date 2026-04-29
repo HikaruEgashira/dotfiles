@@ -60,9 +60,6 @@
 
       # ペインズーム
       keybind = cmd+z=text:\x01z
-
-      # gh q fzf cd (zsh widget bound to this escape sequence; CSI u kitty-style)
-      keybind = cmd+g=text:\x1b[103;9u
     '';
     force = true;
   };

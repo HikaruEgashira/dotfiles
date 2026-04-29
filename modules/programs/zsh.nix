@@ -34,7 +34,7 @@
     };
 
     initContent = builtins.concatStringsSep "\n" [
-      # gh q fzf → cd (cmd+g via ghostty sends CSI u: \e[103;9u)
+      # gh q fzf → cd (ctrl+g, overrides default send-break)
       ''
         ghq-fzf-cd-widget() {
           local dir
@@ -47,7 +47,7 @@
           fi
         }
         zle -N ghq-fzf-cd-widget
-        bindkey '^[[103;9u' ghq-fzf-cd-widget
+        bindkey '^G' ghq-fzf-cd-widget
       ''
 
       # aliases
