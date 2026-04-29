@@ -22,10 +22,24 @@
       ...
     }:
     let
+      # darwin で hang する / cache されない上流テストを止めるための minimal overlay。
+      # 個別パッケージにのみ適用 — フル python 系を再ビルドしたくないので overrideAttrs に留める。
+      overlays = [
+        (_final: prev: {
+          # direnv 2.37.1 の test-zsh が aarch64-darwin で stdin 待ちで hang する
+          direnv = prev.direnv.overrideAttrs (_: {
+            doCheck = false;
+          });
+        })
+      ];
+
       forSystem =
         system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system overlays;
+            config.allowUnfree = true;
+          };
         in
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
