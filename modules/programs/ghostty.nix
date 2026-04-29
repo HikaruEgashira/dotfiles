@@ -60,6 +60,9 @@
 
       # ペインズーム
       keybind = cmd+z=text:\x01z
+
+      # gh q fzf cd (zsh widget bound to this escape sequence)
+      keybind = cmd+g=text:\x1b[ghqcd~
     '';
     force = true;
   };

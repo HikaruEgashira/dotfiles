@@ -34,6 +34,22 @@
     };
 
     initContent = builtins.concatStringsSep "\n" [
+      # gh q fzf → cd (cmd+g via ghostty sends \e[ghqcd~)
+      ''
+        ghq-fzf-cd-widget() {
+          local dir
+          dir=$(gh q -- pwd) || { zle reset-prompt; return; }
+          if [[ -n "$dir" ]]; then
+            BUFFER="cd ''${(q)dir}"
+            zle accept-line
+          else
+            zle reset-prompt
+          fi
+        }
+        zle -N ghq-fzf-cd-widget
+        bindkey '^[[ghqcd~' ghq-fzf-cd-widget
+      ''
+
       # aliases
       ''
         review() { claude "/review-flow $1"; }
