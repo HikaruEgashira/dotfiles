@@ -6,7 +6,7 @@
 # tmux セッション内で claude を起動する。
 # teammateMode=tmux により、Agent Teams が自動でペイン分割を管理する。
 
-if [[ "$1" == "kill" ]]; then
+if [[ $1 == "kill" ]]; then
   dir="${2:-.}"
   dir="$(cd "$dir" && pwd)"
   session="dev-$(basename "$dir")"

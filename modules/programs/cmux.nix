@@ -1,7 +1,8 @@
 {
   home.file.".config/cmux/settings.json" = {
     text = builtins.toJSON {
-      "$schema" = "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux-settings.schema.json";
+      "$schema" =
+        "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux-settings.schema.json";
       schemaVersion = 1;
 
       app = {

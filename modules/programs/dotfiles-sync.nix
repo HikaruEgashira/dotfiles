@@ -1,9 +1,20 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   syncScript = pkgs.writeShellScript "dotfiles-sync" ''
     set -eu
-    export PATH=${lib.makeBinPath [ pkgs.git pkgs.nix pkgs.coreutils ]}:$PATH
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.git
+        pkgs.nix
+        pkgs.coreutils
+      ]
+    }:$PATH
 
     cd "$HOME/dotfiles"
 
@@ -36,10 +47,12 @@ in
     config = {
       Label = "dev.egahika.dotfiles-sync";
       ProgramArguments = [ "${syncScript}" ];
-      StartCalendarInterval = [{
-        Hour = 9;
-        Minute = 0;
-      }];
+      StartCalendarInterval = [
+        {
+          Hour = 9;
+          Minute = 0;
+        }
+      ];
       RunAtLoad = false;
       StandardOutPath = "${config.home.homeDirectory}/.cache/dotfiles-sync.log";
       StandardErrorPath = "${config.home.homeDirectory}/.cache/dotfiles-sync.err";

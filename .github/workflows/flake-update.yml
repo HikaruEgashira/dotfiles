@@ -1,7 +1,7 @@
 name: "flake-update"
 on:
   schedule:
-    - cron: "0 4 * * 1"  # 毎週月曜 04:00 UTC (= 月曜 13:00 JST)
+    - cron: "0 4 * * 1" # 毎週月曜 04:00 UTC (= 月曜 13:00 JST)
   workflow_dispatch:
 
 permissions:
