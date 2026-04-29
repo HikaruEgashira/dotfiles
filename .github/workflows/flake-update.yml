@@ -1,0 +1,53 @@
+name: "flake-update"
+on:
+  schedule:
+    - cron: "0 4 * * 1"  # 毎週月曜 04:00 UTC (= 月曜 13:00 JST)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        timeout-minutes: 5
+        with:
+          persist-credentials: true
+      - name: Install Nix
+        uses: cachix/install-nix-action@ab739621df7a23f52766f9ccc97f38da6b7af14f # v31.10.5
+        timeout-minutes: 5
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Run nix flake update
+        timeout-minutes: 10
+        run: nix flake update
+      - name: Open PR if flake.lock changed
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet flake.lock; then
+            echo "no flake.lock changes"
+            exit 0
+          fi
+
+          branch="bot/flake-update-$(date -u +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add flake.lock
+          git commit -m "chore: nix flake update"
+          git push -u origin "$branch"
+
+          pr_url=$(gh pr create \
+            --title "chore: nix flake update" \
+            --body "Automated weekly \`nix flake update\`. Auto-merge enabled — will land if CI passes." \
+            --base main \
+            --head "$branch")
+          gh pr merge "$pr_url" --auto --squash --delete-branch

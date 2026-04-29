@@ -10,6 +10,7 @@
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix
     ./modules/programs/cmux.nix
+    ./modules/programs/dotfiles-sync.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
