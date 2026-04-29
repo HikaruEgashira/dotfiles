@@ -119,6 +119,17 @@
     # Mobile dev (cask 移行)
     pkgs.android-tools
 
+    # GUI applications (cask 移行・darwin 対応確認済み)
+    pkgs.vscode
+    pkgs.code-cursor
+    pkgs.slack
+    pkgs.discord
+    pkgs.spotify
+    pkgs.google-chrome
+    pkgs.raycast
+    # pkgs.calibre は nixpkgs で broken
+    pkgs.bitwarden-desktop
+
     # build / lib deps (brew leaves に出ていた一般ツール)
     pkgs.ffmpeg
     pkgs.gnupg
