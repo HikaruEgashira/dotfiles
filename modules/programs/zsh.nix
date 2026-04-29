@@ -38,7 +38,7 @@
       ''
         ghq-fzf-cd-widget() {
           local dir
-          dir=$(gh q -- pwd) || { zle reset-prompt; return; }
+          dir=$(gh q list | fzf --height=40% --reverse) || { zle reset-prompt; return; }
           if [[ -n "$dir" ]]; then
             BUFFER="cd ''${(q)dir}"
             zle accept-line
