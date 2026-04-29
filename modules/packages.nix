@@ -1,7 +1,20 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
-{
-  home.packages = [
+let
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
+
+  # darwin でしかビルドできない / linux 等価が無いもの。
+  # CI は x86_64-linux で評価するためここを越境させると build 失敗。
+  darwinOnly = lib.optionals isDarwin [
+    pkgs.cocoapods
+    pkgs.mas
+    pkgs.duti
+    pkgs.terminal-notifier
+    pkgs.iproute2mac
+    pkgs.raycast
+  ];
+
+  cross = [
     # Nix runtime / package mgmt
     pkgs.cachix
     pkgs.pinentry-curses
@@ -55,7 +68,6 @@
     pkgs.wasmtime
     pkgs.sccache
     pkgs.sqlc
-    pkgs.cocoapods
     pkgs.dotenvx
 
     # DB / data
@@ -73,10 +85,6 @@
     pkgs.nushell
     pkgs.pueue
     pkgs.rclone
-    pkgs.mas
-    pkgs.duti
-    pkgs.terminal-notifier
-    pkgs.iproute2mac
     pkgs.bitwarden-cli
     pkgs.git-lfs
     pkgs.inetutils
@@ -129,7 +137,6 @@
     pkgs.discord
     pkgs.spotify
     pkgs.google-chrome
-    pkgs.raycast
     # pkgs.calibre は nixpkgs で broken
     pkgs.bitwarden-desktop
 
@@ -141,4 +148,7 @@
     pkgs.autoconf
     pkgs.gts
   ];
+in
+{
+  home.packages = cross ++ darwinOnly;
 }
