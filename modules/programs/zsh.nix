@@ -54,28 +54,6 @@
       ''
         review() { claude "/review-flow $1"; }
         current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
-
-        git() {
-          local subcmd="" skip_next=0 arg
-          for arg in "$@"; do
-            if [ $skip_next -eq 1 ]; then skip_next=0; continue; fi
-            case "$arg" in
-              -c|-C|--git-dir|--work-tree|--namespace|--super-prefix) skip_next=1 ;;
-              -*) ;;
-              *) subcmd="$arg"; break ;;
-            esac
-          done
-          if [ "$subcmd" = "commit" ] && command -v gitleaks >/dev/null 2>&1; then
-            local global_hooks="$HOME/.config/git/hooks"
-            local repo_hooks
-            repo_hooks=$(command git config --local --get core.hooksPath 2>/dev/null || true)
-            if [ -n "$repo_hooks" ] && [ "$repo_hooks" != "$global_hooks" ]; then
-              print -u2 "⚠ repo overrides core.hooksPath=$repo_hooks — running gitleaks inline"
-              command gitleaks git --staged --redact --no-banner || return $?
-            fi
-          fi
-          command git "$@"
-        }
       ''
 
       # rust
