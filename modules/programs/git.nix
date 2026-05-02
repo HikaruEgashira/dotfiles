@@ -53,6 +53,20 @@ in
         "https://gist.github.com".helper = ghCredentialHelper;
       };
 
+      # SSH transport を git から物理的に閉じる。`git@host:` / `ssh://git@host/`
+      # を全て HTTPS に強制 rewrite し、認証は gh credential helper (token) のみに絞る。
+      # 既存 remote の url が ssh でも in-memory で書き換わるため .git/config の修正は不要。
+      url = {
+        "https://github.com/".insteadOf = [
+          "git@github.com:"
+          "ssh://git@github.com/"
+        ];
+        "https://gist.github.com/".insteadOf = [
+          "git@gist.github.com:"
+          "ssh://git@gist.github.com/"
+        ];
+      };
+
       alias = {
         st = "status -sb";
         co = "checkout";

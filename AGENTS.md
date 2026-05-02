@@ -41,7 +41,8 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 - **ledger 経由**: `home.packages` を直接書かない。`lib/package-registry.nix` に `mkEntry` で宣言し、purpose (`build`/`edit`/`ops`/`comm`/`observe`/`play`/`util` の 7 値) と `reason` を記す。
 - **逃げ場の明文化**: `Brewfile` に書く時は理由を行コメントで残し、nix 化のトリガーが何かを書く (例: codex CLI の nix 化が ripgrep の brew 削除のトリガー)。
 - **CI ゲート 4 段**: treefmt formatter / home-manager eval / determinism gate / lint (deadnix + shellcheck)。緑にしてから merge。
-- **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。SSH 認証は `~/.ssh/id_ed25519` + `ssh-agent` (macOS Keychain) を前提とする。
+- **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。
+- **git transport は HTTPS only**: `programs.git.settings.url` の `insteadOf` で `git@github.com:` / `ssh://git@github.com/` を `https://github.com/` に強制 rewrite し、認証は `gh auth git-credential` (HTTPS + token) に一本化する。SSH 鍵による git auth は使わない (commit signing 用の SSH 鍵は別軸で維持)。
 
 ## 同期と多重マシン
 
