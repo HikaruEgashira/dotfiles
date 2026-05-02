@@ -51,7 +51,10 @@ let
     "ms-vscode.anycode-python"
     "ms-vscode.anycode-rust"
     "ms-vscode.anycode-typescript"
-    "ms-vscode.cpptools"
+    # ms-vscode.cpptools は aarch64-darwin / x86_64-darwin で
+    # nix-vscode-extensions の removed list に入っており取得不能。
+    # C/C++ 編集が必要になったら anycode-cpp で代替するか、
+    # 一時的に Brewfile に逃がす。
     "ms-vscode.remote-explorer"
     "ms-vscode.vscode-speech"
     "rust-lang.rust-analyzer"
