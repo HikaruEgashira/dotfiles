@@ -31,6 +31,11 @@ jobs:
       - name: Run linters (deadnix + shellcheck)
         timeout-minutes: 5
         run: nix run --accept-flake-config '.#lint'
+      - name: Build MEL (Minimum Equipment List)
+        # MEL は essential 階層: 失敗したら全 PR をブロックする。
+        # 通常 packages の breakage は eval gate のみ (warning 扱い)。
+        timeout-minutes: 15
+        run: nix build --no-link --print-build-logs --accept-flake-config '.#checks.x86_64-linux.mel'
       - name: Evaluate home-manager configuration
         # 完全ビルドは crush 等の go テスト走行で 25min を超える上、
         # 実際にデプロイされるのは aarch64-darwin。eval だけでも cocoapods

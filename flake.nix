@@ -156,6 +156,34 @@
           type = "app";
           program = "${script}/bin/audit";
         };
+      # Minimum Equipment List (Survivor #6 MVP).
+      # 「これさえ動けば仕事継続可能」な最小集合を declarative に固定する。
+      # CI が MEL build を失敗させたら全 PR ブロック (essential)。
+      # 通常 packages の breakage は warning 扱い (現行 CI は eval-only) と
+      # 階層を区別する。USB DR snapshot は次 PR。
+      melFor =
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system overlays;
+            config.allowUnfree = true;
+          };
+        in
+        pkgs.linkFarmFromDrvs "hikae-mel-${system}" (
+          with pkgs;
+          [
+            git
+            gh
+            ripgrep
+            fd
+            jq
+            jj
+            zsh
+            tmux
+            gnupg
+            coreutils
+          ]
+        );
     in
     {
       homeConfigurations."hikae" = forSystem "aarch64-darwin";
@@ -173,6 +201,7 @@
       checks.x86_64-linux = {
         build = (forSystem "x86_64-linux").activationPackage;
         formatting = (treefmtFor "x86_64-linux").config.build.check self;
+        mel = melFor "x86_64-linux";
       };
     };
 }
