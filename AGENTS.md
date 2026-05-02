@@ -60,6 +60,8 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 
 ## 詳細リンク
 
-- ideation: `docs/ideation/2026-05-02-secure-fast-lean-dotfiles-ideation.md`
+- 「どう操作するか」: `docs/operations.md` (運用 cookbook、トラブルシュート、ロールバック、新マシン bootstrap)
+- 「何ができたか」: `docs/changelog.md` (Survivor → PR マトリクス、設計判断のサマリ、再考余地、継続条件)
+- 「なぜそう設計したか」: `docs/ideation/2026-05-02-secure-fast-lean-dotfiles-ideation.md` (7 Survivor の warrant と rationale)
 - README (人間向け): `README.md`
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント
