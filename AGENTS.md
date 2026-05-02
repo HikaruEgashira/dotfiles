@@ -41,7 +41,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 - **ledger 経由**: `home.packages` を直接書かない。`lib/package-registry.nix` に `mkEntry` で宣言し、purpose (`build`/`edit`/`ops`/`comm`/`observe`/`play`/`util` の 7 値) と `reason` を記す。
 - **逃げ場の明文化**: `Brewfile` に書く時は理由を行コメントで残し、nix 化のトリガーが何かを書く (例: codex CLI の nix 化が ripgrep の brew 削除のトリガー)。
 - **CI ゲート 4 段**: treefmt formatter / home-manager eval / determinism gate / lint (deadnix + shellcheck)。緑にしてから merge。
-- **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去と `1Password CLI + Secure Enclave` への移行が継続中 (Survivor #3)。新規秘密は `op run --` か `direnv` 経由でセッション局所に閉じ、commit しない。SSH 認証は `modules/programs/ssh.nix` の `dotfiles.onePasswordSshAgent.enable` を立てれば 1Password agent 経由になる (1Password app と Secure Enclave key の事前用意が前提なので既定 OFF)。
+- **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。SSH 認証は `~/.ssh/id_ed25519` + `ssh-agent` (macOS Keychain) を前提とする。
 
 ## 同期と多重マシン
 
@@ -62,6 +62,5 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 
 - 「どう操作するか」: `docs/operations.md` (運用 cookbook、トラブルシュート、ロールバック、新マシン bootstrap)
 - 「何ができたか」: `docs/changelog.md` (Survivor → PR マトリクス、設計判断のサマリ、再考余地、継続条件)
-- 「なぜそう設計したか」: `docs/ideation/2026-05-02-secure-fast-lean-dotfiles-ideation.md` (7 Survivor の warrant と rationale)
 - README (人間向け): `README.md`
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント

@@ -74,24 +74,6 @@ nix show-config | grep '^trusted-users'   # → root @admin
 
 以降の activation は `nix-community.cachix.org` から fetch する。
 
-### 3.2 1Password SSH agent (Survivor #3 part 1)
-
-前提:
-
-- 1Password app + SSH agent を有効化
-- 1Password 内で Secure Enclave key を生成
-- 公開鍵を GitHub などに登録
-
-`hosts/hikae/default.nix` (or 任意の module) に追加:
-
-```nix
-{ ... }: {
-  dotfiles.onePasswordSshAgent.enable = true;
-}
-```
-
-activation 後、`~/.ssh/config` に `IdentityAgent ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` が出れば成功。`ssh -T git@github.com` で auth が通れば実体化済。
-
 ## 4. トラブルシュート
 
 ### 4.1 activation が失敗した
@@ -179,6 +161,4 @@ nix run ~/dotfiles#homeConfigurations.hikae.activationPackage --accept-flake-con
 
 # 4) brew 部分 (kext / GUI / vscode 以外の cask)
 brew bundle --file=~/dotfiles/Brewfile
-
-# 5) 1Password SSH agent を opt-in する場合は §3.2 を実行
 ```
