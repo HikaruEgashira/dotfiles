@@ -164,3 +164,20 @@ mode: repo-grounded
 | R16 | Sneakernet bundle 単独                                 | survivor 6 (MEL) に統合                                                                         |
 | R17 | dangerous-command theme switch / AI pane 紫枠          | scope 小さいが具体価値あり → brainstorm 候補として保留                                          |
 | R18 | dotfiles を ephemeral 実行環境発射台へ (Codespaces 等) | 価値は高いが 5 軸 focus と直接結びつき弱、別 ideation トピック                                  |
+
+## External Grounding (Web Research)
+
+各 survivor を後続で brainstorm する際に取り込むべき 2025-2026 primary source とプリミティブ:
+
+- **#1 計測駆動 Reproducibility パイプ** — kokada.dev "ZSH Startup Latency with Nix" (2025) は 218ms→138ms の具体例を提供: `zsh-fast-syntax-highlighting` 採用 (-17ms), `pkgs.runCommand` で `fzf --zsh` / `zoxide init zsh` / `direnv hook zsh` を build-time pre-generate (-26ms), shim ベース SSH agent 検出を `zsocket` に置換 (-16ms)。`zprof` + `hyperfine` + `dtrace -n 'proc:::exec-success /execname == "zsh"/ ...'` の三段プロファイリングで活性化ホットパスの真の所在を可視化。Determinate Systems の `magic-nix-cache` / FlakeHub cache が cachix の代替候補。
+- **#2 Package Ledger** — `nix.settings.auto-optimise-store = true` で hardlink 重複排除を build ごとに自動化 (既存 path には初回 `nix-store --optimise` が必要)。`nix.gc.options = "--delete-older-than 30d"` の declarative GC + `min-free = 100MiB` の reactive GC を Ledger の機械的退場基準と共存させる。APFS の copy-on-write/dedup と nix-store hardlink は補完関係 (ファイルシステム層 + inode 層) で重複しない。
+- **#3 Secret-file Eradication** — Determinate Secure Packages (`flakehub.com/f/DeterminateSystems/secure/0`, 2025) が overlay 1 行で signed binaries + SLA-backed CVE remediation (Critical 7 日) + per-release SBOM を提供 → 「自分の laptop に落ちる package の出所」を AKIA 撤去と同タイミングで supply-chain 側からも閉じる候補。1Password CLI + Secure Enclave SSH key は macOS で実用段階。
+- **#4 波及する Pre-commit Flake Module** — `cachix/pre-commit-hooks.nix` + flake-parts (Feb 2026 mccurdyc 比較で「再利用 module を切り出す repo の最良解」) の組合せが現行 treefmt-only 構成からの自然な進化。Polyglot 拡張は ruff (Python), biome (TS), gofumpt (Go), stylua (Lua), statix + deadnix (Nix) の確立スタックで足りる。
+- **#5 GitOps + multi-host matrix** — 単機なら `flake-utils` で十分、host overlay/共有 module 抽出に進むなら `flake-parts` (mccurdyc 2026)。`devenv` は per-project 環境の orthogonal layer であり home-manager 置換ではない。jujutsu (jj) 併用は dotfiles バージョン管理の operation log + undo を直接強化 (hermanradtke 2025)。
+- **#6 MEL** — Determinate Nix の hermetic evaluation + faster GC は MEL closure を「再現可能な最小単位」として CI で固定する基盤。`nix copy --to file://...` での export 形式は確立済。
+- **#7 Gitleaks 一重化** — GitHub secret scanning push protection は 2024 以降 public/private repo で free 化 (確認済)。TruffleHog/GitGuardian も同方向で server-side 一元化が業界標準。
+
+### 追加候補 (Brainstorm 候補プール)
+
+- **B1. Jujutsu (jj) co-located with git for dotfiles** — operation log + atomic undo が「rebase 中に間違った dotfiles 変更を bisect 不要で取り消せる」価値を提供。git 互換のため既存 GitHub 連携・push protection は無傷。warrant: external (hermanradtke 2025), reasoned (operation log は activation を 1 つの atomic event 単位で管理する skill にも相性が良い)。survivor #5 GitOps と統合余地あり。
+- **B2. Build-time pre-generated shell integrations as flake output** — survivor #1 の中の具体テクニック。`pkgs.runCommand "shell-init" {} '' fzf --zsh > $out/fzf.zsh; ... ''` を flake output 化し、zsh 起動の I/O を build-time に押し込む。-20ms オーダーの確実な改善。
