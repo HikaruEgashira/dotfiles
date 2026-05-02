@@ -105,9 +105,10 @@
             printf '%s' "$JSON" | ${pkgs.jq}/bin/jq -r 'group_by(.purpose) | .[] | "  \(.[0].purpose)\t\(length)"'
             echo ""
             echo "Entries (purpose / source / expires / name / reason):"
+            # awk で列整形 (column は coreutils に無く util-linux 依存になるため避ける)
             printf '%s' "$JSON" \
               | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, (.expires // "-"), .name, .reason] | @tsv' \
-              | ${pkgs.coreutils}/bin/column -t -s "$(printf '\t')"
+              | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-11s %-32s %s\n", $1, $2, $3, $4, $5 }'
             echo ""
             EXPIRED=$(printf '%s' "$JSON" | ${pkgs.jq}/bin/jq '[.[] | select(.expires != null)] | length')
             echo "Entries with expires set: $EXPIRED"
