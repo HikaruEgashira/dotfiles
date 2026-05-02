@@ -28,6 +28,18 @@ jobs:
       - name: Run formatter check
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
+      - name: Lint Brewfile (no vscode entries)
+        # VS Code 拡張は modules/programs/vscode.nix (nix-vscode-extensions) で管理する。
+        # Brewfile に `vscode "..."` 行が混入したら declarative 経路から外れるので CI fail。
+        timeout-minutes: 1
+        run: |
+          if grep -E '^vscode\s+"' Brewfile >/dev/null; then
+            echo "FAIL: Brewfile contains vscode '...' lines."
+            echo "  → migrate to modules/programs/vscode.nix (nix-vscode-extensions overlay)"
+            grep -nE '^vscode\s+"' Brewfile
+            exit 1
+          fi
+          echo "OK: no vscode entries in Brewfile"
       - name: Run linters (deadnix + shellcheck)
         timeout-minutes: 5
         run: nix run --accept-flake-config '.#lint'
