@@ -48,7 +48,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 - daily 09:00 launchd で `dotfiles-sync` が `main` 追従。clean tree のみ。
 - weekly GitHub Actions が `flake.lock` を auto-merge PR で更新。
 - 各 sync の結果は `~/.cache/dotfiles-sync/metrics.jsonl` に追記される (`outcome` / `wall_s` / `head_before` / `head_after`)。
-- 2 台目以降は `homeConfigurations.<user>@<host>` matrix が必要 (Survivor #5、未着手)。
+- 2 台目以降の追加: `hosts/<host>/default.nix` を作成し、`flake.nix` の `hosts` attrset に 1 行追加するだけ。`home.nix` は universal な base としてそのまま、host 固有 override (proxy / 別 identity / screenlock など) は host モジュール側に書く。`extraSpecialArgs.host` が各モジュールから参照可能なので必要なら module 内で `if host == "hikae@work" then ... else ...` の分岐も書ける。
 
 ## エージェントが避けるべき変更
 

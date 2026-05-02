@@ -52,21 +52,38 @@
         nix-vscode-extensions.overlays.default
       ];
 
-      forSystem =
+      pkgsFor =
         system:
-        let
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config.allowUnfree = true;
-          };
-        in
+        import nixpkgs {
+          inherit system overlays;
+          config.allowUnfree = true;
+        };
+
+      # Host 表 — 2 台目以降は ./hosts/<host>/default.nix を作って 1 行追加するだけ。
+      # `host` は extraSpecialArgs で各モジュールから参照可能 (host-specific 分岐用)。
+      hosts = {
+        hikae = {
+          system = "aarch64-darwin";
+        };
+      };
+
+      forHost =
+        host:
+        { system, ... }:
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgsFor system;
           extraSpecialArgs = {
             dotfilesPath = self;
+            inherit host;
           };
-          modules = [ ./home.nix ];
+          modules = [
+            ./home.nix
+            ./hosts/${host}
+          ];
         };
+
+      # 旧 `forSystem` 呼び出しサイトの互換層。primary host (= hikae) を仮定。
+      forSystem = system: forHost "hikae" { inherit system; };
 
       treefmtFor =
         system:
@@ -193,7 +210,7 @@
         );
     in
     {
-      homeConfigurations."hikae" = forSystem "aarch64-darwin";
+      homeConfigurations = nixpkgs.lib.mapAttrs forHost hosts;
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
