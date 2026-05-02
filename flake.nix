@@ -63,6 +63,49 @@
             "*.json"
           ];
         };
+
+      # Package ledger audit script (Survivor #2 MVP).
+      # 各 system の pkgs から registry を組み立て、purpose 別の集計と
+      # expires 期限切れエントリを STDOUT に出力する。
+      auditAppFor =
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system overlays;
+            config.allowUnfree = true;
+          };
+          ledger = import ./lib/ledger.nix {
+            inherit pkgs;
+            lib = pkgs.lib;
+          };
+          registry = import ./lib/package-registry.nix {
+            inherit pkgs;
+            lib = pkgs.lib;
+          };
+          payload = ledger.toJSON registry.all;
+          script = pkgs.writeShellScriptBin "audit" ''
+            set -eu
+            JSON=${pkgs.lib.escapeShellArg payload}
+            echo "## Package Ledger ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
+            echo ""
+            echo "Total entries: $(printf '%s' "$JSON" | ${pkgs.jq}/bin/jq 'length')"
+            echo ""
+            echo "By purpose:"
+            printf '%s' "$JSON" | ${pkgs.jq}/bin/jq -r 'group_by(.purpose) | .[] | "  \(.[0].purpose)\t\(length)"'
+            echo ""
+            echo "Entries (purpose / source / expires / name / reason):"
+            printf '%s' "$JSON" \
+              | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, (.expires // "-"), .name, .reason] | @tsv' \
+              | ${pkgs.coreutils}/bin/column -t -s "$(printf '\t')"
+            echo ""
+            EXPIRED=$(printf '%s' "$JSON" | ${pkgs.jq}/bin/jq '[.[] | select(.expires != null)] | length')
+            echo "Entries with expires set: $EXPIRED"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/audit";
+        };
     in
     {
       homeConfigurations."hikae" = forSystem "aarch64-darwin";
@@ -70,6 +113,10 @@
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
       );
+
+      apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
+        audit = auditAppFor system;
+      });
 
       # CI (ubuntu) での検証用
       checks.x86_64-linux = {
