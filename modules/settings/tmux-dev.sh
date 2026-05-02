@@ -1,10 +1,7 @@
 #!/bin/bash
-# Claude Code Agent Teams レイアウト
-# Usage: tdev [project-dir]    セッション作成 or アタッチ
-#        tdev kill [project-dir] セッション終了
-#
-# tmux セッション内で claude を起動する。
-# teammateMode=tmux により、Agent Teams が自動でペイン分割を管理する。
+# Usage: tdev [project-dir]       create/attach session
+#        tdev kill [project-dir]  kill session
+# Pane splits are driven by Claude Agent Teams (teammateMode=tmux).
 
 if [[ $1 == "kill" ]]; then
   dir="${2:-.}"
@@ -19,7 +16,6 @@ dir="$(cd "$dir" && pwd)"
 
 session="dev-$(basename "$dir")"
 
-# 既存セッションがあればアタッチ
 if tmux has-session -t "$session" 2>/dev/null; then
   tmux attach -t "$session"
   exit 0

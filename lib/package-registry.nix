@@ -1,8 +1,3 @@
-# Package Ledger — single source of truth
-#
-# 全エントリをここに集中させ、`modules/packages.nix` は home.packages 用に
-# pkg だけを抽出、`flake.nix` の `apps.<system>.audit` は metadata を抽出して
-# 整形表示する。両者で重複を持たないために registry を 1 ファイルに切り出している。
 {
   pkgs,
   lib,
@@ -14,7 +9,6 @@ let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
 
   cross = [
-    # Nix runtime / package mgmt
     (mkEntry {
       pkg = pkgs.cachix;
       purpose = "build";
@@ -41,7 +35,6 @@ let
       reason = "dev shells per project";
     })
 
-    # Devflow
     (mkEntry {
       pkg = pkgs.gh;
       purpose = "edit";
@@ -68,7 +61,6 @@ let
       reason = "GitHub Actions SHA pin";
     })
 
-    # Cloud / Infra / Security
     (mkEntry {
       pkg = pkgs.awscli2;
       purpose = "ops";
@@ -100,7 +92,6 @@ let
       reason = "encrypted config files";
     })
 
-    # Container / Virt
     (mkEntry {
       pkg = pkgs.docker-buildx;
       purpose = "build";
@@ -127,7 +118,6 @@ let
       reason = "devcontainer CLI";
     })
 
-    # Languages / build
     (mkEntry {
       pkg = pkgs.cmake;
       purpose = "build";
@@ -179,7 +169,6 @@ let
       reason = "encrypted .env loader";
     })
 
-    # DB / data
     (mkEntry {
       pkg = pkgs.duckdb;
       purpose = "ops";
@@ -196,7 +185,6 @@ let
       reason = "local Redis for projects";
     })
 
-    # CLI utils
     (mkEntry {
       pkg = pkgs.coreutils;
       purpose = "util";
@@ -283,14 +271,12 @@ let
       reason = "terminal recording";
     })
 
-    # Misc
     (mkEntry {
       pkg = pkgs.ollama;
       purpose = "play";
       reason = "local LLM serving";
     })
 
-    # GUI applications (cask 移行・darwin 対応確認済み)
     (mkEntry {
       pkg = pkgs.slack;
       purpose = "comm";
@@ -307,7 +293,6 @@ let
       reason = "browser fallback";
     })
 
-    # build / lib deps (brew leaves に出ていた一般ツール)
     (mkEntry {
       pkg = pkgs.ffmpeg;
       purpose = "util";
@@ -340,8 +325,7 @@ let
     })
   ];
 
-  # darwin でしかビルドできない / linux 等価が無いもの。
-  # CI は x86_64-linux で評価するためここを越境させると build 失敗。
+  # CI evaluates on x86_64-linux; entries here must not leak into `cross`
   darwinOnly = lib.optionals isDarwin [
     (mkEntry {
       pkg = pkgs.cocoapods;

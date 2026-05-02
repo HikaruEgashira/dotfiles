@@ -1,10 +1,3 @@
-# VS Code 拡張の declarative 管理 (Survivor #2 phase 2)
-#
-# 旧体制: Brewfile に `vscode "..."` 行で imperative 同期。
-# 新体制: nix-vscode-extensions overlay 経由で nix-store 管理。
-#
-# 拡張の追加は本ファイルの `extensionIds` に publisher.name を 1 行追加するだけ。
-# 削除も同様に行を消すだけで activation 時に extension dir から外れる。
 {
   pkgs,
   lib,
@@ -14,8 +7,6 @@
 let
   m = pkgs.vscode-marketplace;
 
-  # publisher.name 形式の文字列リスト。Brewfile から移行した 41 件。
-  # 名前順にソート (publisher 単位での視認性優先)。
   extensionIds = [
     "anthropic.claude-code"
     "arcticicestudio.nord-visual-studio-code"
@@ -51,10 +42,7 @@ let
     "ms-vscode.anycode-python"
     "ms-vscode.anycode-rust"
     "ms-vscode.anycode-typescript"
-    # ms-vscode.cpptools は aarch64-darwin / x86_64-darwin で
-    # nix-vscode-extensions の removed list に入っており取得不能。
-    # C/C++ 編集が必要になったら anycode-cpp で代替するか、
-    # 一時的に Brewfile に逃がす。
+    # ms-vscode.cpptools is on the darwin removed list; use anycode-cpp instead
     "ms-vscode.remote-explorer"
     "ms-vscode.vscode-speech"
     "rust-lang.rust-analyzer"
@@ -63,8 +51,6 @@ let
     "yoavbls.pretty-ts-errors"
   ];
 
-  # "publisher.name" を `m.publisher."name"` に解決する。
-  # 拡張名にハイフンが含まれていても (vscode-deno など) attrByPath で安全に lookup。
   resolveExt =
     id:
     let

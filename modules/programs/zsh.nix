@@ -8,7 +8,7 @@ _:
     syntaxHighlighting.enable = true;
 
     envExtra = ''
-      # Nix daemon (nix-installer PR#714 gates /etc/zshenv behind SSH_CONNECTION)
+      # nix-installer PR#714 gates /etc/zshenv behind SSH_CONNECTION
       if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
           . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
       fi
@@ -34,7 +34,6 @@ _:
     };
 
     initContent = builtins.concatStringsSep "\n" [
-      # gh q fzf → cd (ctrl+g, overrides default send-break)
       ''
         ghq-fzf-cd-widget() {
           local dir
@@ -50,26 +49,18 @@ _:
         bindkey '^G' ghq-fzf-cd-widget
       ''
 
-      # aliases
       ''
         review() { claude "/review-flow $1"; }
         current() { claude "/current-pr gh pr view | head -n 150 => $(gh pr view | head -n 150), gh pr diff | head -n 50 => $(gh pr diff | head -n 50) $1"; }
       ''
 
-      # rust
       ''
         export CARGO_TARGET_DIR="$HOME/.cargo-target"
         export RUSTC_WRAPPER=sccache
-      ''
 
-      # terraform
-      ''
         export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
         mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
-      ''
 
-      # path
-      ''
         export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
         export PATH=$PATH:$HOME/.spicetify
         export PATH=$PATH:$HOME/.local/bin
@@ -77,7 +68,7 @@ _:
         command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
       ''
 
-      # secrets — child shells inherit, so skip the dotenvx round-trip on re-entry
+      # child shells inherit; skip the dotenvx round-trip on re-entry
       ''
         if [ -z "''${OPENAI_API_KEY-}" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
           export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
@@ -91,7 +82,6 @@ _:
         fi
       ''
 
-      # send-claude
       (builtins.readFile ../settings/send-claude.zsh)
     ];
   };

@@ -1,8 +1,6 @@
 {
   description = "hikae's dotfiles";
 
-  # Trusted substituter — home-manager activation を source build に落とさない。
-  # nix-community キーは upstream 配布値、追加時は CI 側でも extra_nix_config に反映。
   nixConfig = {
     extra-substituters = [
       "https://nix-community.cachix.org"
@@ -38,17 +36,13 @@
       ...
     }:
     let
-      # darwin で hang する / cache されない上流テストを止めるための minimal overlay。
-      # 個別パッケージにのみ適用 — フル python 系を再ビルドしたくないので overrideAttrs に留める。
       overlays = [
         (_final: prev: {
-          # direnv 2.37.1 の test-zsh が aarch64-darwin で stdin 待ちで hang する
+          # direnv 2.37.1 test-zsh hangs on aarch64-darwin
           direnv = prev.direnv.overrideAttrs (_: {
             doCheck = false;
           });
         })
-        # nix-vscode-extensions の overlay を適用すると `pkgs.vscode-marketplace`
-        # と `pkgs.open-vsx` が attribute path で利用可能になる。
         nix-vscode-extensions.overlays.default
       ];
 
@@ -59,8 +53,6 @@
           config.allowUnfree = true;
         };
 
-      # Host 表 — 2 台目以降は ./hosts/<host>/default.nix を作って 1 行追加するだけ。
-      # `host` は extraSpecialArgs で各モジュールから参照可能 (host-specific 分岐用)。
       hosts = {
         hikae = {
           system = "aarch64-darwin";
@@ -82,7 +74,6 @@
           ];
         };
 
-      # 旧 `forSystem` 呼び出しサイトの互換層。primary host (= hikae) を仮定。
       forSystem = system: forHost "hikae" { inherit system; };
 
       treefmtFor =
@@ -102,12 +93,6 @@
           ];
         };
 
-      # Package ledger audit script (Survivor #2 MVP).
-      # 各 system の pkgs から registry を組み立て、purpose 別の集計と
-      # expires 期限切れエントリを STDOUT に出力する。
-      # Static analysis aggregator (Survivor #4 MVP).
-      # treefmt は formatter のみ。lint (statix / deadnix / shellcheck) は
-      # 別 entrypoint に集約し、CI と手元の両方から `nix run .#lint` で叩ける。
       lintAppFor =
         system:
         let
@@ -167,7 +152,7 @@
             printf '%s' "$JSON" | ${pkgs.jq}/bin/jq -r 'group_by(.purpose) | .[] | "  \(.[0].purpose)\t\(length)"'
             echo ""
             echo "Entries (purpose / source / expires / name / reason):"
-            # awk で列整形 (column は coreutils に無く util-linux 依存になるため避ける)
+            # awk: `column` is util-linux only, not in coreutils
             printf '%s' "$JSON" \
               | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, (.expires // "-"), .name, .reason] | @tsv' \
               | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-11s %-32s %s\n", $1, $2, $3, $4, $5 }'
@@ -180,11 +165,7 @@
           type = "app";
           program = "${script}/bin/audit";
         };
-      # Minimum Equipment List (Survivor #6 MVP).
-      # 「これさえ動けば仕事継続可能」な最小集合を declarative に固定する。
-      # CI が MEL build を失敗させたら全 PR ブロック (essential)。
-      # 通常 packages の breakage は warning 扱い (現行 CI は eval-only) と
-      # 階層を区別する。USB DR snapshot は次 PR。
+      # MEL: minimum closure that must always build (CI gate)
       melFor =
         system:
         let
@@ -221,7 +202,6 @@
         lint = lintAppFor system;
       });
 
-      # CI (ubuntu) での検証用
       checks.x86_64-linux = {
         build = (forSystem "x86_64-linux").activationPackage;
         formatting = (treefmtFor "x86_64-linux").config.build.check self;

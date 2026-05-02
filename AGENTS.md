@@ -44,6 +44,32 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 - **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。
 - **git transport は HTTPS only**: `programs.git.settings.url` の `insteadOf` で `git@github.com:` / `ssh://git@github.com/` を `https://github.com/` に強制 rewrite し、認証は `gh auth git-credential` (HTTPS + token) に一本化する。SSH 鍵による git auth は使わない (commit signing 用の SSH 鍵は別軸で維持)。
 
+## インラインコメントの書き方
+
+コードは自己ドキュメントが原則。コメントは **書かないのが既定**で、書く時は以下に従う。
+
+- **書く時は WHY のみ**: code 自体が WHAT を語る (well-named identifier / explicit settings)。コメントは「なぜこの選択をしたか」「なぜここで通常と違うことをしているか」だけ。同じことを言い換えるコメントは消す。
+- **1 行が上限**: 段落・複数行のブロックヘッダ・装飾的なファイルバナー (`# ===== Section =====` 等) は禁止。複数事象を語りたくなったら `docs/` に書く。
+- **rot するメタ参照を書かない**: 「Survivor #N」「PR #M」「ADR-XXXX」「次 PR で対応」等は repo 側 (`docs/changelog.md` 等) に集約する。コードに固有名を残さない。例外は外部の安定 ID (CVE / 上流 issue / 仕様番号) のみ。
+- **目次的な区切りコメントを書かない**: `# rust`, `# path`, `# DB / data` のようなセクションラベルは ledger の `purpose` 等の構造化メタデータで代替する。grep / outline で十分追える場合は不要。
+- **「廃止/移行/旧体制」を書かない**: 削除した時点で消す。git history が経緯の正史。「旧 X は ...」のような時系列メタは書き残さない。
+- **書く時の言語は周辺コードに合わせる**: 1 ファイル内で日英混在させない (混ざっているなら片方に寄せる)。
+- **Bash/zsh は `set -eu` を前提にできる場合は `command -v` 等のガードもコメント不要**: ガードがあること自体が意図を語る。
+
+例:
+
+```nix
+# OK — non-obvious WHY in 1 line
+direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });  # test-zsh hangs on aarch64-darwin
+
+# NG — restates WHAT
+# direnv の test を無効化する
+direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
+
+# NG — rotting meta-ref
+# Survivor #2 phase 2 で導入。詳細は docs/ideation/...
+```
+
 ## 同期と多重マシン
 
 - daily 09:00 launchd で `dotfiles-sync` が `main` 追従。clean tree のみ。

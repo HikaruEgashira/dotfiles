@@ -24,7 +24,7 @@ _ai_should_send() {
 
   [[ "$cmd" == /* ]] && return 1
 
-  # sayコマンドの引数に日本語が含まれても誤検知しないよう除外
+  # `say` arg may contain Japanese; don't treat it as a Claude prompt
   [[ "${cmd%% *}" == "say" ]] && return 1
 
   local total=${#cmd}
@@ -57,5 +57,5 @@ zle -N _ai_accept_line
 bindkey '^M' _ai_accept_line
 bindkey '^J' _ai_accept_line
 
-# ★さらに accept-line 自体も上書き（プラグインのbindkey回避）
+# override accept-line so plugin bindkeys can't bypass us
 zle -N accept-line _ai_accept_line

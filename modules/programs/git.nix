@@ -44,18 +44,12 @@ in
       pull.rebase = true;
       fetch.prune = true;
 
-      # gh CLI credential helper を nix-store path で固定。
-      # 旧 ~/.gitconfig には /opt/homebrew/bin/gh が hardcode されており
-      # gh が nix-profile に移った時点で push が device-not-configured で fail していた。
-      # 旧設定は home.activation.purgeStaleGhCredentialHelper で unset する。
       credential = {
         "https://github.com".helper = ghCredentialHelper;
         "https://gist.github.com".helper = ghCredentialHelper;
       };
 
-      # SSH transport を git から物理的に閉じる。`git@host:` / `ssh://git@host/`
-      # を全て HTTPS に強制 rewrite し、認証は gh credential helper (token) のみに絞る。
-      # 既存 remote の url が ssh でも in-memory で書き換わるため .git/config の修正は不要。
+      # SSH transport is banned; all GitHub URLs are rewritten to HTTPS
       url = {
         "https://github.com/".insteadOf = [
           "git@github.com:"
@@ -85,7 +79,7 @@ in
 
   xdg.configFile."git/hooks/pre-commit".source = preCommit;
 
-  # ~/.gitconfig の user.{name,email} は HM 管理を上書きするため unset。
+  # ~/.gitconfig overrides ~/.config/git/config; legacy keys must be unset
   home.activation.purgeStaleGitUserIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     gitconfig="$HOME/.gitconfig"
     [ -f "$gitconfig" ] || exit 0
@@ -96,10 +90,6 @@ in
     done
   '';
 
-  # gh auth setup-git が ~/.gitconfig に書いた絶対パス helper を撤去。
-  # ~/.gitconfig の設定は ~/.config/git/config を上書きするため、
-  # この unset を行わないと HM 管理側の credential helper は効かない。
-  # 冪等: 対象キーが無ければ no-op で抜ける。
   home.activation.purgeStaleGhCredentialHelper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     gitconfig="$HOME/.gitconfig"
     [ -f "$gitconfig" ] || exit 0
@@ -108,10 +98,7 @@ in
       if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
         $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
       fi
-      # 残った空の [credential "https://..."] section を削除
-      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
-        : # まだ他 key が残っているならセクションは残す
-      else
+      if ! ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
         $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section "credential.https://$host" 2>/dev/null || true
       fi
     done

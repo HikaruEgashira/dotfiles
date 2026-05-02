@@ -40,7 +40,6 @@ let
     head_before=$(git rev-parse HEAD 2>/dev/null || echo "")
     head_after="$head_before"
 
-    # main 以外で動いている時はスキップ (作業中ブランチを壊さない)
     branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
     if [ "$branch" != "main" ]; then
       echo "skip: not on main (current=$branch)"
@@ -48,7 +47,6 @@ let
       exit 0
     fi
 
-    # dirty なら作業中なのでスキップ
     if ! git diff --quiet HEAD --; then
       echo "skip: dirty working tree"
       outcome="skip-dirty"

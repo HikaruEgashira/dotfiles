@@ -26,7 +26,7 @@
     force = true;
   };
 
-  # plist-only settings (not available in settings.json schema)
+  # not exposed via settings.json schema; must go through `defaults`
   home.activation.cmuxDefaults = ''
     /usr/bin/defaults write com.cmuxterm.app sidebarBlendMode -string "withinWindow"
     /usr/bin/defaults write com.cmuxterm.app sidebarBlurOpacity -float 0
