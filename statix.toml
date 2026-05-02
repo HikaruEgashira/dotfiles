@@ -1,0 +1,10 @@
+# statix configuration. See https://github.com/oppiliappan/statix
+#
+# `disabled` に書いた lint code はチェックから除外される。
+# 復活させたい時はこのリストから外し、必要なら同 PR でコード側を修正する。
+
+# W04 (manual_inherit_from) は writeShellScriptBin の indented-string 内に
+# 含まれる ${pkgs.X}/bin/Y のような shell-context interpolation を Nix の
+# assignment と誤検出する。flake.nix の audit/lint script で多用される
+# パターンなので一律無効化。
+disabled = ["manual_inherit_from"]

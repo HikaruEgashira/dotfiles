@@ -103,9 +103,8 @@
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")}"
             cd "$root"
 
-            # NOTE: statix は将来追加。現状は indented-string 内の Nix
-            # interpolation を W04 として誤検出するため、別 PR で
-            # statix.toml に disabled_lints を整備してから配線する。
+            echo "==> statix check (config: statix.toml)"
+            ${pkgs.statix}/bin/statix check .
 
             echo "==> deadnix"
             ${pkgs.deadnix}/bin/deadnix --fail .
