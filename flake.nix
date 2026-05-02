@@ -1,6 +1,17 @@
 {
   description = "hikae's dotfiles";
 
+  # Trusted substituter — home-manager activation を source build に落とさない。
+  # nix-community キーは upstream 配布値、追加時は CI 側でも extra_nix_config に反映。
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     home-manager = {

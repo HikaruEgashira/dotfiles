@@ -23,6 +23,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            extra-substituters = https://nix-community.cachix.org
+            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
       - name: Run formatter check
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
@@ -35,3 +37,18 @@ jobs:
           nix eval --raw '.#checks.x86_64-linux.build.drvPath'
           echo
           echo "evaluated successfully"
+      - name: Eval determinism gate
+        # drvPath が 2 回の eval で一致しない = builtins.currentTime / 環境依存 / IFD 等の
+        # impurity が紛れ込んだサイン。eval だけなので cheap。build determinism は別途。
+        timeout-minutes: 5
+        run: |
+          h1=$(nix eval --raw '.#checks.x86_64-linux.build.drvPath')
+          h2=$(nix eval --raw --no-eval-cache '.#checks.x86_64-linux.build.drvPath')
+          if [ "$h1" != "$h2" ]; then
+            echo "FAIL: drvPath differs across evaluations"
+            echo "  first:  $h1"
+            echo "  second: $h2"
+            exit 1
+          fi
+          echo "OK: drvPath stable across evaluations"
+          echo "  $h1"
