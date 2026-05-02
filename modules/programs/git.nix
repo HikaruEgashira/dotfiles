@@ -29,8 +29,8 @@ in
     signing.format = "ssh";
 
     settings = {
-      user.name = "hikae";
-      user.email = "account@egahika.dev";
+      user.name = "HikaruEgashira";
+      user.email = "39324739+HikaruEgashira@users.noreply.github.com";
 
       core = {
         whitespace = "trailing-space,space-before-tab";
@@ -70,6 +70,17 @@ in
   };
 
   xdg.configFile."git/hooks/pre-commit".source = preCommit;
+
+  # ~/.gitconfig の user.{name,email} は HM 管理を上書きするため unset。
+  home.activation.purgeStaleGitUserIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    gitconfig="$HOME/.gitconfig"
+    [ -f "$gitconfig" ] || exit 0
+    for key in user.email user.name; do
+      if ${pkgs.git}/bin/git config --file "$gitconfig" --get "$key" >/dev/null 2>&1; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset "$key" || true
+      fi
+    done
+  '';
 
   # gh auth setup-git が ~/.gitconfig に書いた絶対パス helper を撤去。
   # ~/.gitconfig の設定は ~/.config/git/config を上書きするため、
