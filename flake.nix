@@ -22,6 +22,10 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,6 +34,7 @@
       nixpkgs,
       home-manager,
       treefmt-nix,
+      nix-vscode-extensions,
       ...
     }:
     let
@@ -42,6 +47,9 @@
             doCheck = false;
           });
         })
+        # nix-vscode-extensions の overlay を適用すると `pkgs.vscode-marketplace`
+        # と `pkgs.open-vsx` が attribute path で利用可能になる。
+        nix-vscode-extensions.overlays.default
       ];
 
       forSystem =
