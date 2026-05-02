@@ -9,7 +9,7 @@
 }:
 
 let
-  ledger = import ./ledger.nix { inherit pkgs lib; };
+  ledger = import ./ledger.nix { inherit lib; };
   inherit (ledger) mkEntry;
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
 

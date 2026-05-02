@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 # AWS CLI shared config.
 # Managed by home-manager so all profile definitions are reproducible.

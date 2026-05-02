@@ -64,9 +64,11 @@
         system:
         treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} {
           projectRootFile = "flake.nix";
-          programs.nixfmt.enable = true;
-          programs.prettier.enable = true;
-          programs.shfmt.enable = true;
+          programs = {
+            nixfmt.enable = true;
+            prettier.enable = true;
+            shfmt.enable = true;
+          };
           settings.formatter.prettier.includes = [
             "*.md"
             "*.yaml"
@@ -78,6 +80,45 @@
       # Package ledger audit script (Survivor #2 MVP).
       # 各 system の pkgs から registry を組み立て、purpose 別の集計と
       # expires 期限切れエントリを STDOUT に出力する。
+      # Static analysis aggregator (Survivor #4 MVP).
+      # treefmt は formatter のみ。lint (statix / deadnix / shellcheck) は
+      # 別 entrypoint に集約し、CI と手元の両方から `nix run .#lint` で叩ける。
+      lintAppFor =
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system overlays;
+            config.allowUnfree = true;
+          };
+          script = pkgs.writeShellScriptBin "lint" ''
+            set -eu
+            root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")}"
+            cd "$root"
+
+            # NOTE: statix は将来追加。現状は indented-string 内の Nix
+            # interpolation を W04 として誤検出するため、別 PR で
+            # statix.toml に disabled_lints を整備してから配線する。
+
+            echo "==> deadnix"
+            ${pkgs.deadnix}/bin/deadnix --fail .
+
+            echo "==> shellcheck (tracked *.sh)"
+            shfiles=$(${pkgs.git}/bin/git ls-files '*.sh' 2>/dev/null || true)
+            if [ -n "$shfiles" ]; then
+              # shellcheck disable=SC2086
+              ${pkgs.shellcheck}/bin/shellcheck $shfiles
+            else
+              echo "  (no *.sh tracked)"
+            fi
+
+            echo "OK: all linters passed"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/lint";
+        };
+
       auditAppFor =
         system:
         let
@@ -85,10 +126,7 @@
             inherit system overlays;
             config.allowUnfree = true;
           };
-          ledger = import ./lib/ledger.nix {
-            inherit pkgs;
-            lib = pkgs.lib;
-          };
+          ledger = import ./lib/ledger.nix { lib = pkgs.lib; };
           registry = import ./lib/package-registry.nix {
             inherit pkgs;
             lib = pkgs.lib;
@@ -128,6 +166,7 @@
 
       apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
         audit = auditAppFor system;
+        lint = lintAppFor system;
       });
 
       # CI (ubuntu) での検証用
