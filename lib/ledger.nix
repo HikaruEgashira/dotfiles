@@ -6,10 +6,7 @@
 #
 # 利用側は `mkEntry` で 1 エントリを宣言し、`pkgsOf` でビルド可能な package list、
 # `metaOf` で audit 用 metadata list を取り出す。
-{
-  pkgs,
-  lib,
-}:
+{ lib }:
 
 let
   # 用途タクソノミ (固定 7 値)。新カテゴリ追加は ADR を要求する想定。
