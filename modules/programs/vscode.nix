@@ -12,7 +12,6 @@ let
     "arcticicestudio.nord-visual-studio-code"
     "astral-sh.ty"
     "bierner.markdown-mermaid"
-    "biomejs.biome"
     "denoland.vscode-deno"
     "docker.docker"
     "editorconfig.editorconfig"
