@@ -246,11 +246,6 @@ let
       reason = "network probe";
     })
     (mkEntry {
-      pkg = pkgs.ngrok;
-      purpose = "ops";
-      reason = "tunnel localhost";
-    })
-    (mkEntry {
       pkg = pkgs.mitmproxy;
       purpose = "observe";
       reason = "HTTPS interception debug";
