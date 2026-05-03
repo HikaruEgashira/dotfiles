@@ -37,12 +37,6 @@
     }:
     let
       overlays = [
-        (_final: prev: {
-          # direnv 2.37.1 test-zsh hangs on aarch64-darwin
-          direnv = prev.direnv.overrideAttrs (_: {
-            doCheck = false;
-          });
-        })
         nix-vscode-extensions.overlays.default
       ];
 
