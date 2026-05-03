@@ -25,11 +25,6 @@ let
       reason = "fallback font for terminals";
     })
     (mkEntry {
-      pkg = pkgs.mise;
-      purpose = "build";
-      reason = "per-project tool versions";
-    })
-    (mkEntry {
       pkg = pkgs.devenv;
       purpose = "build";
       reason = "dev shells per project";
