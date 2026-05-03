@@ -40,6 +40,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 - **declarative 優先**: シェルから `git config --global` 等で永続変更しない。`programs.git.settings` に書く。`~/.gitconfig` の設定は HM-管理の `~/.config/git/config` を上書きするため、レガシーが残っていれば `home.activation` で `--unset-all` する。
 - **ledger 経由**: `home.packages` を直接書かない。`lib/package-registry.nix` に `mkEntry` で宣言し、purpose (`build`/`edit`/`ops`/`comm`/`observe`/`play`/`util` の 7 値) と `reason` を記す。
 - **逃げ場の明文化**: `Brewfile` に書く時は理由を行コメントで残し、nix 化のトリガーが何かを書く (例: codex CLI の nix 化が ripgrep の brew 削除のトリガー)。
+- **ローカルソースビルド禁止**: 手元での source build はサプライチェーンリスク (依存ツリー全域でのコンパイル時 RCE 機会) が高いため、`lib/package-registry.nix` に追加するのは `cache.nixos.org` の binary substituter からそのまま取れる pkg のみ。`overrideAttrs` で version / src を pin するパッチ (= 結果的にローカルビルドを誘発する) も禁止。nixpkgs binary cache が無いものは `Brewfile` (署名付きの bottle / cask) か、上流公式の署名済みインストーラ (例: `curl https://mise.run \| sh`) に逃がす。`nix flake check` / `nix build .#homeConfigurations.hikae.activationPackage --dry-run` 出力に `will be built` で home-manager 自身のラッパー以外が並んだら追加を取り下げる。
 - **CI ゲート 4 段**: treefmt formatter / home-manager eval / determinism gate / lint (deadnix + shellcheck)。緑にしてから merge。
 - **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。
 - **git transport は HTTPS only**: `programs.git.settings.url` の `insteadOf` で `git@github.com:` / `ssh://git@github.com/` を `https://github.com/` に強制 rewrite し、認証は `gh auth git-credential` (HTTPS + token) に一本化する。SSH 鍵による git auth は使わない (commit signing 用の SSH 鍵は別軸で維持)。
