@@ -266,6 +266,11 @@ let
       purpose = "play";
       reason = "local LLM serving";
     })
+    (mkEntry {
+      pkg = pkgs.python3Packages.huggingface-hub;
+      purpose = "play";
+      reason = "Hugging Face Hub CLI (hf / huggingface-cli)";
+    })
 
     (mkEntry {
       pkg = pkgs.slack;
