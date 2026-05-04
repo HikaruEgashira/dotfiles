@@ -33,7 +33,7 @@ cask "arc"
 cask "block-goose"
 cask "calibre"                  # nixpkgs broken
 cask "codex"                    # GUI: nix の codex は CLI で別物
-cask "ghostty"                  # nixpkgs.ghostty は darwin binary cache 不在
+cask "ghostty"
 cask "macos-fuse-t/cask/fuse-t"
 cask "macos-fuse-t/cask/fuse-t-sshfs"
 cask "suzuki-shunsuke/ghir/ghir"
