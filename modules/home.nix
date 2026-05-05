@@ -14,6 +14,13 @@
         //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
         min-release-age=3
         audit-level=high
+      '';
+      force = true;
+    };
+    # pnpm reads its own global rc; keeping these out of ~/.npmrc avoids
+    # npm 11 warnings (and npm 12 errors) on unknown user config.
+    file."Library/Preferences/pnpm/rc" = {
+      text = ''
         minimum-release-age=4320
         trust-policy=no-downgrade
         strict-dep-builds=true
