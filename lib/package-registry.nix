@@ -62,6 +62,11 @@ let
       reason = "AWS CLI";
     })
     (mkEntry {
+      pkg = pkgs.google-cloud-sdk;
+      purpose = "ops";
+      reason = "Google Cloud CLI";
+    })
+    (mkEntry {
       pkg = pkgs.cloudflared;
       purpose = "ops";
       reason = "Cloudflare Tunnel client";
