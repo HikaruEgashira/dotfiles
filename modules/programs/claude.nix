@@ -1,9 +1,7 @@
 { lib, pkgs, ... }:
 let
   managed = [
-    "settings.json"
     "CLAUDE.md"
-    "RTK.md"
     "statusline-command.sh"
     "hooks/bash_command_validator.py"
     "hooks/say_on_stop.py"
