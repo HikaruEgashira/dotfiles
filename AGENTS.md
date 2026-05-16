@@ -14,14 +14,15 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 
 ## 何をどこに書くか
 
-| やりたいこと                       | 置き場所                                                               |
-| ---------------------------------- | ---------------------------------------------------------------------- |
-| `pkgs.<name>` だけで足りる package | `lib/package-registry.nix` (`mkEntry { pkg; purpose; reason; }`)       |
-| 設定が要る program                 | `modules/programs/<name>.nix` を新規作成、`home.nix` に `imports` 追加 |
-| GUI / kext / nixpkgs に無いもの    | `Brewfile` (理由をコメントで残す)                                      |
-| CLI 補助・チートシート             | `modules/settings/<topic>.{sh,md}`                                     |
-| ideation / 設計                    | `docs/ideation/YYYY-MM-DD-<topic>-ideation.md`                         |
-| ADR / 解決策                       | `docs/solutions/<problem-type>/<id>.md` (未整備)                       |
+| やりたいこと                       | 置き場所                                                                                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `pkgs.<name>` だけで足りる package | `lib/package-registry.nix` (`mkEntry { pkg; purpose; reason; }`)                                                                         |
+| 設定が要る program                 | `modules/programs/<name>.nix` を新規作成、`home.nix` に `imports` 追加                                                                   |
+| GUI / kext / nixpkgs に無いもの    | `Brewfile` (理由をコメントで残す)                                                                                                        |
+| CLI 補助・チートシート             | `modules/settings/<topic>.{sh,md}`                                                                                                       |
+| Claude Code のユーザー設定         | `modules/programs/claude/<file>` (settings.json / CLAUDE.md / hooks 等); MCP は `claude mcp add --scope user` で `~/.claude.json` に登録 |
+| ideation / 設計                    | `docs/ideation/YYYY-MM-DD-<topic>-ideation.md`                                                                                           |
+| ADR / 解決策                       | `docs/solutions/<problem-type>/<id>.md` (未整備)                                                                                         |
 
 ## 実行可能エントリポイント
 
