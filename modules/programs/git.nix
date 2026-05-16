@@ -72,35 +72,71 @@ in
 
     ignores = [
       ".DS_Store"
+      ".AppleDouble"
+      ".LSOverride"
+      ".claude/ralph-loop.local.md"
+      ".claude/tmp"
+      ".claude/worktrees/"
+      ".codex/config.toml"
+      ".entire/"
+      ".env"
+      ".env.keys"
+      ".env.local"
+      ".idea/tasks.xml"
+      ".idea/workspace.xml"
+      ".vscode/launch.json"
+      ".vscode/settings.json"
+      "*.swo"
       "environment.toml"
+      "*.zip"
       "*.swp"
+      "*~"
+      "CLAUDE.local.md"
+      "Desktop.ini"
+      "PROGRESS.md"
+      "Thumbs.db"
+      "ehthumbs.db"
+      "memo"
+      "memo.md"
+      "settings.local.json"
+      "todo.md"
     ];
   };
 
   xdg.configFile."git/hooks/pre-commit".source = preCommit;
 
   # ~/.gitconfig overrides ~/.config/git/config; legacy keys must be unset
-  home.activation.purgeStaleGitUserIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    gitconfig="$HOME/.gitconfig"
-    [ -f "$gitconfig" ] || exit 0
-    for key in user.email user.name; do
-      if ${pkgs.git}/bin/git config --file "$gitconfig" --get "$key" >/dev/null 2>&1; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset "$key" || true
-      fi
-    done
-  '';
+  home.activation = {
+    purgeStaleGitUserIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      gitconfig="$HOME/.gitconfig"
+      [ -f "$gitconfig" ] || exit 0
+      for key in user.email user.name; do
+        if ${pkgs.git}/bin/git config --file "$gitconfig" --get "$key" >/dev/null 2>&1; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset "$key" || true
+        fi
+      done
+    '';
 
-  home.activation.purgeStaleGhCredentialHelper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    gitconfig="$HOME/.gitconfig"
-    [ -f "$gitconfig" ] || exit 0
-    for host in github.com gist.github.com; do
-      key="credential.https://$host.helper"
-      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
+    purgeStaleGhCredentialHelper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      gitconfig="$HOME/.gitconfig"
+      [ -f "$gitconfig" ] || exit 0
+      for host in github.com gist.github.com; do
+        key="credential.https://$host.helper"
+        if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
+        fi
+        if ! ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section "credential.https://$host" 2>/dev/null || true
+        fi
+      done
+    '';
+
+    purgeStaleGitExcludesFile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      gitconfig="$HOME/.gitconfig"
+      [ -f "$gitconfig" ] || exit 0
+      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all core.excludesfile >/dev/null 2>&1; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all core.excludesfile || true
       fi
-      if ! ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section "credential.https://$host" 2>/dev/null || true
-      fi
-    done
-  '';
+    '';
+  };
 }
