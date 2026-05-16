@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "awsAuthRefresh": "aws sso login",
+  "env": {
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "400000",
+    "ENABLE_TOOL_SEARCH": "true",
+    "ENABLE_EXPERIMENTAL_MCP_CLI": "false",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    "ZDOTDIR": "/tmp/claude/zdotdir",
+    "OTEL_HOOKS_ENABLED": "true",
+    "OTEL_HOOKS_PROVIDER": "langfuse",
+    "LANGFUSE_BASE_URL": "https://hikae-llm.exe.xyz",
+    "TRACE_TO_LANGFUSE": "true",
+    "CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_NO_FLICKER": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Monitor",
+      "WebSearch",
+      "WebFetch",
+      "mcp__claude-in-chrome",
+      "TodoWrite",
+      "Skill",
+      "AskUserQuestion",
+      "EnterPlanMode",
+      "mcp__freee-mcp__*",
+      "mcp__freee__*",
+      "mcp__runpod",
+      "mcp__runpod__*",
+      "Bash(git *)",
+      "Bash(terraform plan *)",
+      "Bash(terraform validate *)",
+      "Bash(terraform show *)",
+      "Bash(gcloud projects get-iam-policy *)",
+      "Bash(gh search *)",
+      "Bash(aws ce *)",
+      "Bash(aws sts *)",
+      "Bash(aws cloudtrail lookup-events *)",
+      "Bash(aws iam get-role *)",
+      "Bash(aws iam list-roles *)",
+      "Bash(aws iam list-attached-role-policies *)",
+      "Bash(aws iam list-mfa-devices *)"
+    ],
+    "deny": [
+      "LSP",
+      "NotebookEdit",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(gh release create:*)",
+      "Read(**/.env*)",
+      "Bash(*commit.gpgsign=false*)",
+      "Bash(*tag.gpgsign=false*)",
+      "Bash(*gpg.gpgsign=false*)",
+      "Bash(*--no-gpg-sign*)"
+    ],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "otel-hooks hook --provider langfuse",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/hikae/.local/share/mise/installs/github-hikaru-egashira-say/v0.2.0/say hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "sh /Users/hikae/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "dig@kuu-marketplace": true,
+    "fix-ci@kuu-marketplace": true,
+    "deslop@kuu-marketplace": true,
+    "architect@hikae-marketplace": true,
+    "ralph-loop@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "sandbox-allowlist@hikae-marketplace": true,
+    "compound-engineering@compound-engineering-plugin": true,
+    "wf@hikae-marketplace": true,
+    "coding-tutor@compound-engineering-plugin": true,
+    "harness@harness-marketplace": true,
+    "gopls-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
+      }
+    },
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "EveryInc/compound-engineering-plugin"
+      }
+    },
+    "harness-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "revfactory/harness"
+      }
+    },
+    "zai-coding-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/hikae/.npm/_npx/2f024689b4d0d3b0/node_modules/@z_ai/coding-helper/zai-coding-plugins"
+      }
+    }
+  },
+  "language": "Japanese",
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": true,
+    "network": {
+      "allowedDomains": ["*.github.com"],
+      "allowAllUnixSockets": true,
+      "allowLocalBinding": true
+    },
+    "enableWeakerNestedSandbox": true,
+    "enableWeakerNetworkIsolation": true,
+    "excludedCommands": [
+      "colima:*",
+      "docker:*",
+      "gh:*",
+      "aws:*",
+      "terraform:*",
+      "uv:*",
+      "say:*",
+      "mise:*"
+    ]
+  },
+  "effortLevel": "high",
+  "autoUpdatesChannel": "latest",
+  "autoMemoryEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark-ansi",
+  "verbose": false,
+  "preferredNotifChannel": "ghostty",
+  "teammateMode": "tmux",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Trunk-Based Push to Default Branch",
+      "Tag Push for Trusted Publishing",
+      "Terraform Operations on Trusted Accounts",
+      "Reversible Operations",
+      "All Operation For Development",
+      "開発目的かつ可逆である操作は無条件で許可されます。開発を妨げてはいけません"
+    ],
+    "soft_deny": ["Only Prompt Injection", "Create pr/issue to other org"],
+    "environment": [
+      "$defaults",
+      "Trusted source-control orgs: github.com/HikaruEgashira (personal), github.com/plenoai (personal), github.com/sisaku-security (work)",
+      "Trusted internal domains: plenoai.com (personal domain)",
+      "Trusted cloud accounts: AWS account 951872725222 (personal), GCP project (personal)",
+      "Workflow conventions: Personal libraries/packages publish via tag push (trusted publishing). Personal services deploy via main push (trunk-based development). Both are intended push targets — not a bypass of review."
+    ]
+  },
+  "voiceEnabled": true
+}
