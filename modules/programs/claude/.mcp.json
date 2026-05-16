@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "sisakuintel": {
-      "type": "http",
-      "url": "https://gnz50e1eu9.execute-api.ap-northeast-1.amazonaws.com/mcp"
-    }
-  }
-}

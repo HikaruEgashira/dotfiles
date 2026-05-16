@@ -1,7 +1,6 @@
 { lib, pkgs, ... }:
 let
   managed = [
-    ".mcp.json"
     "settings.json"
     "CLAUDE.md"
     "RTK.md"
