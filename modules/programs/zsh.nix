@@ -23,7 +23,7 @@ _:
       c = "claudex";
       con = "claudex -c continue";
       z = "zod .";
-      q = "gh q --";
+      q = "gh q bash ~/dotfiles/modules/settings/tmux-dev.sh";
       rel = "source ~/.zshrc";
       ghq = "gh q";
       say = "mise exec github:HikaruEgashira/say -- say";
