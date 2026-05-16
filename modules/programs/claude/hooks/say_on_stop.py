@@ -2,8 +2,11 @@
 """Stop hook: last line of assistant response を say コマンドで発話する"""
 
 import json
+import os
 import subprocess
 import sys
+
+SAY_BIN = os.path.expanduser("~/.local/share/mise/shims/say")
 
 
 def main():
@@ -27,10 +30,7 @@ def main():
 
     last_line = lines[0]
 
-    subprocess.run(
-        ["/Users/hikae/ghq/github.com/HikaruEgashira/say/say", last_line],
-        check=False,
-    )
+    subprocess.run([SAY_BIN, last_line], check=False)
 
 
 if __name__ == "__main__":

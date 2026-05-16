@@ -73,7 +73,7 @@
           },
           {
             "type": "command",
-            "command": "/Users/hikae/.local/share/mise/installs/github-hikaru-egashira-say/v0.2.0/say hook",
+            "command": "/Users/hikae/.local/share/mise/shims/say hook",
             "async": true
           }
         ]
