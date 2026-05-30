@@ -12,7 +12,6 @@
     "LANGFUSE_BASE_URL": "https://hikae-llm.exe.xyz",
     "TRACE_TO_LANGFUSE": "true",
     "CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "1",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_NO_FLICKER": "1"
   },
   "permissions": {
@@ -165,7 +164,6 @@
   "theme": "dark-ansi",
   "verbose": false,
   "preferredNotifChannel": "ghostty",
-  "teammateMode": "tmux",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
