@@ -10,4 +10,4 @@
 nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
 ```
 
-注意: `modules/programs/claude/settings.json` は `modules/programs/claude.nix` の `managed` リストに含まれず home-manager で配置されない（orphan）。Claude Code の実効設定は live ファイル `~/.claude/settings.json`（Claude Code が直接書き換える通常ファイル）。settings 変更を反映するには live ファイルを直接編集する必要がある。`AGENTS.md` 参照。
+注意: Claude Code の `settings.json` は repo で管理しない。実効設定は live ファイル `~/.claude/settings.json`（Claude Code が起動毎に直接書き換える通常ファイル）が source of truth。settings 変更は live ファイルを直接編集する。repo の `modules/programs/claude.nix` が配置するのは CLAUDE.md / hooks / statusline 等のみ。`AGENTS.md` 参照。

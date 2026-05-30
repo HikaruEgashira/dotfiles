@@ -20,7 +20,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 | 設定が要る program                 | `modules/programs/<name>.nix` を新規作成、`home.nix` に `imports` 追加                                                                   |
 | GUI / kext / nixpkgs に無いもの    | `Brewfile` (理由をコメントで残す)                                                                                                        |
 | CLI 補助・チートシート             | `modules/settings/<topic>.{sh,md}`                                                                                                       |
-| Claude Code のユーザー設定         | `modules/programs/claude/<file>` (settings.json / CLAUDE.md / hooks 等); MCP は `claude mcp add --scope user` で `~/.claude.json` に登録 |
+| Claude Code のユーザー設定         | `modules/programs/claude/<file>` (CLAUDE.md / hooks / statusline 等); `settings.json` は repo 管理せず live `~/.claude/settings.json` が source of truth; MCP は `claude mcp add --scope user` で `~/.claude.json` に登録 |
 | ideation / 設計                    | `docs/ideation/YYYY-MM-DD-<topic>-ideation.md`                                                                                           |
 | ADR / 解決策                       | `docs/solutions/<problem-type>/<id>.md` (未整備)                                                                                         |
 
