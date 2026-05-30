@@ -41,6 +41,11 @@
 - tasks https://github.com/users/HikaruEgashira/projects/10
 - repositoryはgh qを用いて ~/ghq/github.com/<owner>/<repo> で作業する
 
+## Documentation
+
+- OSSの開発者向け文書（CHANGELOG/README/コメント/commit message/配布ドキュメント）は英語で書く
+- 日本語で出力してよいのはplan・design docとチャット応答に限る
+
 ## Workflow
 
 package/libraryは全てtag pushで発火するtrusted publishingを採用する
@@ -48,5 +53,5 @@ serviceはmain pushでデプロイするtrunk based developmentを採用する
 実装後は品質保証を実施しreleaseして動作確認するまでがタスク完了の定義である
 auto mergeを有効化する際はユーザーにレビューを求めない (gh pr merge --auto で即発火させる)
 terraform apply も同様にユーザーにレビューを求めない。plan 内容を本文に提示済みなら -auto-approve、もしくは plan ファイル保存→apply で進める
-git status cleanな状態でタスク完了すること
+git status cleanかつremoteと同期済み（push完了）の状態をタスク完了とする。commitしたら確認を挟まずpushまで通す（pushは可逆）
 実装開始前にgit statusがdirtyな場合はgh wtを切ってから実装開始する
