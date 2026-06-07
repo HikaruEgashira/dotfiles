@@ -76,6 +76,7 @@ in
         co = "checkout";
         br = "branch";
         ci = "commit";
+        undo = "reset --soft HEAD~1";
         sync = "!git switch \"$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's@^origin/@@')\" && git pull";
       };
     };
