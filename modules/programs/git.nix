@@ -49,8 +49,14 @@ in
       # leading "" resets the accumulated helper list per host so only gh
       # (which always serves the active gh account's token) is consulted.
       credential = {
-        "https://github.com".helper = [ "" ghCredentialHelper ];
-        "https://gist.github.com".helper = [ "" ghCredentialHelper ];
+        "https://github.com".helper = [
+          ""
+          ghCredentialHelper
+        ];
+        "https://gist.github.com".helper = [
+          ""
+          ghCredentialHelper
+        ];
       };
 
       # SSH transport is banned; all GitHub URLs are rewritten to HTTPS
