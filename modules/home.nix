@@ -5,7 +5,7 @@
     stateVersion = "23.11";
     enableNixpkgsReleaseCheck = false;
     sessionVariables = {
-      GOPRIVATE = "github.com/plenoai/*";
+      GOPRIVATE = "github.com/HikaruEgashira/*,github.com/plenoai/*";
     };
 
     file.".npmrc" = {
