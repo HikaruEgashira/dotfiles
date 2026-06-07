@@ -4,6 +4,9 @@
     homeDirectory = "/Users/hikae";
     stateVersion = "23.11";
     enableNixpkgsReleaseCheck = false;
+    sessionVariables = {
+      GOPRIVATE = "github.com/plenoai/*";
+    };
 
     file.".npmrc" = {
       text = ''
