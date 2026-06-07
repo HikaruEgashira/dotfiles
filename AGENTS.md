@@ -93,3 +93,7 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 - 「何ができたか」: `docs/changelog.md` (Survivor → PR マトリクス、設計判断のサマリ、再考余地、継続条件)
 - README (人間向け): `README.md`
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント
+
+<!-- agentops:dreaming:start -->
+# Project memory (managed by agentops dreaming — do not edit between markers)
+<!-- agentops:dreaming:end -->
