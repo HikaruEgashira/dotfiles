@@ -139,6 +139,11 @@ let
       reason = "Go meta-linter";
     })
     (mkEntry {
+      pkg = pkgs.nixfmt;
+      purpose = "build";
+      reason = "Nix formatter matching `nix fmt`";
+    })
+    (mkEntry {
       pkg = pkgs.ast-grep;
       purpose = "build";
       reason = "syntactic codemod";
