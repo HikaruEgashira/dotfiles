@@ -20,10 +20,6 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-vscode-extensions = {
-      url = "github:nix-community/nix-vscode-extensions";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -32,12 +28,10 @@
       nixpkgs,
       home-manager,
       treefmt-nix,
-      nix-vscode-extensions,
       ...
     }:
     let
       overlays = [
-        nix-vscode-extensions.overlays.default
       ];
 
       pkgsFor =
