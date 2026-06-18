@@ -15,6 +15,7 @@
         //registry.npmjs.org/:_authToken=''${NPM_TOKEN}
         registry=https://npm.flatt.tech/
         //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
+        allow-git=none
         min-release-age=3
         audit-level=high
       '';
