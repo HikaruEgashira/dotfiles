@@ -34,7 +34,7 @@ in
 
       core = {
         whitespace = "trailing-space,space-before-tab";
-        editor = "code --wait";
+        editor = "zed --wait";
         hooksPath = hooksDir;
       };
 
