@@ -22,17 +22,6 @@ brew bundle --file=~/dotfiles/Brewfile                          # residual GUI /
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and re-activates daily at 09:00 when the working tree is clean.
 A weekly GitHub Actions job (`flake-update.yml`) opens an auto-merge PR with the latest `flake.lock`.
 
-## Supply Chain Hardening
-
-`modules/home.nix` owns `~/.npmrc`. Keep npm exotic dependency policy explicit so `pmsec --check` does not depend on npm defaults:
-
-```ini
-allow-git=none
-allow-remote=none
-allow-file=none
-allow-directory=none
-```
-
 ## Layout
 
 ```

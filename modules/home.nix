@@ -16,6 +16,9 @@
         registry=https://npm.flatt.tech/
         //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
         allow-git=none
+        allow-remote=none
+        allow-file=none
+        allow-directory=none
         min-release-age=3
         audit-level=high
       '';
