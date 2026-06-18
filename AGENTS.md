@@ -95,5 +95,7 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント
 
 <!-- agentops:dreaming:start -->
+
 # Project memory (managed by agentops dreaming — do not edit between markers)
+
 <!-- agentops:dreaming:end -->
