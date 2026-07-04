@@ -22,10 +22,25 @@ let
   '';
 
   ghCredentialHelper = "!${pkgs.gh}/bin/gh auth git-credential";
+
+  # git-lfs invoked by absolute store path: hooks must survive PATH-sanitized
+  # environments (e.g. Homebrew's superenv during `brew tap`)
+  lfsHook =
+    name:
+    pkgs.writeShellScript "git-lfs-${name}" ''
+      exec ${pkgs.git-lfs}/bin/git-lfs ${name} "$@"
+    '';
+  lfsHookNames = [
+    "post-checkout"
+    "post-commit"
+    "post-merge"
+    "pre-push"
+  ];
 in
 {
   programs.git = {
     enable = true;
+    lfs.enable = true;
     signing.format = "ssh";
 
     settings = {
@@ -116,7 +131,19 @@ in
     ];
   };
 
-  xdg.configFile."git/hooks/pre-commit".source = preCommit;
+  xdg.configFile = {
+    "git/hooks/pre-commit".source = preCommit;
+  }
+  // lib.listToAttrs (
+    map (name: {
+      name = "git/hooks/${name}";
+      value = {
+        source = lfsHook name;
+        # `git lfs install` previously wrote unmanaged hooks here; clobber them
+        force = true;
+      };
+    }) lfsHookNames
+  );
 
   # ~/.gitconfig overrides ~/.config/git/config; legacy keys must be unset
   home.activation = {
