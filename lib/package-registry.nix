@@ -278,6 +278,11 @@ let
       reason = "AI coding agent multiplexer (TUI)";
     })
     (mkEntry {
+      pkg = pkgs.pi-coding-agent;
+      purpose = "edit";
+      reason = "Pi coding agent CLI";
+    })
+    (mkEntry {
       pkg = pkgs.ollama;
       purpose = "play";
       reason = "local LLM serving";
