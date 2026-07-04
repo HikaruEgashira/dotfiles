@@ -35,6 +35,7 @@ modules/
     aws.nix              ~/.aws/config; readonly default + step-up MFA role
     cli-tools.nix        fzf / bat / lsd / aria2 / starship
     cmux.nix             cmux settings.json + macOS defaults
+    codex.nix            ~/.codex/AGENTS.md via the Claude global guidance
     dotfiles-sync.nix    launchd agent: daily git pull + home-manager switch
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
     git.nix              identity, signing, hooks (gitleaks pre-commit)
