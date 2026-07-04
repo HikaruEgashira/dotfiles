@@ -20,6 +20,10 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    herdr = {
+      url = "github:ogulcancelik/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -28,10 +32,14 @@
       nixpkgs,
       home-manager,
       treefmt-nix,
+      herdr,
       ...
     }:
     let
       overlays = [
+        (final: _prev: {
+          herdr = herdr.packages.${final.stdenv.hostPlatform.system}.default;
+        })
       ];
 
       pkgsFor =

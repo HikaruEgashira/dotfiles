@@ -272,6 +272,12 @@ let
     })
 
     (mkEntry {
+      pkg = pkgs.herdr;
+      purpose = "edit";
+      source = "flake:ogulcancelik/herdr";
+      reason = "AI coding agent multiplexer (TUI)";
+    })
+    (mkEntry {
       pkg = pkgs.ollama;
       purpose = "play";
       reason = "local LLM serving";
