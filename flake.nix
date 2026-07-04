@@ -12,6 +12,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-pi.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -30,6 +31,7 @@
     {
       self,
       nixpkgs,
+      nixpkgs-pi,
       home-manager,
       treefmt-nix,
       herdr,
@@ -37,6 +39,18 @@
     }:
     let
       overlays = [
+        (
+          final: _prev:
+          let
+            piPkgs = import nixpkgs-pi {
+              system = final.stdenv.hostPlatform.system;
+              config.allowUnfree = true;
+            };
+          in
+          {
+            pi-coding-agent = piPkgs.pi-coding-agent;
+          }
+        )
         (final: _prev: {
           herdr = herdr.packages.${final.stdenv.hostPlatform.system}.default;
         })
