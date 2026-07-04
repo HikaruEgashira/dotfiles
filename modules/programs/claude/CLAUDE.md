@@ -42,4 +42,4 @@ serviceはmain pushでデプロイするtrunk based developmentを採用する
 auto mergeを有効化する際はユーザーにレビューを求めない (gh pr merge --auto で即発火させる)
 terraform apply も同様にユーザーにレビューを求めない。plan 内容を本文に提示済みなら -auto-approve、もしくは plan ファイル保存→apply で進める
 git status cleanかつremoteと同期済み（push完了）の状態をタスク完了とする。commitしたら確認を挟まずpushまで通す（pushは可逆）
-実装開始前にgit statusがdirtyな場合はherdr worktree createでworktreeを切ってから実装開始する (herdr外ではgh wtにフォールバック)
+実装開始前にgit statusがdirtyな場合はherdr worktree createでworktreeを切ってから実装開始する
