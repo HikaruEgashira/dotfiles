@@ -101,6 +101,12 @@
             "*.yml"
             "*.json"
           ];
+          # prettier escapes literal `DI_*` / `PVTI_*` as markdown emphasis;
+          # AGENTS.md's agentops marker region is machine-rewritten
+          settings.formatter.prettier.excludes = [
+            "AGENTS.md"
+            "modules/programs/claude/CLAUDE.md"
+          ];
         };
 
       lintAppFor =

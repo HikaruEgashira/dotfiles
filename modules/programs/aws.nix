@@ -9,7 +9,6 @@
 
     [profile seccamp]
     region             = ap-northeast-1
-    # token and endpoint live in the script (machine-local, not in VCS)
     credential_process = ${config.home.homeDirectory}/.config/secrets/seccamp-credential-process
 
     [profile hikae-admin-mfa]
