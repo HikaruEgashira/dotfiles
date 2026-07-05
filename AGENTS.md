@@ -95,7 +95,8 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント
 
 <!-- agentops:dreaming:start -->
-
 # Project memory (managed by agentops dreaming — do not edit between markers)
 
+## skills-install-convention ([[skills-install-convention]])
+How to install agent skills on this machine — npx skills CLI, ~/.agents/skills shared dir, symlinks for claude-code and codex
 <!-- agentops:dreaming:end -->
