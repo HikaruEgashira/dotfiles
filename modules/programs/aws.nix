@@ -6,6 +6,9 @@ _: {
     [default]
     region = ap-northeast-1
 
+    [profile seccamp]
+    region = ap-northeast-1
+
     [profile hikae-admin-mfa]
     region           = ap-northeast-1
     role_arn         = arn:aws:iam::951872725222:role/hikae-stepup-admin
