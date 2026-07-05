@@ -12,6 +12,9 @@ _:
       if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
           . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
       fi
+
+      # seccamp 期間限定: 終了後に削除して default (readonly) に戻す
+      export AWS_PROFILE=seccamp
     '';
 
     profileExtra = ''

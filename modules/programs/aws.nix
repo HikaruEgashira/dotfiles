@@ -1,13 +1,16 @@
 # Architecture, threat model, mitigations: iac-aws ADR-0008.
 # `default` = hikae-readonly (long-lived AKIA, 365d rotation).
 # Privilege escalation: AWS_PROFILE=hikae-admin-mfa (assumes role, requires TOTP).
-_: {
+{ config, ... }:
+{
   home.file.".aws/config".text = ''
     [default]
     region = ap-northeast-1
 
     [profile seccamp]
-    region = ap-northeast-1
+    region             = ap-northeast-1
+    # token and endpoint live in the script (machine-local, not in VCS)
+    credential_process = ${config.home.homeDirectory}/.config/secrets/seccamp-credential-process
 
     [profile hikae-admin-mfa]
     region           = ap-northeast-1
