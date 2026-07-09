@@ -12,6 +12,7 @@
     ./modules/programs/claude.nix
     ./modules/programs/codex.nix
     ./modules/programs/cmux.nix
+    ./modules/programs/herdr.nix
 
     ./modules/programs/dotfiles-sync.nix
   ];
