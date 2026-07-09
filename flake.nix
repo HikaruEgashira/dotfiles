@@ -106,6 +106,8 @@
           settings.formatter.prettier.excludes = [
             "AGENTS.md"
             "modules/programs/claude/CLAUDE.md"
+            # lazy.nvim rewrites these on every :Lazy sync; formatting them fights the tool
+            "modules/programs/nvim/config/*.json"
           ];
         };
 

@@ -6,6 +6,7 @@
     ./modules/programs/git.nix
     ./modules/programs/aws.nix
     ./modules/programs/cli-tools.nix
+    ./modules/programs/nvim/default.nix
     ./modules/programs/zsh.nix
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix

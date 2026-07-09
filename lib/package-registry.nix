@@ -36,6 +36,16 @@ let
       reason = "GitHub CLI / PR ops";
     })
     (mkEntry {
+      pkg = pkgs.neovim;
+      purpose = "edit";
+      reason = "primary editor (LazyVim config in modules/programs/nvim)";
+    })
+    (mkEntry {
+      pkg = pkgs.lazygit;
+      purpose = "edit";
+      reason = "LazyVim <leader>gg git UI";
+    })
+    (mkEntry {
       pkg = pkgs.ripgrep;
       purpose = "util";
       reason = "primary code search";
