@@ -17,5 +17,22 @@
     source_profile   = default
     mfa_serial       = arn:aws:iam::951872725222:mfa/hikae-readonly
     duration_seconds = 43200
+
+    # terraform 等 SDK ツールから iac-aws-apply を使うための profile。
+    # SDK は ~/.aws/cli/cache を読まないため、credential_process で AWS CLI に
+    # 解決を委譲し、cache 済み MFA セッション(12h)を再利用させる。
+    # MFA プロンプトは cache が切れた時のみ。terraform 実行前に
+    # `aws sts get-caller-identity --profile seccamp-apply` で warm しておく。
+    [profile seccamp-apply]
+    region             = ap-northeast-1
+    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile seccamp-apply-chain --format process
+
+    # hikae-admin-mfa (stepup-admin, MFA+12h cache) → iac-aws-apply の role chain。
+    # chaining のためセッションは 1h だが、CLI が無プロンプトで再 assume する。
+    [profile seccamp-apply-chain]
+    region            = ap-northeast-1
+    role_arn          = arn:aws:iam::951872725222:role/iac-aws-apply
+    role_session_name = local-apply
+    source_profile    = hikae-admin-mfa
   '';
 }
