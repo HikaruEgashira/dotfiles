@@ -34,5 +34,23 @@
     role_arn          = arn:aws:iam::951872725222:role/iac-aws-apply
     role_session_name = local-apply
     source_profile    = hikae-admin-mfa
+
+    # lab-seccamp26d2 (931932531320, seccamp-2026-d2 の terraform 対象)。
+    # iac-aws-apply@lab の trust は OrganizationAccountAccessRole のみのため 2-hop chain。
+    [profile seccamp-lab-apply]
+    region             = ap-northeast-1
+    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile seccamp-lab-apply-chain --format process
+
+    [profile seccamp-lab-apply-chain]
+    region            = ap-northeast-1
+    role_arn          = arn:aws:iam::931932531320:role/iac-aws-apply
+    role_session_name = local-apply
+    source_profile    = seccamp-lab-org
+
+    [profile seccamp-lab-org]
+    region            = ap-northeast-1
+    role_arn          = arn:aws:iam::931932531320:role/OrganizationAccountAccessRole
+    role_session_name = local-apply
+    source_profile    = hikae-admin-mfa
   '';
 }
