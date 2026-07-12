@@ -16,6 +16,7 @@
     ./modules/programs/herdr.nix
 
     ./modules/programs/dotfiles-sync.nix
+    ./modules/programs/clean-worktree.nix
   ];
 
   nixpkgs.config.allowUnfree = true;

@@ -70,9 +70,11 @@ locally_merged() { # repo sha
 last_activity() { # worktree_path gitdir
   local commit_ts=0 fs_ts=0 f
   commit_ts=$(git -C "$1" log -1 --format=%ct 2>/dev/null) || commit_ts=0
+  case "$commit_ts" in '' | *[!0-9]*) commit_ts=0 ;; esac
   for f in "$2/index" "$2/HEAD"; do
     if [ -e "$f" ]; then
-      local m; m=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null) || continue
+      local m; m=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null) || continue
+      case "$m" in '' | *[!0-9]*) continue ;; esac
       [ "$m" -gt "$fs_ts" ] && fs_ts=$m
     fi
   done
