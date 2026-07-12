@@ -30,13 +30,13 @@
     # terraform 等 SDK ツールから iac-aws-apply を使うための profile。
     # SDK には SSO cache を読めないものがあるため、credential_process で
     # AWS CLI に解決を委譲する。
-    [profile seccamp-apply]
+    [profile iac-aws-apply]
     region             = ap-northeast-1
-    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile seccamp-apply-chain --format process
+    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile iac-aws-apply-chain --format process
 
     # hikae-admin-sso → iac-aws-apply の role chain (CI と権限パリティ)。
     # chaining のためセッションは 1h だが、CLI が無プロンプトで再 assume する。
-    [profile seccamp-apply-chain]
+    [profile iac-aws-apply-chain]
     region            = ap-northeast-1
     role_arn          = arn:aws:iam::951872725222:role/iac-aws-apply
     role_session_name = local-apply
