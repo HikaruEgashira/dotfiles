@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Stop hook: last line of assistant response を say コマンドで発話する"""
+"""Stop hook: last line of assistant response を say-hook コマンドで発話する"""
 
 import json
 import os
 import subprocess
 import sys
 
-SAY_BIN = os.path.expanduser("~/.local/share/mise/shims/say")
+SAY_BIN = os.path.expanduser("~/.local/share/mise/shims/say-hook")
 
 
 def main():

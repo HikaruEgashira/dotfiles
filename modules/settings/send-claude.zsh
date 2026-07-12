@@ -24,8 +24,8 @@ _ai_should_send() {
 
   [[ "$cmd" == /* ]] && return 1
 
-  # `say` arg may contain Japanese; don't treat it as a Claude prompt
-  [[ "${cmd%% *}" == "say" ]] && return 1
+  # `say-hook` arg may contain Japanese; don't treat it as a Claude prompt
+  [[ "${cmd%% *}" == "say" || "${cmd%% *}" == "say-hook" ]] && return 1
 
   local total=${#cmd}
   (( total < AI_MIN_LEN )) && return 1

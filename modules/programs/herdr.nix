@@ -23,7 +23,7 @@
     ${pkgs.gnugrep}/bin/grep -q horn553.herdr-ntfy "$HOME/.config/herdr/plugins.json" 2>/dev/null \
       || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install horn553/herdr-ntfy --ref fd404baffd166863291a1f6ea2067743debdaccf --yes || true
 
-    ${pkgs.gnugrep}/bin/grep -q hikaruegashira.say "$HOME/.config/herdr/plugins.json" 2>/dev/null \
-      || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install HikaruEgashira/say/herdr --ref c8c0e8d0e88425e5f6809cd9f17d679d6940436f --yes || true
+    ${pkgs.gnugrep}/bin/grep -q hikaruegashira.say-hook "$HOME/.config/herdr/plugins.json" 2>/dev/null \
+      || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install HikaruEgashira/say-hook/herdr --ref bcaa40b7d7c7c6382a749de8afc21a866348392b --yes || true
   '';
 }
