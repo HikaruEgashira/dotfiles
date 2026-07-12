@@ -1,11 +1,25 @@
-# Architecture, threat model, mitigations: iac-aws ADR-0008.
-# `default` = hikae-readonly (long-lived AKIA, 365d rotation).
-# Privilege escalation: AWS_PROFILE=hikae-admin-mfa (assumes role, requires TOTP).
+# Architecture, threat model, mitigations: iac-aws ADR-0010 (supersedes ADR-0008).
+# Identity Center 移行中の過渡構成: sso-session / hikae-admin-sso を追加済み、
+# 旧経路 (default AKIA + hikae-admin-mfa) は SSO 疎通確認後に削除する。
+# Privilege escalation: AWS_PROFILE=hikae-admin-sso (同一 SSO セッション内の切替)。
 { config, ... }:
 {
   home.file.".aws/config".text = ''
+    [sso-session hikae]
+    sso_start_url = https://d-9567730231.awsapps.com/start
+    sso_region = ap-northeast-1
+    sso_registration_scopes = sso:account:access
+
     [default]
     region = ap-northeast-1
+
+    # terraform apply 等の特権操作 (iac-aws ADR-0010 L2)。
+    # `aws sso login --profile hikae-admin-sso` でセッション確立 (90日)。
+    [profile hikae-admin-sso]
+    region = ap-northeast-1
+    sso_session = hikae
+    sso_account_id = 951872725222
+    sso_role_name = AdministratorAccess
 
     [profile seccamp]
     region             = ap-northeast-1
