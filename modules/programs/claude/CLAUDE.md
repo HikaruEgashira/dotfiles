@@ -19,5 +19,4 @@
 - serviceはmain pushでデプロイするtrunk based developmentを採用する
 - 実装後は品質保証を実施しreleaseして動作確認するまでがタスク完了の定義である
 - git status cleanかつremoteと同期済みの状態をタスク完了とする
-- 実装開始前にgit statusがdirtyな場合はherdr worktree createでworktreeを切ってから実装開始する
 - repositoryはgh qを用いて ~/ghq/github.com/<owner>/<repo> で作業する
