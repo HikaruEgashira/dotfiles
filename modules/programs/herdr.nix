@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 let
-  sayHookRevision = "a595d2b4a2b698536ca9eb1d141807efa42bd743";
-  sayHookVersion = "v0.4.0";
+  sayHookRevision = "6bfb4269a9b626847433f11a1549a1688abcded0";
+  sayHookVersion = "v0.4.1";
 in
 {
   home = {
@@ -28,7 +28,8 @@ in
       ".config/herdr/plugins/config/hikaruegashira.say-hook/.env" = {
         text = ''
           SAY_BIN=$HOME/.local/share/mise/installs/github-hikaru-egashira-say-hook/${sayHookVersion}/say-hook
-          export ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
+          ELEVENLABS_VOICE_ID=fUjY9K2nAIwlALOwSiwc
+          ELEVENLABS_VOICE_NAME='Yui - Japanese girl female Anime voice'
         '';
         force = true;
       };
@@ -55,6 +56,7 @@ in
           || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install HikaruEgashira/say-hook/herdr --ref ${sayHookRevision} --yes
 
         $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke install-claude-hook --plugin hikaruegashira.say-hook
+        $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke check --plugin hikaruegashira.say-hook
       '';
     };
   };
