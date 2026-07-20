@@ -26,7 +26,6 @@ _:
       q = "gh q bash ~/dotfiles/modules/settings/tmux-dev.sh";
       rel = "source ~/.zshrc";
       ghq = "gh q";
-      say-hook = "mise exec github:HikaruEgashira/say-hook -- say-hook";
       tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
       up = "claude-compose up";
       down = "claude-compose down";

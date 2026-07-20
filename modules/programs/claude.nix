@@ -4,14 +4,12 @@ let
     "CLAUDE.md"
     "statusline-command.sh"
     "hooks/bash_command_validator.py"
-    "hooks/say_on_stop.py"
     "bin/claude-caffeinate.sh"
   ];
 
   executableFiles = {
     "statusline-command.sh" = true;
     "hooks/bash_command_validator.py" = true;
-    "hooks/say_on_stop.py" = true;
     "bin/claude-caffeinate.sh" = true;
   };
 in
