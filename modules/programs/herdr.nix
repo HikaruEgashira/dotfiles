@@ -1,7 +1,10 @@
 { lib, pkgs, ... }:
 let
-  sayHookRevision = "6bfb4269a9b626847433f11a1549a1688abcded0";
-  sayHookVersion = "v0.4.1";
+  sayHookRevision = "1a2e8625f019e6be59802a26f5eeec4a9ae3eee0";
+  sayHookVersion = "v0.4.2";
+  sayHookBinPath = ".local/share/mise/installs/github-hikaru-egashira-say-hook/${sayHookVersion}/say-hook";
+  sayHookVoiceId = "fUjY9K2nAIwlALOwSiwc";
+  sayHookVoiceName = "Yui - Japanese girl female Anime voice";
 in
 {
   home = {
@@ -27,9 +30,9 @@ in
 
       ".config/herdr/plugins/config/hikaruegashira.say-hook/.env" = {
         text = ''
-          SAY_BIN=$HOME/.local/share/mise/installs/github-hikaru-egashira-say-hook/${sayHookVersion}/say-hook
-          ELEVENLABS_VOICE_ID=fUjY9K2nAIwlALOwSiwc
-          ELEVENLABS_VOICE_NAME='Yui - Japanese girl female Anime voice'
+          SAY_BIN="$HOME/${sayHookBinPath}"
+          ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId}
+          ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName}
         '';
         force = true;
       };
@@ -44,6 +47,10 @@ in
       sayHook = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         $DRY_RUN_CMD "$HOME/.local/bin/mise" unuse --global --no-prune github:HikaruEgashira/say-hook
         $DRY_RUN_CMD "$HOME/.local/bin/mise" install github:HikaruEgashira/say-hook@${sayHookVersion}
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
+          ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
+          ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
+          "$HOME/${sayHookBinPath}" check
       '';
 
       herdrPlugins = lib.hm.dag.entryAfter [ "sayHook" ] ''
@@ -56,7 +63,6 @@ in
           || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install HikaruEgashira/say-hook/herdr --ref ${sayHookRevision} --yes
 
         $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke install-claude-hook --plugin hikaruegashira.say-hook
-        $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke check --plugin hikaruegashira.say-hook
       '';
     };
   };
