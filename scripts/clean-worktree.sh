@@ -24,11 +24,17 @@ usage() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    -n|--dry-run) DRY_RUN=1 ;;
-    --days) DAYS="$2"; shift ;;
-    --force) FORCE=1 ;;
-    -h|--help) usage ;;
-    *) echo "unknown option: $1" >&2; usage 1 ;;
+  -n | --dry-run) DRY_RUN=1 ;;
+  --days)
+    DAYS="$2"
+    shift
+    ;;
+  --force) FORCE=1 ;;
+  -h | --help) usage ;;
+  *)
+    echo "unknown option: $1" >&2
+    usage 1
+    ;;
   esac
   shift
 done
@@ -61,8 +67,8 @@ pr_merged() { # repo branch
 # default branch に取り込み済みか (squash merge は検出不可 → pr_merged が補完)
 locally_merged() { # repo sha
   local def
-  def=$(git -C "$1" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null) \
-    || def=$(git -C "$1" symbolic-ref -q --short HEAD 2>/dev/null) || return 1
+  def=$(git -C "$1" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null) ||
+    def=$(git -C "$1" symbolic-ref -q --short HEAD 2>/dev/null) || return 1
   git -C "$1" merge-base --is-ancestor "$2" "$def" 2>/dev/null
 }
 
@@ -73,7 +79,8 @@ last_activity() { # worktree_path gitdir
   case "$commit_ts" in '' | *[!0-9]*) commit_ts=0 ;; esac
   for f in "$2/index" "$2/HEAD"; do
     if [ -e "$f" ]; then
-      local m; m=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null) || continue
+      local m
+      m=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null) || continue
       case "$m" in '' | *[!0-9]*) continue ;; esac
       [ "$m" -gt "$fs_ts" ] && fs_ts=$m
     fi
@@ -93,42 +100,58 @@ for repo in "$GHQ_ROOT"/*/*/; do
 
   while IFS= read -r line; do
     case "$line" in
-      worktree\ *) wt=${line#worktree } ; branch="" sha="" locked=0 ;;
-      HEAD\ *) sha=${line#HEAD } ;;
-      branch\ *) branch=${line#branch refs/heads/} ;;
-      locked*) locked=1 ;;
-      "")
-        [ -n "${wt:-}" ] || continue
-        [ "$wt" = "$main_path" ] && { wt=""; continue; }
-        [ -d "$wt" ] || { wt=""; continue; }
-
-        reason=""
-        if [ -n "$branch" ] && { pr_merged "$repo" "$branch" || locally_merged "$repo" "$sha"; }; then
-          reason="merged"
-        else
-          gitdir=$(git -C "$wt" rev-parse --git-dir 2>/dev/null) || gitdir=""
-          activity=$(last_activity "$wt" "$gitdir")
-          [ "$activity" -lt "$THRESHOLD" ] && reason="stale(${DAYS}d+)"
-        fi
-        if [ -z "$reason" ]; then wt=""; continue; fi
-
-        if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ] && [ "$FORCE" -eq 0 ]; then
-          echo "skip   $wt  ($reason, dirty — --force で削除)"
-          skipped=$((skipped + 1)); wt=""
-          continue
-        fi
-
-        echo "remove $wt  ($reason, branch=${branch:-detached})"
-        [ "$locked" -eq 1 ] && run git -C "$repo" worktree unlock "$wt"
-        if run git -C "$repo" worktree remove --force "$wt"; then
-          [ "$reason" = "merged" ] && [ -n "$branch" ] \
-            && run git -C "$repo" branch -D "$branch" 2>/dev/null
-          removed=$((removed + 1))
-        fi
+    worktree\ *)
+      wt=${line#worktree }
+      branch="" sha="" locked=0
+      ;;
+    HEAD\ *) sha=${line#HEAD } ;;
+    branch\ *) branch=${line#branch refs/heads/} ;;
+    locked*) locked=1 ;;
+    "")
+      [ -n "${wt:-}" ] || continue
+      [ "$wt" = "$main_path" ] && {
         wt=""
-        ;;
+        continue
+      }
+      [ -d "$wt" ] || {
+        wt=""
+        continue
+      }
+
+      reason=""
+      if [ -n "$branch" ] && { pr_merged "$repo" "$branch" || locally_merged "$repo" "$sha"; }; then
+        reason="merged"
+      else
+        gitdir=$(git -C "$wt" rev-parse --git-dir 2>/dev/null) || gitdir=""
+        activity=$(last_activity "$wt" "$gitdir")
+        [ "$activity" -lt "$THRESHOLD" ] && reason="stale(${DAYS}d+)"
+      fi
+      if [ -z "$reason" ]; then
+        wt=""
+        continue
+      fi
+
+      if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ] && [ "$FORCE" -eq 0 ]; then
+        echo "skip   $wt  ($reason, dirty — --force で削除)"
+        skipped=$((skipped + 1))
+        wt=""
+        continue
+      fi
+
+      echo "remove $wt  ($reason, branch=${branch:-detached})"
+      [ "$locked" -eq 1 ] && run git -C "$repo" worktree unlock "$wt"
+      if run git -C "$repo" worktree remove --force "$wt"; then
+        [ "$reason" = "merged" ] && [ -n "$branch" ] &&
+          run git -C "$repo" branch -D "$branch" 2>/dev/null
+        removed=$((removed + 1))
+      fi
+      wt=""
+      ;;
     esac
-  done < <(git -C "$repo" worktree list --porcelain 2>/dev/null; echo)
+  done < <(
+    git -C "$repo" worktree list --porcelain 2>/dev/null
+    echo
+  )
 done
 
 echo "---"
