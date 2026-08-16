@@ -15,7 +15,7 @@ EOF
 }
 
 require_file() {
-  [[ -f "$PAM_SUDO_FILE" ]] || {
+  [[ -f $PAM_SUDO_FILE ]] || {
     echo "Missing PAM sudo file: $PAM_SUDO_FILE" >&2
     exit 1
   }
@@ -36,7 +36,7 @@ write_root_owned() {
 }
 
 ensure_backup() {
-  if [[ ! -f "$BACKUP_FILE" ]]; then
+  if [[ ! -f $BACKUP_FILE ]]; then
     sudo cp "$PAM_SUDO_FILE" "$BACKUP_FILE"
     sudo chown root:wheel "$BACKUP_FILE"
     sudo chmod 0644 "$BACKUP_FILE"
@@ -63,7 +63,7 @@ enable() {
       inserted = 1
     }
     { print }
-  ' "$PAM_SUDO_FILE" > "$tmp"
+  ' "$PAM_SUDO_FILE" >"$tmp"
 
   write_root_owned "$tmp"
   echo "Enabled Touch ID for sudo."
@@ -81,15 +81,18 @@ disable() {
   tmp=$(mktemp)
   trap 'rm -f "$tmp"' EXIT
 
-  grep -Fvx "$PAM_TID_LINE" "$PAM_SUDO_FILE" > "$tmp"
+  grep -Fvx "$PAM_TID_LINE" "$PAM_SUDO_FILE" >"$tmp"
   write_root_owned "$tmp"
   echo "Disabled Touch ID for sudo."
 }
 
 case "${1:-status}" in
-  enable) enable ;;
-  disable) disable ;;
-  status) status ;;
-  -h|--help|help) usage ;;
-  *) usage >&2; exit 1 ;;
+enable) enable ;;
+disable) disable ;;
+status) status ;;
+-h | --help | help) usage ;;
+*)
+  usage >&2
+  exit 1
+  ;;
 esac
