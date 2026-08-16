@@ -72,7 +72,7 @@ _:
         if [ -z "''${OPENAI_API_KEY-}" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
           export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
           eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c '
-            for k in OPENAI_API_KEY NPM_TOKEN GH_PKG_TOKEN FLATT_GUARD_TOKEN ZAI_API_KEY; do
+            for k in OPENAI_API_KEY ORCA_KEY NPM_TOKEN GH_PKG_TOKEN FLATT_GUARD_TOKEN ZAI_API_KEY; do
               eval "v=\$$k"
               [ -n "$v" ] && printf "export %s=%q\n" "$k" "$v"
             done
