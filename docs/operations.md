@@ -57,7 +57,22 @@
 
 ## 3. オプトイン機能を有効化する
 
-### 3.1 cachix substituter を実効化 (Survivor #1)
+### 3.1 sudo で Touch ID を使う
+
+```bash
+~/dotfiles/scripts/sudo-touchid.sh status
+~/dotfiles/scripts/sudo-touchid.sh enable
+```
+
+無効化するとき:
+
+```bash
+~/dotfiles/scripts/sudo-touchid.sh disable
+```
+
+このスクリプトは `/etc/pam.d/sudo` を安全に更新し、`root:wheel` / `0644` を維持する。
+
+### 3.2 cachix substituter を実効化 (Survivor #1)
 
 1 度だけ:
 
