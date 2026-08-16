@@ -17,6 +17,7 @@ nix flake update ~/dotfiles                                     # bump inputs
 nix fmt ~/dotfiles                                              # format nix/yaml/md/sh
 nix flake check ~/dotfiles                                      # build + fmt gate
 brew bundle --file=~/dotfiles/Brewfile                          # residual GUI / kext / tap
+~/dotfiles/scripts/sudo-touchid.sh status|enable|disable        # manage Touch ID for sudo safely
 ```
 
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and re-activates daily at 09:00 when the working tree is clean.

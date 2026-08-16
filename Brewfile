@@ -7,7 +7,7 @@
 # 大半のCLI / GUI は modules/packages.nix (Nix flake) で hash-pinned 管理。
 # 残った理由:
 #   - nixpkgs に存在しない (cliclick, sisakulint, m1-terraform-provider-helper, ghir, block-goose, arc, sequel-ace, session-manager-plugin)
-#   - nixpkgs で broken (mole, calibre)
+#   - nixpkgs で broken (calibre)
 #   - kext 必要で macOS でしか動かない (macfuse, fuse-t, fuse-t-sshfs)
 #   - linux-only / nix darwin 未対応 (obs)
 #   - cask の brew 依存で ripgrep が解放できない (codex を nix 化したら ripgrep は削除可)
@@ -18,7 +18,6 @@ tap "kreuzwerker/taps"          # m1-terraform-provider-helper
 tap "macos-fuse-t/cask"         # fuse-t
 tap "sisaku-security/sisakulint"
 tap "suzuki-shunsuke/ghir"
-tap "tw93/tap"                  # mole
 
 # === Formulae (nixpkgs に存在しない / broken のみ) ===
 brew "checkov"                  # nixpkgs ≥ 2026-04-27 の python313-av で aarch64-darwin import check が SIGKILL
@@ -26,7 +25,6 @@ brew "cliclick"
 brew "ripgrep"                  # codex (cask) が依存
 brew "kreuzwerker/taps/m1-terraform-provider-helper"
 brew "sisaku-security/sisakulint/sisakulint"
-brew "tw93/tap/mole"
 
 # === Casks (darwin 限定 / kext / nixpkgs 不在) ===
 cask "arc"
