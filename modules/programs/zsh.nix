@@ -69,15 +69,16 @@ _:
 
       # child shells inherit; skip the dotenvx round-trip on re-entry
       ''
-        if [ -z "''${OPENAI_API_KEY-}" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
+        if [ -z "''${_DOTENVX_KEYS_LOADED-}" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
           export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
           eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c '
             for k in OPENAI_API_KEY ORCA_KEY NPM_TOKEN GH_PKG_TOKEN FLATT_GUARD_TOKEN ZAI_API_KEY; do
-              eval "v=\$$k"
+              eval "v=\$k"
               [ -n "$v" ] && printf "export %s=%q\n" "$k" "$v"
             done
           ')"
           [ -n "''${FLATT_GUARD_TOKEN-}" ] && export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
+          export _DOTENVX_KEYS_LOADED=1
         fi
       ''
 
