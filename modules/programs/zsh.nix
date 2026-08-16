@@ -14,10 +14,6 @@ _:
       fi
     '';
 
-    profileExtra = ''
-      export PATH="$HOME/.local/share/mise/shims:$PATH"
-    '';
-
     shellAliases = {
       claude = "claudex";
       c = "claudex";
@@ -60,11 +56,18 @@ _:
         export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
         mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
 
-        export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
-        export PATH=$PATH:$HOME/.spicetify
-        export PATH=$PATH:$HOME/.local/bin
-        export PATH=$PATH:$HOME/.pdtm/go/bin
         command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
+        typeset -U path PATH
+        path=(
+          "$HOME/.local/bin"
+          "$HOME/.local/share/mise/shims"
+          "$HOME/.pdtm/go/bin"
+          "$HOME/.spicetify"
+          /opt/homebrew/bin
+          /usr/local/bin
+          $path
+        )
+        export PATH
       ''
 
       # child shells inherit; skip the dotenvx round-trip on re-entry
