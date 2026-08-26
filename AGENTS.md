@@ -29,9 +29,9 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 | コマンド                                                        | 効果                                              |
 | --------------------------------------------------------------- | ------------------------------------------------- |
 | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | activation を実行 (本番適用)                      |
-| `nix flake update ~/dotfiles`                                   | inputs を bump (週次 GitHub Actions が PR を出す) |
 | `nix fmt`                                                       | treefmt で nix / md / yaml / sh / json を整形     |
 | `nix flake check`                                               | formatter + home-manager build + apps eval        |
+| `nix run .#update`                                              | 全 inputs を latest に bump + eval gate (`--activate` で適用) |
 | `nix run .#audit`                                               | Package Ledger の purpose 別集計と全エントリ表    |
 | `nix run .#lint`                                                | deadnix + shellcheck (CI でも実行)                |
 | `brew bundle --file=~/dotfiles/Brewfile`                        | nix で扱えない GUI / kext / cask の同期           |

@@ -207,6 +207,75 @@
             coreutils
           ]
         );
+      updateAppFor =
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system overlays;
+            config.allowUnfree = true;
+          };
+          script = pkgs.writeShellScriptBin "update" ''
+            set -eu
+            root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
+            cd "$root"
+
+            activate=0
+            for arg in "$@"; do
+              case "$arg" in
+                --activate) activate=1 ;;
+                *) echo "unknown argument: $arg" >&2; exit 1 ;;
+              esac
+            done
+
+            echo "==> bumping all inputs to latest"
+            ${pkgs.nix}/bin/nix flake update
+
+            echo
+            echo "==> changed inputs:"
+            ${pkgs.git}/bin/git diff --stat -- flake.lock || true
+
+            echo
+            echo "==> eval gate"
+            ${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.activationPackage.drvPath > /dev/null
+
+            echo
+            echo "==> pi: $(${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.pkgs.pi-coding-agent.version)"
+
+            if [ "$activate" -eq 0 ]; then
+              echo
+              echo "Done — flake.lock updated. Apply with: nix run .#update -- --activate"
+              exit 0
+            fi
+
+            echo
+            echo "==> activate: applying new generation"
+            ${pkgs.nix}/bin/nix run .#homeConfigurations.hikae.activationPackage
+
+            # legacy ~/.nix-profile の home-manager-path 要素は activation ごとに古くなる (aws.nix / TERMINFO が参照)
+            legacy_profile="$HOME/.nix-profile"
+            if [ -w "$(dirname "$legacy_profile")" ] || [ -w "$legacy_profile" ]; then
+              hm_profile="$HOME/.local/state/nix/profiles/home-manager"
+              if [ -e "$hm_profile" ]; then
+                gen=$(readlink "$hm_profile")
+                home_path_link="$gen/home-path"
+                if [ -L "$home_path_link" ]; then
+                  current_hp=$(readlink "$home_path_link")
+                  install_state=$(${pkgs.nix}/bin/nix profile list --profile "$legacy_profile" --json 2>/dev/null | ${pkgs.jq}/bin/jq -r '.elements["home-manager-path"].storePaths[0] // empty' 2>/dev/null | head -1)
+                  if [ -n "$install_state" ] && [ "$install_state" != "$current_hp" ]; then
+                    echo
+                    echo "==> refresh ~/.nix-profile home-manager-path"
+                    ${pkgs.nix}/bin/nix profile remove home-manager-path --profile "$legacy_profile" >/dev/null
+                    ${pkgs.nix}/bin/nix profile add "$current_hp" --profile "$legacy_profile" >/dev/null
+                  fi
+                fi
+              fi
+            fi
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/update";
+        };
     in
     {
       homeConfigurations = nixpkgs.lib.mapAttrs forHost hosts;
@@ -218,6 +287,7 @@
       apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
         audit = auditAppFor system;
         lint = lintAppFor system;
+        update = updateAppFor system;
       });
 
       checks.x86_64-linux = {
