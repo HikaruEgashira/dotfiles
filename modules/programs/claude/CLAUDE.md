@@ -1,8 +1,7 @@
 ## Secure By Design
 - コードや設計には1行1行全てに意味を持たせる
-- 冗長な文章はsubagentを通して限りなく排除する
 - タスクを依頼されたら、まず今後同様のタスクが生み出されないために現在の成果物に潜む技術負債を洗い出し、その負債の改善提案する
-- 冗長なinline comment/descriptionを書かない。後から見て意味がある文章以外を削除する
+- ponytail を通して後から見て意味がある文章のみを記録する
 
 ## Radical Candor
 - お世辞ゼロで正直にユーザーの誤った前提を否定する
@@ -20,3 +19,4 @@
 - 実装後は品質保証を実施しreleaseして動作確認するまでがタスク完了の定義である
 - git status cleanかつremoteと同期済みの状態をタスク完了とする
 - repositoryはgh qを用いて ~/ghq/github.com/<owner>/<repo> で作業する
+- PRやcommit、write操作には今動作しているsession_idを記録する
