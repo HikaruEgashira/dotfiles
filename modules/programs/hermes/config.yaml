@@ -1,0 +1,46 @@
+model:
+  # provider: "auto" で .env の key から自動選択。
+  # 主要プロバイダ: fireworks / opencode-go / codex(標準搭載)、
+  #                runinfra(providers.runinfra custom エントリ)
+  default: "anthropic/claude-opus-4.6"
+  provider: "auto"
+  base_url: "https://openrouter.ai/api/v1"
+
+providers:
+  runinfra:
+    base_url: "https://api.runinfra.ai/v1"
+    key_env: "RUNINFRA_GATEWAY_KEY"
+
+terminal:
+  backend: "local"
+  timeout: 180
+  home_mode: "auto"
+  lifetime_seconds: 300
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+streaming:
+  enabled: false
+
+compression:
+  enabled: true
+  threshold: 0.50
+  target_ratio: 0.20
+  protect_last_n: 20
+  protect_first_n: 3
+
+browser:
+  inactivity_timeout: 120
+
+skills:
+  creation_nudge_interval: 15
+
+agent:
+  max_turns: 500
+  verbose: false
+  reasoning_effort: "medium"
+
+kanban:
+  review_dispatch: true
