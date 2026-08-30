@@ -91,7 +91,8 @@ in
         co = "checkout";
         br = "branch";
         ci = "commit";
-        undo = "reset --soft HEAD~1";
+        undo = "!f() { test -z \"$(git status --porcelain --untracked-files=no)\" || { echo 'git undo: commit or stash local changes first' >&2; exit 1; }; subject=$(git log -1 --format=%s) && git reset --soft HEAD~1 && git stash push --staged -m \"undo: $subject\"; }; f";
+        redo = ''!f() { s=$(git stash list -1 --format=%gs) && case "$s" in *undo:*) git stash pop --index && git commit -m "''${s#*undo: }";; *) echo 'git redo: top stash was not created by git undo' >&2; exit 1;; esac; }; f'';
         sync = "!git switch \"$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's@^origin/@@')\" && git pull";
       };
     };
