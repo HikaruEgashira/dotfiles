@@ -91,7 +91,7 @@ in
         co = "checkout";
         br = "branch";
         ci = "commit";
-        undo = "reset --soft HEAD~1";
+        undo = "!f() { subject=$(git log -1 --format=%s) && git reset --soft HEAD~1 && git stash push --staged -m \"undo: $subject\"; }; f";
         sync = "!git switch \"$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's@^origin/@@')\" && git pull";
       };
     };
