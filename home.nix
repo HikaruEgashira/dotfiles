@@ -12,6 +12,8 @@
     ./modules/programs/ghostty.nix
     ./modules/programs/claude.nix
     ./modules/programs/codex.nix
+    ./modules/programs/opencode.nix
+    ./modules/programs/pi.nix
     ./modules/programs/cmux.nix
     ./modules/programs/herdr.nix
     ./modules/programs/hermes.nix

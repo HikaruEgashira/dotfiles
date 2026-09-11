@@ -10,4 +10,4 @@
 nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
 ```
 
-注意: Claude Code の `settings.json` は repo で管理しない。実効設定は live ファイル `~/.claude/settings.json`（Claude Code が起動毎に直接書き換える通常ファイル）が source of truth。settings 変更は live ファイルを直接編集する。repo の `modules/programs/claude.nix` が配置するのは CLAUDE.md / hooks / statusline 等のみ。Codex の global guidance は `modules/programs/codex.nix` が同じ内容を `~/.codex/AGENTS.md` に配置する。`AGENTS.md` 参照。
+注意: Claude Code の `settings.json` は repo で管理しない。実効設定は live ファイル `~/.claude/settings.json`（Claude Code が起動毎に直接書き換える通常ファイル）が source of truth。settings 変更は live ファイルを直接編集する。repo の `modules/programs/claude.nix` が配置するのは CLAUDE.md / hooks / statusline 等のみ。`modules/programs/claude/CLAUDE.md` は全エージェント共通の single source で、`codex.nix` が `~/.codex/AGENTS.md` に、`pi.nix` が `~/.pi/agent/APPEND_SYSTEM.md` に配置し、`opencode.nix` が ponytail と連結して `~/.config/opencode/AGENTS.md` に配置する。`AGENTS.md` 参照。
