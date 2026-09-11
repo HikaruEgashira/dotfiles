@@ -60,6 +60,7 @@ _:
         typeset -U path PATH
         path=(
           "$HOME/.local/bin"
+          "$HOME/.opencode/bin"
           "$HOME/.local/share/mise/shims"
           "$HOME/.pdtm/go/bin"
           "$HOME/.spicetify"
