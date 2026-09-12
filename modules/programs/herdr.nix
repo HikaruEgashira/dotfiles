@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 let
   sayHookRevision = "1a2e8625f019e6be59802a26f5eeec4a9ae3eee0";
-  sayHookVersion = "v0.4.2";
+  sayHookVersion = "v0.5.0";
   sayHookBinPath = ".local/share/mise/installs/github-hikaru-egashira-say-hook/${sayHookVersion}/say-hook";
   sayHookVoiceId = "fUjY9K2nAIwlALOwSiwc";
   sayHookVoiceName = "Yui - Japanese girl female Anime voice";
