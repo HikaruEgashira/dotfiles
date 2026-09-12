@@ -4,15 +4,15 @@
 
 ## 1. 日常運用
 
-| やりたいこと  | コマンド                                                        | 備考                                                                                                                                                                             |
-| ------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 設定を反映    | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | 冪等。`--accept-flake-config` は trusted-users 設定後は不要                                                                                                                      |
-| ledger 棚卸し | `nix run ~/dotfiles#audit`                                      | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                                  |
-| 静的検査      | `nix run ~/dotfiles#lint`                                       | statix + deadnix + shellcheck (CI と同一)                                                                                                                                        |
-| 整形          | `nix fmt ~/dotfiles`                                            | nixfmt + prettier + shfmt                                                                                                                                                        |
-| flake gate    | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                                 |
-| inputs 更新   | `nix run ~/dotfiles#update`                                     | 全 inputs を latest に bump + eval gate。`-- --activate` で適用 + レガシー `~/.nix-profile` の home-manager-path も refresh。週次 GH Actions の PR が守備範囲 (手動 commit 不要) |
-| 同期実績      | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after`                                                                                                                                    |
+| やりたいこと  | コマンド                                                        | 備考                                                                                                                 |
+| ------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 設定を反映    | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | 冪等。`--accept-flake-config` は trusted-users 設定後は不要                                                          |
+| ledger 棚卸し | `nix run ~/dotfiles#audit`                                      | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                      |
+| 静的検査      | `nix run ~/dotfiles#lint`                                       | statix + deadnix + shellcheck (CI と同一)                                                                            |
+| 整形          | `nix fmt ~/dotfiles`                                            | nixfmt + prettier + shfmt                                                                                            |
+| flake gate    | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                     |
+| inputs 更新   | `nix run ~/dotfiles#update`                                     | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions の PR が守備範囲 (手動 commit 不要) |
+| 同期実績      | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after`                                                                        |
 
 ## 2. 何かを追加する
 
@@ -40,13 +40,7 @@
 ### 2.4 新しい host (2 台目以降) を足す
 
 1. `hosts/<HOST>/default.nix` を新規作成。host 固有の override (proxy / 別 identity / screenlock) を書く。
-2. `flake.nix` の `hosts` attrset に 1 行追加:
-   ```nix
-   hosts = {
-     hikae = { system = "aarch64-darwin"; };
-     "<HOST>" = { system = "aarch64-darwin"; };
-   };
-   ```
+2. `flake.nix` の `mkConfig` を host / system 引数化し、`homeConfigurations` に `<HOST>` エントリを追加する。
 3. 新 host で `nix run github:HikaruEgashira/dotfiles#homeConfigurations.<HOST>.activationPackage`。
 
 ### 2.5 nixpkgs に無い GUI / kext を足す
@@ -70,7 +64,7 @@
 ~/dotfiles/scripts/sudo-touchid.sh disable
 ```
 
-このスクリプトは `/etc/pam.d/sudo` を安全に更新し、`root:wheel` / `0644` を維持する。
+このスクリプトは macOS Ventura+ の `/etc/pam.d/sudo_local` を更新する (OS 更新で上書きされない)。旧 `/etc/pam.d/sudo` 内の inline 行は enable / disable 時に掃除する。
 
 ### 3.2 cachix substituter を実効化 (Survivor #1)
 

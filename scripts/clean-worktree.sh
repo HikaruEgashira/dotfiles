@@ -17,7 +17,6 @@ DRY_RUN=0
 FORCE=0
 
 usage() {
-  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
   echo "usage: $(basename "$0") [-n|--dry-run] [--days N] [--force]"
   exit "${1:-0}"
 }
@@ -96,7 +95,7 @@ for repo in "$GHQ_ROOT"/*/*/; do
   # 実体が消えた登録を先に掃除
   run git -C "$repo" worktree prune
 
-  main_path=$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null | xargs dirname)
+  main_path=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null)
 
   while IFS= read -r line; do
     case "$line" in

@@ -18,7 +18,6 @@ let
       pkg,
       purpose,
       source ? "nixpkgs",
-      expires ? null,
       reason ? "",
     }:
     assert lib.assertMsg (validPurpose purpose)
@@ -28,7 +27,6 @@ let
         pkg
         purpose
         source
-        expires
         reason
         ;
       name = pkg.pname or pkg.name or "?";
@@ -43,7 +41,6 @@ let
         name
         purpose
         source
-        expires
         reason
         ;
     }) entries;
@@ -54,8 +51,6 @@ in
   inherit
     mkEntry
     pkgsOf
-    metaOf
     toJSON
-    purposes
     ;
 }

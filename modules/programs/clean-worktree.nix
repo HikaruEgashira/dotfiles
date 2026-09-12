@@ -14,8 +14,6 @@ let
         pkgs.gh
         pkgs.coreutils
         pkgs.gnugrep
-        pkgs.gnused
-        pkgs.findutils
       ]
     }:$PATH
     exec "$HOME/dotfiles/scripts/clean-worktree.sh"

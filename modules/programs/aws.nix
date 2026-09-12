@@ -2,7 +2,7 @@
 # `default` = Identity Center ReadOnlyAccess permission set (長期 AKIA なし)。
 # Privilege escalation: AWS_PROFILE=hikae-admin-sso (同一 SSO セッション内の切替)。
 # セッション確立 (90日毎): `aws sso login` (パスワード + passkey)。
-{ config, ... }:
+{ config, pkgs, ... }:
 {
   home.file.".aws/config".text = ''
     [sso-session hikae]
@@ -32,7 +32,7 @@
     # AWS CLI に解決を委譲する。
     [profile iac-aws-apply]
     region             = ap-northeast-1
-    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile iac-aws-apply-chain --format process
+    credential_process = ${pkgs.awscli2}/bin/aws configure export-credentials --profile iac-aws-apply-chain --format process
 
     # hikae-admin-sso → iac-aws-apply の role chain (CI と権限パリティ)。
     # chaining のためセッションは 1h だが、CLI が無プロンプトで再 assume する。
@@ -46,7 +46,7 @@
     # iac-aws-apply@lab の trust は OrganizationAccountAccessRole のみのため 2-hop chain。
     [profile seccamp-lab-apply]
     region             = ap-northeast-1
-    credential_process = ${config.home.homeDirectory}/.nix-profile/bin/aws configure export-credentials --profile seccamp-lab-apply-chain --format process
+    credential_process = ${pkgs.awscli2}/bin/aws configure export-credentials --profile seccamp-lab-apply-chain --format process
 
     [profile seccamp-lab-apply-chain]
     region            = ap-northeast-1

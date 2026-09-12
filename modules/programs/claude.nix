@@ -2,16 +2,8 @@
 let
   managed = [
     "CLAUDE.md"
-    "statusline-command.sh"
-    "hooks/bash_command_validator.py"
     "bin/claude-caffeinate.sh"
   ];
-
-  executableFiles = {
-    "statusline-command.sh" = true;
-    "hooks/bash_command_validator.py" = true;
-    "bin/claude-caffeinate.sh" = true;
-  };
 in
 {
   home.file = lib.listToAttrs (
@@ -19,7 +11,7 @@ in
       name = ".claude/${rel}";
       value = {
         source = ./claude/${rel};
-        executable = executableFiles.${rel} or false;
+        executable = lib.hasPrefix "bin/" rel;
       };
     }) managed
   );

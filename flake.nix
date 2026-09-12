@@ -12,7 +12,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-pi.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -31,7 +30,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-pi,
       home-manager,
       treefmt-nix,
       herdr,
@@ -39,18 +37,6 @@
     }:
     let
       overlays = [
-        (
-          final: _prev:
-          let
-            piPkgs = import nixpkgs-pi {
-              system = final.stdenv.hostPlatform.system;
-              config.allowUnfree = true;
-            };
-          in
-          {
-            pi-coding-agent = piPkgs.pi-coding-agent;
-          }
-        )
         (final: _prev: {
           herdr = herdr.packages.${final.stdenv.hostPlatform.system}.default;
         })
@@ -63,28 +49,16 @@
           config.allowUnfree = true;
         };
 
-      hosts = {
-        hikae = {
-          system = "aarch64-darwin";
-        };
-      };
-
-      forHost =
-        host:
-        { system, ... }:
+      mkConfig =
+        system:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          extraSpecialArgs = {
-            dotfilesPath = self;
-            inherit host;
-          };
+          extraSpecialArgs.dotfilesPath = self;
           modules = [
             ./home.nix
-            ./hosts/${host}
+            ./hosts/hikae
           ];
         };
-
-      forSystem = system: forHost "hikae" { inherit system; };
 
       treefmtFor =
         system:
@@ -114,10 +88,7 @@
       lintAppFor =
         system:
         let
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config.allowUnfree = true;
-          };
+          pkgs = pkgsFor system;
           script = pkgs.writeShellScriptBin "lint" ''
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")}"
@@ -149,10 +120,7 @@
       auditAppFor =
         system:
         let
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config.allowUnfree = true;
-          };
+          pkgs = pkgsFor system;
           ledger = import ./lib/ledger.nix { lib = pkgs.lib; };
           registry = import ./lib/package-registry.nix {
             inherit pkgs;
@@ -169,14 +137,11 @@
             echo "By purpose:"
             printf '%s' "$JSON" | ${pkgs.jq}/bin/jq -r 'group_by(.purpose) | .[] | "  \(.[0].purpose)\t\(length)"'
             echo ""
-            echo "Entries (purpose / source / expires / name / reason):"
+            echo "Entries (purpose / source / name / reason):"
             # awk: `column` is util-linux only, not in coreutils
             printf '%s' "$JSON" \
-              | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, (.expires // "-"), .name, .reason] | @tsv' \
-              | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-11s %-32s %s\n", $1, $2, $3, $4, $5 }'
-            echo ""
-            EXPIRED=$(printf '%s' "$JSON" | ${pkgs.jq}/bin/jq '[.[] | select(.expires != null)] | length')
-            echo "Entries with expires set: $EXPIRED"
+              | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, .name, .reason] | @tsv' \
+              | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-32s %s\n", $1, $2, $3, $4 }'
           '';
         in
         {
@@ -187,10 +152,7 @@
       melFor =
         system:
         let
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config.allowUnfree = true;
-          };
+          pkgs = pkgsFor system;
         in
         pkgs.linkFarmFromDrvs "hikae-mel-${system}" (
           with pkgs;
@@ -210,10 +172,7 @@
       updateAppFor =
         system:
         let
-          pkgs = import nixpkgs {
-            inherit system overlays;
-            config.allowUnfree = true;
-          };
+          pkgs = pkgsFor system;
           script = pkgs.writeShellScriptBin "update" ''
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
@@ -250,26 +209,6 @@
             echo
             echo "==> activate: applying new generation"
             ${pkgs.nix}/bin/nix run .#homeConfigurations.hikae.activationPackage
-
-            # legacy ~/.nix-profile の home-manager-path 要素は activation ごとに古くなる (aws.nix / TERMINFO が参照)
-            legacy_profile="$HOME/.nix-profile"
-            if [ -w "$(dirname "$legacy_profile")" ] || [ -w "$legacy_profile" ]; then
-              hm_profile="$HOME/.local/state/nix/profiles/home-manager"
-              if [ -e "$hm_profile" ]; then
-                gen=$(readlink "$hm_profile")
-                home_path_link="$gen/home-path"
-                if [ -L "$home_path_link" ]; then
-                  current_hp=$(readlink "$home_path_link")
-                  install_state=$(${pkgs.nix}/bin/nix profile list --profile "$legacy_profile" --json 2>/dev/null | ${pkgs.jq}/bin/jq -r '.elements["home-manager-path"].storePaths[0] // empty' 2>/dev/null | head -1)
-                  if [ -n "$install_state" ] && [ "$install_state" != "$current_hp" ]; then
-                    echo
-                    echo "==> refresh ~/.nix-profile home-manager-path"
-                    ${pkgs.nix}/bin/nix profile remove home-manager-path --profile "$legacy_profile" >/dev/null
-                    ${pkgs.nix}/bin/nix profile add "$current_hp" --profile "$legacy_profile" >/dev/null
-                  fi
-                fi
-              fi
-            fi
           '';
         in
         {
@@ -278,7 +217,7 @@
         };
     in
     {
-      homeConfigurations = nixpkgs.lib.mapAttrs forHost hosts;
+      homeConfigurations.hikae = mkConfig "aarch64-darwin";
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
@@ -291,7 +230,7 @@
       });
 
       checks.x86_64-linux = {
-        build = (forSystem "x86_64-linux").activationPackage;
+        build = (mkConfig "x86_64-linux").activationPackage;
         formatting = (treefmtFor "x86_64-linux").config.build.check self;
         mel = melFor "x86_64-linux";
       };

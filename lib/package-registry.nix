@@ -290,7 +290,6 @@ let
     (mkEntry {
       pkg = pkgs.pi-coding-agent;
       purpose = "edit";
-      source = "flake:nixpkgs-pi";
       reason = "Pi coding agent CLI";
     })
     (mkEntry {

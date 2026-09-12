@@ -147,37 +147,22 @@ in
   );
 
   # ~/.gitconfig overrides ~/.config/git/config; legacy keys must be unset
-  home.activation = {
-    purgeStaleGitUserIdentity = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      gitconfig="$HOME/.gitconfig"
-      [ -f "$gitconfig" ] || exit 0
-      for key in user.email user.name; do
-        if ${pkgs.git}/bin/git config --file "$gitconfig" --get "$key" >/dev/null 2>&1; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset "$key" || true
-        fi
-      done
-    '';
-
-    purgeStaleGhCredentialHelper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      gitconfig="$HOME/.gitconfig"
-      [ -f "$gitconfig" ] || exit 0
-      for host in github.com gist.github.com; do
-        key="credential.https://$host.helper"
-        if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
-        fi
-        if ! ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section "credential.https://$host" 2>/dev/null || true
-        fi
-      done
-    '';
-
-    purgeStaleGitExcludesFile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      gitconfig="$HOME/.gitconfig"
-      [ -f "$gitconfig" ] || exit 0
-      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all core.excludesfile >/dev/null 2>&1; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all core.excludesfile || true
+  home.activation.purgeStaleGitConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    gitconfig="$HOME/.gitconfig"
+    [ -f "$gitconfig" ] || exit 0
+    for key in user.email user.name core.excludesfile; do
+      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
       fi
-    '';
-  };
+    done
+    for host in github.com gist.github.com; do
+      key="credential.https://$host.helper"
+      if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
+      fi
+      if ! ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp "^credential\\.https://$host\\." >/dev/null 2>&1; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section "credential.https://$host" 2>/dev/null || true
+      fi
+    done
+  '';
 }
