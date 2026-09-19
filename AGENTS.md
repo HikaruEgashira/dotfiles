@@ -36,6 +36,8 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 | `nix run .#lint`                                                | deadnix + shellcheck (CI でも実行)                |
 | `brew bundle --file=~/dotfiles/Brewfile`                        | nix で扱えない GUI / kext / cask の同期           |
 
+設定変更は適用までがタスク完了の定義。commit / push に加えて activation を実行し、反映先ファイルを確認する。
+
 ## 規約 (Secure By Design)
 
 - **declarative 優先**: シェルから `git config --global` 等で永続変更しない。`programs.git.settings` に書く。`~/.gitconfig` の設定は HM-管理の `~/.config/git/config` を上書きするため、レガシーが残っていれば `home.activation` で `--unset-all` する。
