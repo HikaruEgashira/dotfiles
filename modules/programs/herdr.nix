@@ -64,7 +64,10 @@ in
           "$HOME/.config/herdr/plugins.json" >/dev/null 2>&1 \
           || PATH="${pkgs.git}/bin:$PATH" $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin install HikaruEgashira/say-hook/herdr --ref ${sayHookRevision} --yes
 
-        $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke install-claude-hook --plugin hikaruegashira.say-hook
+        # herdr は disabled プラグインの action を exit 1 で拒否するため、有効時のみ invoke する
+        ${pkgs.jq}/bin/jq -e '.[] | select(.plugin_id == "hikaruegashira.say-hook" and .enabled)' "$HOME/.config/herdr/plugins.json" >/dev/null 2>&1 \
+          && $DRY_RUN_CMD ${pkgs.herdr}/bin/herdr plugin action invoke install-claude-hook --plugin hikaruegashira.say-hook \
+          || true
       '';
     };
   };
