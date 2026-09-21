@@ -30,8 +30,14 @@ require("lazy").setup({
 })
 
 -- LazyVim's own options run during setup, so these must come after it.
-vim.opt.laststatus = 0 -- no statusline (lualine is disabled)
-vim.opt.showmode = true -- mode text in cmdline is the only mode signal left
+-- native statusline shows only the mode (lualine is disabled)
+_G.__modmode = function()
+  local labels = { n = "NORMAL", i = "INSERT", v = "VISUAL", V = "V-LINE", ["\22"] = "V-BLOCK", s = "SELECT", R = "REPLACE", c = "COMMAND", t = "TERMINAL", ["!"] = "SHELL" }
+  return labels[vim.fn.mode(1)] or vim.fn.mode(1):upper()
+end
+vim.opt.laststatus = 3 -- single global statusline
+vim.opt.statusline = "%{v:lua.__modmode()}"
+
 vim.opt.number = false
 vim.opt.relativenumber = false
 vim.opt.signcolumn = "no" -- hide git/diagnostic signs

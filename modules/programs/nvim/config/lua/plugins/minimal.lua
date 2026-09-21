@@ -18,6 +18,7 @@ return {
     picker = {
       sources = {
         explorer = {
+          auto_close = true, -- hide when focusing the editor window
           jump = { close = true },
           layout = {
             preset = "sidebar",
