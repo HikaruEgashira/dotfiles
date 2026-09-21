@@ -5,40 +5,51 @@
 # クリーンアップ: brew bundle cleanup --file=~/dotfiles/Brewfile --force
 #
 # 大半のCLI / GUI は modules/packages.nix (Nix flake) で hash-pinned 管理。
-# 残った理由:
-#   - nixpkgs に存在しない (cliclick, sisakulint, m1-terraform-provider-helper, ghir, block-goose, arc, sequel-ace, session-manager-plugin)
-#   - nixpkgs で broken (calibre)
-#   - kext 必要で macOS でしか動かない (macfuse, fuse-t, fuse-t-sshfs)
+# ここに残る理由:
+#   - nixpkgs に存在しない (sisakulint, higgsfield, pleno-dlp, oracle, graphite, tailscale-app, windows-app)
 #   - linux-only / nix darwin 未対応 (obs)
 #   - cask の brew 依存で ripgrep が解放できない (codex を nix 化したら ripgrep は削除可)
 #   - codex は brew cask=GUI / nixpkgs.codex=CLI で別物
+#   - 野良追従: brew に既 install だったものを管理下へ取り込んだ (nixpkgs 移行候補)
 
 # === Taps ===
-tap "kreuzwerker/taps"          # m1-terraform-provider-helper
-tap "macos-fuse-t/cask"         # fuse-t
-tap "sisaku-security/sisakulint"
-tap "suzuki-shunsuke/ghir"
+tap "higgsfield-ai/tap"         # higgsfield (nixpkgs 無し)
+tap "plenoai/tap"               # pleno-dlp (nixpkgs 無し)
+tap "sisaku-security/sisakulint" # sisakulint (nixpkgs 無し)
+tap "steipete/tap"              # oracle (nixpkgs 無し)
+tap "withgraphite/tap"          # graphite (nixpkgs 無し)
 
-# === Formulae (nixpkgs に存在しない / broken のみ) ===
-brew "checkov"                  # nixpkgs ≥ 2026-04-27 の python313-av で aarch64-darwin import check が SIGKILL
-brew "cliclick"
+# === Formulae ===
+# 野良追従: brew に既 install だったものを管理下へ (全て nixpkgs 移行候補)
+brew "actionlint"
+brew "arm-none-eabi-gcc"
+brew "cargo-nextest"
+brew "cmake"
+brew "git-lfs"
+brew "googleworkspace-cli"
+brew "graphviz"
+brew "higgsfield-ai/tap/higgsfield"
+brew "hyperfine"
+brew "icarus-verilog"
+brew "openvpn"
+brew "plenoai/tap/pleno-dlp"
+brew "pnpm"
+brew "poppler"
+brew "powershell"
 brew "ripgrep"                  # codex (cask) が依存
-brew "kreuzwerker/taps/m1-terraform-provider-helper"
+brew "silicon"
 brew "sisaku-security/sisakulint/sisakulint"
+brew "steipete/tap/oracle"
+brew "tesseract"
+brew "withgraphite/tap/graphite"
+brew "zig@0.15"
 
-# === Casks (darwin 限定 / kext / nixpkgs 不在) ===
-cask "arc"
-cask "block-goose"
-cask "calibre"                  # nixpkgs broken
+# === Casks (darwin 限定 / nixpkgs 不在) ===
 cask "codex"                    # GUI: nix の codex は CLI で別物
 cask "ghostty"
-cask "macos-fuse-t/cask/fuse-t"
-cask "macos-fuse-t/cask/fuse-t-sshfs"
-cask "suzuki-shunsuke/ghir/ghir"
-cask "macfuse"
 cask "obs"                      # nix obs-studio は linux-only
-cask "sequel-ace"
-cask "session-manager-plugin"
+cask "tailscale-app"            # nixpkgs 無し (GUI)
+cask "windows-app"              # nixpkgs 無し (GUI)
 
 # === Mac App Store ===
 mas "Xcode", id: 497799835
