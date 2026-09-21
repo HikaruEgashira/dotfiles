@@ -42,3 +42,26 @@ vim.opt.number = false
 vim.opt.relativenumber = false
 vim.opt.signcolumn = "no" -- hide git/diagnostic signs
 vim.opt.guicursor = "a:ver25" -- fixed thin cursor in every mode
+
+-- macOS-style shortcuts: Ghostty sends cmd+z/c/v as raw ctrl bytes
+vim.keymap.set({ "n" }, "<C-z>", "u", { desc = "Undo" })
+vim.keymap.set({ "i" }, "<C-z>", "<C-o>u", { desc = "Undo" })
+vim.keymap.set({ "x" }, "<C-z>", "<Esc>u", { desc = "Undo" })
+vim.keymap.set({ "x" }, "<C-c>", "y", { desc = "Copy selection" })
+vim.keymap.set({ "n" }, "<C-v>", '"+p', { desc = "Paste" })
+vim.keymap.set({ "i" }, "<C-v>", "<C-r>+", { desc = "Paste" })
+vim.keymap.set({ "x" }, "<C-v>", '"+p', { desc = "Paste" }) -- block visual stays on <C-q>
+
+-- system clipboard: LazyVim resets it on VeryLazy, so restore after that
+vim.api.nvim_create_autocmd("User", {
+  pattern = "VeryLazy",
+  callback = function()
+    vim.g.clipboard = {
+      name = "macOS clipboard",
+      copy = { ["+"] = "pbcopy", ["*"] = "pbcopy" },
+      paste = { ["+"] = "pbpaste", ["*"] = "pbpaste" },
+      cache_enabled = true,
+    }
+    vim.opt.clipboard = "unnamedplus"
+  end,
+})

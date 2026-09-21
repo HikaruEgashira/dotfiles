@@ -20,6 +20,11 @@
 
       keybind = shift+enter=text:\n
       keybind = cmd+shift+d=text:claude\n
+
+      # macOS-style shortcuts: forward cmd+key as raw bytes; nvim maps them per mode
+      keybind = cmd+z=send_byte:0x1a
+      keybind = cmd+c=send_byte:0x03
+      keybind = cmd+v=send_byte:0x16
     '';
     force = true;
   };

@@ -8,3 +8,4 @@
 # assignment と誤検出する。flake.nix の audit/lint script で多用される
 # パターンなので一律無効化。
 disabled = ["manual_inherit_from"]
+
