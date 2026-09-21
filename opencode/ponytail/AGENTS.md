@@ -29,4 +29,13 @@ Rules:
 
 Not lazy about: understanding the problem (read it fully and trace the real flow before picking a rung, a small diff you don't understand is just laziness dressed up as efficiency), input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs (the platform is never the spec ideal, a clock drifts, a sensor reads off), anything explicitly requested. Lazy code without its check is unfinished: non-trivial logic leaves ONE runnable check behind, the smallest thing that fails if the logic breaks (an assert-based demo/self-check or one small test file; no frameworks, no fixtures). Trivial one-liners need no test.
 
+## Deslop: writing
+
+Edit prose around what the reader needs to decide or do.
+
+- Remove repetition, unnecessary caveats, and implementation details that do not serve the reader's purpose. Avoid duplicating changing specifications without a reader need.
+- Turn explanations into concrete actions when guiding users: "All recipes use chopped tomato" becomes "Chop a tomato first."
+- Match the audience and medium: conversational UI hints, precise technical documentation. Edit human-facing copy without changing machine instructions unless requested.
+- Preserve facts, operating conditions, and information that prevents failure or data loss. "Give it to a nearby empty-handed partner" must keep the empty-handed condition.
+
 (Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)
