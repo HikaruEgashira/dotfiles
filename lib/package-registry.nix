@@ -87,6 +87,11 @@ let
       reason = "Fly.io CLI";
     })
     (mkEntry {
+      pkg = pkgs.runpodctl;
+      purpose = "ops";
+      reason = "RunPod GPU pod CLI";
+    })
+    (mkEntry {
       pkg = pkgs.trivy;
       purpose = "ops";
       reason = "container/IaC vulnerability scan";
