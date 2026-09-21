@@ -31,13 +31,7 @@
 2. `home.nix` の `imports` にパスを追加。
 3. `nix flake check --accept-flake-config` で eval 通過を確認。
 
-### 2.3 新しい VS Code 拡張を足す
-
-1. `modules/programs/vscode.nix` の `extensionIds` に `"<publisher>.<name>"` を追加 (名前順)。
-2. `nix flake check` で eval 通過を確認。`throw "vscode extension not found ..."` が出たら overlay にその拡張がない (新規すぎる / removed list) — `nix-vscode-extensions` の `removed.nix` を確認して anycode 等で代替するか Brewfile 一時退避。
-3. `Brewfile` への `vscode "..."` 追加は CI で fail するので避ける。
-
-### 2.4 新しい host (2 台目以降) を足す
+### 2.3 新しい host (2 台目以降) を足す
 
 1. `hosts/<HOST>/default.nix` を新規作成。host 固有の override (proxy / 別 identity / screenlock) を書く。
 2. `flake.nix` の `mkConfig` を host / system 引数化し、`homeConfigurations` に `<HOST>` エントリを追加する。
@@ -87,20 +81,18 @@ nix show-config | grep '^trusted-users'   # → root @admin
 
 ### 4.1 activation が失敗した
 
-1. エラーメッセージで「extension <X> has been removed on aarch64-darwin」→ `nix-vscode-extensions` の removed list 該当。`vscode.nix` から削除して再 activation。
-2. eval で `infinite recursion` → 直近の module 編集を疑う。`git diff HEAD~1` で範囲を絞る。
-3. 完全に動かなくなった → `home-manager generations` で旧 gen を確認し、`/nix/store/<HASH>-home-manager-generation/activate` を直接実行で巻き戻し。
+1. eval で `infinite recursion` → 直近の module 編集を疑う。`git diff HEAD~1` で範囲を絞る。
+2. 完全に動かなくなった → `home-manager generations` で旧 gen を確認し、`/nix/store/<HASH>-home-manager-generation/activate` を直接実行で巻き戻し。
 
 ### 4.2 CI が落ちた
 
-| 失敗ステップ                          | 主因 / 対応                                                                                      |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `Run formatter check`                 | `nix fmt` を走らせて再 commit                                                                    |
-| `Lint Brewfile (no vscode entries)`   | `Brewfile` から `vscode "..."` 行を撤去し `modules/programs/vscode.nix` の `extensionIds` に追加 |
-| `Run linters (deadnix + shellcheck)`  | `nix run .#lint` をローカルで叩いてエラーを再現、修正                                            |
-| `Evaluate home-manager configuration` | platform-mismatch (darwin-only pkg を `cross` に入れた等)。`darwinOnly` に移す                   |
-| `Eval determinism gate`               | `builtins.currentTime` / IFD など impurity が混入した。当該 commit を切り戻し                    |
-| `Build MEL`                           | MEL essential pkg のいずれかが破損。nixpkgs を一時 pin or 該当 pkg を MEL から外す ADR           |
+| 失敗ステップ                          | 主因 / 対応                                                                            |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Run formatter check`                 | `nix fmt` を走らせて再 commit                                                          |
+| `Run linters (deadnix + shellcheck)`  | `nix run .#lint` をローカルで叩いてエラーを再現、修正                                  |
+| `Evaluate home-manager configuration` | platform-mismatch (darwin-only pkg を `cross` に入れた等)。`darwinOnly` に移す         |
+| `Eval determinism gate`               | `builtins.currentTime` / IFD など impurity が混入した。当該 commit を切り戻し          |
+| `Build MEL`                           | MEL essential pkg のいずれかが破損。nixpkgs を一時 pin or 該当 pkg を MEL から外す ADR |
 
 ### 4.3 `git push` が `Device not configured` で fail する
 
@@ -168,6 +160,6 @@ sudo launchctl kickstart -k system/systems.determinate.nix-daemon
 gh repo clone HikaruEgashira/dotfiles ~/dotfiles
 nix run ~/dotfiles#homeConfigurations.hikae.activationPackage --accept-flake-config
 
-# 4) brew 部分 (kext / GUI / vscode 以外の cask)
+# 4) brew 部分 (kext / GUI / cask)
 brew bundle --file=~/dotfiles/Brewfile
 ```

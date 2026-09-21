@@ -18,7 +18,7 @@ let
       pkg,
       purpose,
       source ? "nixpkgs",
-      reason ? "",
+      reason,
     }:
     assert lib.assertMsg (validPurpose purpose)
       "ledger.mkEntry: unknown purpose '${purpose}' (allowed: ${lib.concatStringsSep ", " purposes})";

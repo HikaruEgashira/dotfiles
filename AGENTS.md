@@ -85,7 +85,6 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 
 - `flake.lock` を手動で書き換える (週次 PR の責務)
 - `~/.gitconfig` を直接編集 (`programs.git.settings` 経由)
-- `Brewfile` に新規 `vscode "..."` 行を足す (`programs.vscode.extensions` への移行が方針)
 - 本番秘密を `home.file` でハードコードする (declarative ≠ plaintext OK ではない)
 - CI を skip するための `--no-warn-dirty` の濫用 (`dotfiles-sync` 内では意図的に使われている例外)
 

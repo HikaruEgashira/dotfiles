@@ -354,6 +354,63 @@ let
       purpose = "build";
       reason = "GNU triangulated surface lib";
     })
+
+    # brew 野良移行 (output 全部が cache.nixos.org 200 確認済み)
+    (mkEntry {
+      pkg = pkgs.actionlint;
+      purpose = "build";
+      reason = "GitHub Actions workflow lint";
+    })
+    (mkEntry {
+      pkg = pkgs.cargo-nextest;
+      purpose = "build";
+      reason = "Rust test runner";
+    })
+    (mkEntry {
+      pkg = pkgs.graphviz;
+      purpose = "util";
+      reason = "graph rendering";
+    })
+    (mkEntry {
+      pkg = pkgs.hyperfine;
+      purpose = "util";
+      reason = "command benchmark";
+    })
+    (mkEntry {
+      pkg = pkgs.openvpn;
+      purpose = "ops";
+      reason = "VPN client";
+    })
+    (mkEntry {
+      pkg = pkgs.pnpm;
+      purpose = "build";
+      reason = "JS package manager";
+    })
+    (mkEntry {
+      pkg = pkgs.poppler-utils;
+      purpose = "util";
+      reason = "PDF CLI tools (pdftoppm etc.)";
+    })
+    (mkEntry {
+      pkg = pkgs.powershell;
+      purpose = "util";
+      reason = "Windows shell";
+    })
+    (mkEntry {
+      pkg = pkgs.silicon;
+      purpose = "util";
+      reason = "code screenshot renderer";
+    })
+    (mkEntry {
+      pkg = pkgs.tesseract;
+      purpose = "util";
+      reason = "OCR engine";
+    })
+    (mkEntry {
+      pkg = pkgs.zig_0_15;
+      purpose = "build";
+      reason = "zig compiler (0.15 pin: projects not yet on 0.16)";
+    })
   ];
 
   # CI evaluates on x86_64-linux; entries here must not leak into `cross`
