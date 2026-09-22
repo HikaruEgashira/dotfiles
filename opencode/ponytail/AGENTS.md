@@ -38,4 +38,12 @@ Edit prose around what the reader needs to decide or do.
 - Match the audience and medium: conversational UI hints, precise technical documentation. Edit human-facing copy without changing machine instructions unless requested.
 - Preserve facts, operating conditions, and information that prevents failure or data loss. "Give it to a nearby empty-handed partner" must keep the empty-handed condition.
 
+## Deslop: docs & audit
+
+Docs carry only the current snapshot. Delete outdated descriptions outright — superseded architecture notes, fulfilled migration write-ups, past measurement reports. Git holds the history; a stale doc is a second source of truth, and second sources rot.
+
+Danger-signal grammar is the negated restatement: "XではあるがYではない" and ません-form flourishes (「キャッシュしません」「受け付けません」). The negation half usually just restates the positive half — delete it, or rewrite positively with のみ／専用／限定／対象外 (「保存するのはXのみ」「volumeはモデルキャッシュ専用」). A negation that states a real security or ops boundary (reject public keys, keep credentials out of output) survives as a positive statement, never deleted.
+
+Tautology hunt, on every edit: each fact lives exactly once. A clause or sentence that only restates what was just said — its own previous clause, or another section's line — gets merged or deleted. Watch the classic pairs: complements (「Xのみ保存」+「Yは保存対象外」), enforcement echoed as transmission (「渡すのはAのみ」+「Aを必須とし」), timeline restatements (「requestがあるときだけping」+「推論が止まればheartbeatも止まり」).
+
 (Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)
