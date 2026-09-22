@@ -20,6 +20,7 @@
 
     ./modules/programs/dotfiles-sync.nix
     ./modules/programs/clean-worktree.nix
+    ./modules/programs/security.nix
   ];
 
   programs.home-manager.enable = true;

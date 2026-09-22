@@ -45,6 +45,29 @@
 
 ## 3. オプトイン機能を有効化する
 
+### 3.0 Firewall posture (module: `modules/programs/security.nix`)
+
+activation が毎回適用できるように、一度だけ passwordless sudo を許可する (ALF バイナリ限定):
+
+```bash
+sudo sh -c 'echo "hikae ALL=NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw" > /etc/sudoers.d/firewall && chmod 440 /etc/sudoers.d/firewall'
+```
+
+activation で適用される内容: global on + stealth on + blockall on (受信全拒否 — 忘れた dev server の `*:PORT` bind が LAN から届かなくなる。AirPlay / Handoff / SSH 受信は止まる)。
+
+activation を待たず今すぐ適用する場合:
+
+```bash
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on --setstealthmode on --setblockall on
+```
+
+確認と元に戻す場合:
+
+```bash
+/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate --getstealthmode --getblockall
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off   # 元に戻す時
+```
+
 ### 3.1 sudo で Touch ID を使う
 
 ```bash
