@@ -1,4 +1,6 @@
 return {
+  { "LazyVim/LazyVim", opts = { colorscheme = "catppuccin" } },
+
   -- chrome: off
   { "akinsho/bufferline.nvim", enabled = false },
   { "nvim-lualine/lualine.nvim", enabled = false },
