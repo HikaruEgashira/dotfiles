@@ -1,7 +1,7 @@
 {
   home.file.".config/ghostty/config" = {
     text = ''
-      theme = TokyoNight
+      theme = Catppuccin Mocha
 
       maximize = true
       macos-titlebar-style = tabs
