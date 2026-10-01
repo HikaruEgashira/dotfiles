@@ -318,11 +318,8 @@ let
       purpose = "comm";
       reason = "community chat";
     })
-    (mkEntry {
-      pkg = pkgs.google-chrome;
-      purpose = "comm";
-      reason = "browser fallback";
-    })
+    # chrome: removed from ledger -- moved to /Applications (official DMG, auto-updating)
+    # context: 2026-10-01 crash incident (stale nix build 147 hijacked LaunchServices)
 
     (mkEntry {
       pkg = pkgs.ffmpeg;
