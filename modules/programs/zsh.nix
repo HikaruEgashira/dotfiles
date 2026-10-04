@@ -74,19 +74,19 @@ _:
       # child shells inherit; skip the dotenvx round-trip on re-entry
       ''
         # _DOTENVX_KEYS_LOADED は「どの世代のキー一覧を読み込み済みか」を表す番号。
-        # 下の for にキーを足したら、この番号も上げること。上げ忘れると、古い番号を
+        # 下の for のキー一覧を変えたら、この番号も上げること。上げ忘れると、古い番号を
         # 持った親プロセス (herdr / tmux 等) 配下のシェルが古い環境を永久に引き継ぎ、
         # 新しいキーが永遠に生えてこない。
-        if [ "''${_DOTENVX_KEYS_LOADED-}" != "2" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
+        if [ "''${_DOTENVX_KEYS_LOADED-}" != "3" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
           export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
           eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c '
-            for k in OPENAI_API_KEY ORCA_KEY NPM_TOKEN GH_PKG_TOKEN FLATT_GUARD_TOKEN TYPESAFE_API_KEY; do
+            for k in ORCA_KEY FLATT_GUARD_TOKEN TYPESAFE_API_KEY; do
               v=$(printenv "$k")
               [ -n "$v" ] && printf "export %s=%q\n" "$k" "$v"
             done
           ')"
           [ -n "''${FLATT_GUARD_TOKEN-}" ] && export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
-          export _DOTENVX_KEYS_LOADED=2
+          export _DOTENVX_KEYS_LOADED=3
         fi
       ''
 
