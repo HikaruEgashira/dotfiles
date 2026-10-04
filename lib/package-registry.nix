@@ -276,11 +276,6 @@ let
       reason = "HTTPS interception debug";
     })
     (mkEntry {
-      pkg = pkgs.rtk;
-      purpose = "play";
-      reason = "LLM token reduction proxy";
-    })
-    (mkEntry {
       pkg = pkgs.vhs;
       purpose = "play";
       reason = "terminal recording";
