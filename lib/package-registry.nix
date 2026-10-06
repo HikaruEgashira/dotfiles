@@ -8,6 +8,24 @@ let
   inherit (ledger) mkEntry;
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
 
+  omp =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation rec {
+        pname = "oh-my-pi";
+        version = "18.6.1";
+        src = pkgs.fetchurl {
+          url = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-darwin-arm64";
+          hash = "sha256-tcpc0XuMwJ7ONoRZiP1AH30QAuGrW5VgDg8yiSQkbVI=";
+        };
+        dontUnpack = true;
+        dontFixup = true;
+        installPhase = ''
+          install -Dm755 "$src" "$out/bin/omp"
+        '';
+      }
+    else
+      null;
+
   cross = [
     (mkEntry {
       pkg = pkgs.cachix;
@@ -438,8 +456,17 @@ let
       reason = "launcher / extension host";
     })
   ];
+
+  darwinArmOnly = lib.optionals (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") [
+    (mkEntry {
+      pkg = omp;
+      purpose = "edit";
+      source = "github:can1357/oh-my-pi";
+      reason = "Oh My Pi coding agent CLI";
+    })
+  ];
 in
 {
-  inherit cross darwinOnly;
-  all = cross ++ darwinOnly;
+  inherit cross darwinOnly darwinArmOnly;
+  all = cross ++ darwinOnly ++ darwinArmOnly;
 }
