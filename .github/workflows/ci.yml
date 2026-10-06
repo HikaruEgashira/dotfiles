@@ -31,6 +31,13 @@ jobs:
       - name: Run linters (deadnix + shellcheck)
         timeout-minutes: 5
         run: nix run --accept-flake-config '.#lint'
+      - name: Run activation tests
+        timeout-minutes: 5
+        run: |
+          for t in tests/*.sh; do
+            echo "==> $t"
+            bash "$t"
+          done
       - name: Build MEL (Minimum Equipment List)
         # MEL は essential 階層: 失敗したら全 PR をブロックする。
         # 通常 packages の breakage は eval gate のみ (warning 扱い)。
