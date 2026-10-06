@@ -14,6 +14,8 @@
 | inputs 更新   | `nix run ~/dotfiles#update`                                     | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions の PR が守備範囲 (手動 commit 不要) |
 | 同期実績      | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after`                                                                        |
 
+clean な `main` は `origin/main` と同じでも activation を毎回実行し、失敗時は次回に再試行する。
+
 ## 2. 何かを追加する
 
 ### 2.1 新しい `home.packages` を足す

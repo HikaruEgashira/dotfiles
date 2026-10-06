@@ -54,14 +54,11 @@ let
     fi
 
     git fetch --quiet origin main
-    if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
-      echo "skip: already up to date"
-      outcome="skip-up-to-date"
-      exit 0
+    if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+      git pull --ff-only --quiet origin main
+      head_after=$(git rev-parse HEAD)
     fi
 
-    git pull --ff-only --quiet origin main
-    head_after=$(git rev-parse HEAD)
     nix run ".#homeConfigurations.hikae.activationPackage" --no-warn-dirty
     outcome="activated"
   '';
