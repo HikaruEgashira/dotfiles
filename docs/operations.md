@@ -47,26 +47,45 @@
 
 ### 3.0 Firewall posture (module: `modules/programs/security.nix`)
 
-activation が毎回適用できるように、一度だけ passwordless sudo を許可する (ALF バイナリ限定):
+activation が毎回適用できるように、各実機で一度だけ3つの setter に引数まで限定した passwordless sudo を許可する。既存の広い規則があれば追記せず、下記3行だけに置き換える:
 
 ```bash
-sudo sh -c 'echo "hikae ALL=NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw" > /etc/sudoers.d/firewall && chmod 440 /etc/sudoers.d/firewall'
+sudo visudo -f /etc/sudoers.d/firewall
 ```
 
-activation で適用される内容: global on + stealth on + blockall on (受信全拒否 — 忘れた dev server の `*:PORT` bind が LAN から届かなくなる。AirPlay / Handoff / SSH 受信は止まる)。
+ファイルの内容:
+
+```sudoers
+hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
+```
+
+activation で適用される内容: global on + stealth on + blockall on。blockall は ALF の非必須な受信を遮断するため、忘れた dev server の `*:PORT` bind は LAN から通常到達できなくなる。ALF だけで全受信を保証せず、必要な受信サービスにも影響する。
 
 activation を待たず今すぐ適用する場合:
 
 ```bash
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on --setstealthmode on --setblockall on
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
 ```
 
-確認と元に戻す場合:
+確認:
 
 ```bash
 /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate --getstealthmode --getblockall
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off   # 元に戻す時
 ```
+
+global は `(State = 1)` または `(State = 2)`、stealth は `on`、blockall は `blocking all non-essential incoming connections` を確認する。activation も同じ実効値を検証し、setter失敗や不一致を終了コード1にする。
+
+一時的に blockall だけを解除する場合（次回 activation で on に戻る）:
+
+```bash
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off
+```
+
+完全に撤回する場合は、module の変更を git で戻し、記録した変更前の3値へ復元してから、不要になった `/etc/sudoers.d/firewall` の3規則を削除する。
 
 ### 3.1 sudo で Touch ID を使う
 
