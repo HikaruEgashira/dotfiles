@@ -321,18 +321,8 @@ let
       reason = "Hugging Face Hub CLI (hf / huggingface-cli)";
     })
 
-    (mkEntry {
-      pkg = pkgs.slack;
-      purpose = "comm";
-      reason = "team chat";
-    })
-    (mkEntry {
-      pkg = pkgs.discord;
-      purpose = "comm";
-      reason = "community chat";
-    })
-    # chrome: removed from ledger -- moved to /Applications (official DMG, auto-updating)
-    # context: 2026-10-01 crash incident (stale nix build 147 hijacked LaunchServices)
+    # GUI apps are Brewfile casks: nix pins stale builds that hijack LaunchServices,
+    # and each flake.lock bump re-downloads hundreds of MiB (see docs/operations.md).
 
     (mkEntry {
       pkg = pkgs.ffmpeg;
@@ -449,11 +439,6 @@ let
       pkg = pkgs.iproute2mac;
       purpose = "ops";
       reason = "ip(8) on Darwin";
-    })
-    (mkEntry {
-      pkg = pkgs.raycast;
-      purpose = "edit";
-      reason = "launcher / extension host";
     })
   ];
 

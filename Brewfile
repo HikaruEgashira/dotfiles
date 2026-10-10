@@ -4,7 +4,7 @@
 # 適用: brew bundle --file=~/dotfiles/Brewfile
 # クリーンアップ: brew bundle cleanup --file=~/dotfiles/Brewfile --force
 #
-# 大半のCLI / GUI は modules/packages.nix (Nix flake) で hash-pinned 管理。
+# CLI は modules/packages.nix (Nix flake) で hash-pinned 管理。GUI (cask) はここ。
 # ここに残る理由:
 #   - nixpkgs に存在しない (sisakulint, arm-none-eabi-gcc, googleworkspace-cli, icarus-verilog, higgsfield, pleno-dlp, oracle, graphite, tailscale-app, windows-app)
 #   - linux-only / nix darwin 未対応 (obs)
@@ -30,7 +30,10 @@ brew "sisaku-security/sisakulint/sisakulint"
 brew "steipete/tap/oracle"
 brew "withgraphite/tap/graphite"
 
-# === Casks (darwin 限定 / nixpkgs 不在) ===
+# === Casks (GUI / darwin 限定 / nixpkgs 不在) ===
+cask "discord"                  # GUI: nix は版を pin し LaunchServices を奪う (chrome と同事象)
+cask "slack"                    # GUI: 同上。cask は auto-update で全版を毎回 DL しない
+cask "raycast"                  # GUI: 同上
 cask "codex"                    # GUI: nix の codex は CLI で別物
 cask "ghostty"
 cask "obs"                      # nix obs-studio は linux-only
