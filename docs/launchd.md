@@ -19,7 +19,6 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.dotfiles-sync`     | home-manager (`modules/programs/dotfiles-sync.nix`)  | 毎日 09:00   | main 追従 + 再 activation     |
 | `dev.egahika.clean-worktree`    | home-manager (`modules/programs/clean-worktree.nix`) | 毎週月 09:30 | merged worktree 掃除          |
 | `com.claude.caffeinate`         | home-manager (`modules/programs/claude.nix`)         | 常駐         | claude 実行中だけ sleep 抑止  |
-| `com.github.facebook.watchman`  | home-manager (`modules/programs/watchman.nix`)       | 常駐         | Metro/Expo 用 file watcher    |
 | `com.atlassian.twg.upkeep`      | **twg 自己管理** (`twg upkeep enable`)               | 12 分間隔    | OAuth refresh + upgrade check |
 | `com.opencodex.proxy`           | **opencodex 自己管理** (`ocx service`)               | 常駐         | Codex provider proxy          |
 | `com.google.GoogleUpdater.wake` | vendor (GoogleUpdater.app)                           | 1 時間間隔   | Chrome/Google app 更新        |
@@ -50,13 +49,14 @@ nix installer が所有するため手動編集しない。Cloudflare WARP / clo
 
 残骸・重複。`scripts/launchd-cleanup.sh` を通常ユーザで実行して削除する（内部で必要な箇所だけ `sudo` を呼ぶ。冪等）。
 
-| 対象                                                                              | 理由                                                                   | 状態                      |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------- |
-| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空    | スクリプト実行待ち (root) |
-| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                        | スクリプト実行待ち (root) |
-| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる | スクリプト実行待ち (root) |
-| `net.tunnelblick.tunnelblick{,.launcher}` + cask                                  | VPN プロファイルが空。`openvpn` は nix 管理                            | スクリプト実行待ち (root) |
-| brew `watchman` / `cloudflared`                                                   | nix 重複                                                               | 削除済み                  |
+| 対象                                                                              | 理由                                                                      | 状態                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------- |
+| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | スクリプト実行待ち (root) |
+| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | スクリプト実行待ち (root) |
+| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | スクリプト実行待ち (root) |
+| `net.tunnelblick.tunnelblick{,.launcher}` + cask                                  | VPN プロファイルが空。`openvpn` は nix 管理                               | スクリプト実行待ち (root) |
+| brew `watchman` / `cloudflared`                                                   | nix 重複                                                                  | 削除済み                  |
+| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                  |
 
 ## 検知
 

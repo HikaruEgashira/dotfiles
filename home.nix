@@ -20,7 +20,6 @@
 
     ./modules/programs/dotfiles-sync.nix
     ./modules/programs/clean-worktree.nix
-    ./modules/programs/watchman.nix
     ./modules/programs/security.nix
   ];
 

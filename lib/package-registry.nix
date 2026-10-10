@@ -440,11 +440,6 @@ let
       purpose = "ops";
       reason = "ip(8) on Darwin";
     })
-    (mkEntry {
-      pkg = pkgs.watchman;
-      purpose = "build";
-      reason = "file watcher for Metro/Expo (pleno-live)";
-    })
   ];
 
   darwinArmOnly = lib.optionals (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") [

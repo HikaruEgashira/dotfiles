@@ -164,7 +164,6 @@
             dev.egahika.dotfiles-sync
             dev.egahika.clean-worktree
             com.claude.caffeinate
-            com.github.facebook.watchman
             com.atlassian.twg.upkeep
             com.opencodex.proxy
             com.google.GoogleUpdater.wake
