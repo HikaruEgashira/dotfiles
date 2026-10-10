@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 (import ../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" [
   {

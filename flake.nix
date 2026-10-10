@@ -148,6 +148,64 @@
           type = "app";
           program = "${script}/bin/audit";
         };
+      launchdAuditAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          script = pkgs.writeShellScriptBin "launchd-audit" ''
+            set -eu
+            if [ "$(${pkgs.coreutils}/bin/uname -s)" != "Darwin" ]; then
+              echo "launchd-audit: macOS only; skipping"
+              exit 0
+            fi
+
+            # Intended non-Apple agents (see docs/launchd.md). Everything else is drift.
+            known='
+            dev.egahika.dotfiles-sync
+            dev.egahika.clean-worktree
+            com.claude.caffeinate
+            com.github.facebook.watchman
+            com.atlassian.twg.upkeep
+            com.opencodex.proxy
+            com.google.GoogleUpdater.wake
+            com.openai.codex-sparkle-progress
+            com.openai.codex-sparkle-updater
+            com.openssh.ssh-agent
+            io.tailscale.ipn.macsys.login-item-helper
+            jp.kiok.nani.ShipIt
+            '
+
+            echo "## launchd third-party agents ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
+            echo ""
+
+            labels=$(/bin/launchctl list \
+              | ${pkgs.gawk}/bin/awk 'NR>1 {print $NF}' \
+              | ${pkgs.gnugrep}/bin/grep -vE '^(com\.apple\.|application\.)' \
+              | ${pkgs.coreutils}/bin/sort -u || true)
+
+            unknown=""
+            while IFS= read -r label; do
+              [ -n "$label" ] || continue
+              if ! printf '%s\n' "$known" | ${pkgs.gnugrep}/bin/grep -qxF "$label"; then
+                unknown="''${unknown}  UNKNOWN  ''${label}\n"
+              fi
+            done <<EOF
+            $labels
+            EOF
+
+            if [ -n "$unknown" ]; then
+              printf '%b' "$unknown"
+              echo ""
+              echo "declare it in docs/launchd.md or remove it"
+              exit 1
+            fi
+            echo "OK: no unexpected third-party launchd agents"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/launchd-audit";
+        };
       # MEL: minimum closure that must always build (CI gate)
       melFor =
         system:
@@ -225,6 +283,7 @@
 
       apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
         audit = auditAppFor system;
+        launchd-audit = launchdAuditAppFor system;
         lint = lintAppFor system;
         update = updateAppFor system;
       });

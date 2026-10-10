@@ -38,6 +38,7 @@ modules/
     cmux.nix             cmux settings.json + macOS defaults
     codex.nix            ~/.codex/AGENTS.md via the Claude global guidance
     dotfiles-sync.nix    launchd agent: daily git pull + home-manager switch
+    watchman.nix         launchd agent: file watcher for Metro/Expo
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
     git.nix              identity, signing, hooks (gitleaks pre-commit)
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
