@@ -56,7 +56,6 @@
           extraSpecialArgs.dotfilesPath = self;
           modules = [
             ./home.nix
-            ./hosts/hikae
           ];
         };
 
