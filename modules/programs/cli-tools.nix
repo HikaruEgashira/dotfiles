@@ -28,7 +28,8 @@
     starship = {
       enable = true;
       settings = {
-        format = "$username$hostname$directory$git_branch$git_state$git_status$cmd_duration$line_break$character";
+        # username/hostname render nothing locally; git_state scans git every prompt for a rebase-only indicator
+        format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
         git_branch = {
           symbol = "🌱 ";
           truncation_length = 4;
