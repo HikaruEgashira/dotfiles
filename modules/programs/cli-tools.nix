@@ -31,21 +31,21 @@
         # username/hostname render nothing locally; git_state scans git every prompt for a rebase-only indicator
         format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
         git_branch = {
-          symbol = "🌱 ";
+          symbol = "branch ";
           truncation_length = 4;
           truncation_symbol = "";
         };
         git_status = {
-          conflicted = "🏳";
-          ahead = "🏎💨";
-          behind = "😰";
-          diverged = "😵";
-          untracked = "🤷";
-          stashed = "📦";
-          modified = "📝";
+          conflicted = "!";
+          ahead = "AHEAD ";
+          behind = "BEHIND ";
+          diverged = "DIVERGED ";
+          untracked = "?";
+          stashed = "\\$";
+          modified = "M";
           staged = "[++\\($count\\)](green)";
-          renamed = "👅";
-          deleted = "🗑";
+          renamed = "R";
+          deleted = "D";
         };
         directory = {
           truncation_length = 5;
