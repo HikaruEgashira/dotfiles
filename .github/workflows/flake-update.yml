@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update:
@@ -26,28 +25,16 @@ jobs:
       - name: Run nix flake update
         timeout-minutes: 10
         run: nix flake update
-      - name: Open PR if flake.lock changed
+      - name: Commit and push if flake.lock changed
         timeout-minutes: 5
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if git diff --quiet flake.lock; then
             echo "no flake.lock changes"
             exit 0
           fi
-
-          branch="bot/flake-update-$(date -u +%Y%m%d)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
           git add flake.lock
           git commit -m "chore: nix flake update"
-          git push -u origin "$branch"
-
-          pr_url=$(gh pr create \
-            --title "chore: nix flake update" \
-            --body "Automated weekly \`nix flake update\`. Auto-merge enabled — will land if CI passes." \
-            --base main \
-            --head "$branch")
-          gh pr merge "$pr_url" --auto --squash --delete-branch
+          git push origin main

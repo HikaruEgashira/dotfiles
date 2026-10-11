@@ -78,7 +78,7 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 ## 同期と多重マシン
 
 - daily 09:00 launchd で `dotfiles-sync` が `main` 追従。clean tree のみ。
-- weekly GitHub Actions が `flake.lock` を auto-merge PR で更新。
+- weekly GitHub Actions が `flake.lock` を main に直接 push (CI は push 後に検証)。
 - 各 sync の結果は `~/.cache/dotfiles-sync/metrics.jsonl` に追記される (`outcome` / `wall_s` / `head_before` / `head_after`)。
 - 2 台目以降の追加: `hosts/<host>/default.nix` を作成し、`flake.nix` の `mkConfig` を host / system 引数化して `homeConfigurations.<host>` を追加する。`home.nix` は universal な base としてそのまま、host 固有 override (proxy / 別 identity / screenlock など) は host モジュール側に書く。
 
