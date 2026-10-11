@@ -9,7 +9,7 @@
 | 設定を反映     | module / package / ledger を変更したら    | `docs/operations.md` §1 日常運用            |
 | 棚卸し         | ledger か launchd の drift が気になったら | `docs/operations.md` §1 / `docs/launchd.md` |
 | 静的検査・整形 | commit 前                                 | `docs/operations.md` §1 日常運用            |
-| inputs 更新    | 週次 PR が滞留したら                      | `docs/operations.md` §1 日常運用            |
+| inputs 更新    | 週次の自動更新を待てない時                | `docs/operations.md` §1 日常運用            |
 
 ## 追加
 

@@ -1,6 +1,6 @@
 # dotfiles
 
-hikae's reproducible dev environment, declared as a Nix flake on top of [home-manager](https://github.com/nix-community/home-manager). Targets `aarch64-darwin`; CI builds the same closure on `x86_64-linux` to keep the modules portable.
+hikae's reproducible dev environment, declared as a Nix flake on top of [home-manager](https://github.com/nix-community/home-manager). Targets `aarch64-darwin`; CI evaluates the home-manager configuration and builds a minimum equipment closure on `x86_64-linux` to keep the modules portable.
 
 ## Install
 
@@ -11,17 +11,23 @@ nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
 
 ## Daily ops
 
+Run these from the repository so the formatter and update app target the right project:
+
 ```bash
-nix run ~/dotfiles#homeConfigurations.hikae.activationPackage   # apply
-nix flake update ~/dotfiles                                     # bump inputs
-nix fmt ~/dotfiles                                              # format nix/yaml/md/sh
-nix flake check ~/dotfiles                                      # build + fmt gate
-brew bundle --file=~/dotfiles/Brewfile                          # residual GUI / kext / tap
-~/dotfiles/scripts/sudo-touchid.sh status|enable|disable        # manage Touch ID for sudo safely
+cd ~/dotfiles
+nix run .#homeConfigurations.hikae.activationPackage  # apply
+nix run .#update                                     # bump inputs + eval gate; add -- --activate to apply
+nix fmt                                             # format nix/yaml/md/sh/json
+nix flake check                                     # evaluate outputs and build checks for the current system
+brew bundle --file=./Brewfile                        # residual GUI / kext / tap
+./scripts/sudo-touchid.sh status                     # inspect; use enable or disable to change
 ```
 
+`nix flake update` takes input names, not a directory. To update directly from another directory, use `nix flake update --flake ~/dotfiles` (without the update app's eval gate).
+See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs/operations.md) for details.
+
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and re-activates daily at 09:00 when the working tree is clean.
-A weekly GitHub Actions job (`flake-update.yml`) opens an auto-merge PR with the latest `flake.lock`.
+A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`.
 
 ## Layout
 
@@ -49,6 +55,6 @@ Brewfile                 nixpkgs に無い / broken / kext 必須なものだけ
 
 ## Conventions
 
-- `pkgs.<name>` でいけるものは `modules/packages.nix`、設定が要るものは `modules/programs/<name>.nix` に分離。
+- `pkgs.<name>` でいけるものは `lib/package-registry.nix` に `mkEntry { pkg; purpose; reason; }` で宣言。設定が要るものは `modules/programs/<name>.nix` に分離。
 - `Brewfile` は **逃げ場**。nixpkgs 化できたら追い出す。各エントリに残す理由をコメントで残す。
-- 全 nix / yaml / md / sh は `nix fmt` (treefmt: nixfmt + prettier + shfmt) で揃える。CI で `nix flake check` がフォーマットとビルド両方をゲートする。
+- 全 nix / yaml / md / sh は `nix fmt` (treefmt: nixfmt + prettier + shfmt) で揃える。CI は整形、lint、activation テスト、最小構成のビルド、home-manager の eval と determinism を検証する。
