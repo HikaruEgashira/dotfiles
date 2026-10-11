@@ -31,7 +31,7 @@
         # username/hostname render nothing locally; git_state scans git every prompt for a rebase-only indicator
         format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
         git_branch = {
-          symbol = "branch ";
+          symbol = "";
           truncation_length = 4;
           truncation_symbol = "";
         };
