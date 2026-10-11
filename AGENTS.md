@@ -84,7 +84,7 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 
 ## エージェントが避けるべき変更
 
-- `flake.lock` を手動で書き換える (週次 PR の責務)
+- `flake.lock` を手動で書き換える (週次の自動更新の責務)
 - `~/.gitconfig` を直接編集 (`programs.git.settings` 経由)
 - 本番秘密を `home.file` でハードコードする (declarative ≠ plaintext OK ではない)
 - CI を skip するための `--no-warn-dirty` の濫用 (`dotfiles-sync` 内では意図的に使われている例外)
