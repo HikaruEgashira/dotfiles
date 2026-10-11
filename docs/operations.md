@@ -1,6 +1,6 @@
 # Operations Cookbook
 
-`~/dotfiles` の運用レシピ集。「どう書くか」は `AGENTS.md`、「なぜそう設計したか」は `docs/ideation/` と各 PR description、「何ができたか」は `docs/changelog.md`。本ドキュメントは「どう操作するか」のみを扱う。
+`~/dotfiles` の運用レシピ集。「どう書くか」は `AGENTS.md`、「なぜそう設計したか」は `docs/ideation/` と各 PR description、手順の索引は `docs/playbooks.md`。本ドキュメントは「どう操作するか」のみを扱う。
 
 ## 1. 日常運用
 

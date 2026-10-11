@@ -21,6 +21,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 | GUI / kext / nixpkgs に無いもの    | `Brewfile` (理由をコメントで残す)                                                                                                                                                                                                                                                           |
 | CLI 補助・チートシート             | `modules/settings/<topic>.{sh,md}`                                                                                                                                                                                                                                                          |
 | AI agent のユーザー設定            | 共有 system prompt は `modules/programs/claude/CLAUDE.md` が single source (`claude.nix` → `~/.claude/CLAUDE.md`、`codex.nix` → `~/.codex/AGENTS.md`、`pi.nix` → `~/.pi/agent/APPEND_SYSTEM.md`); `opencode.nix` はこれを ponytail と連結して `~/.config/opencode/AGENTS.md` に配置。Claude `settings.json` / opencode `opencode.json` は repo 管理せず live が source of truth; MCP は `claude mcp add --scope user` で `~/.claude.json` に登録 |
+| playbook (運用手順)                | 索引は `docs/playbooks.md`、本文は `docs/operations.md` / `docs/launchd.md`                                                                                                                                                                                                                  |
 | ideation / 設計                    | `docs/ideation/YYYY-MM-DD-<topic>-ideation.md`                                                                                                                                                                                                                                              |
 | ADR / 解決策                       | `docs/solutions/<problem-type>/<id>.md` (未整備)                                                                                                                                                                                                                                            |
 
@@ -54,7 +55,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 
 - **書く時は WHY のみ**: code 自体が WHAT を語る (well-named identifier / explicit settings)。コメントは「なぜこの選択をしたか」「なぜここで通常と違うことをしているか」だけ。同じことを言い換えるコメントは消す。
 - **1 行が上限**: 段落・複数行のブロックヘッダ・装飾的なファイルバナー (`# ===== Section =====` 等) は禁止。複数事象を語りたくなったら `docs/` に書く。
-- **rot するメタ参照を書かない**: 「Survivor #N」「PR #M」「ADR-XXXX」「次 PR で対応」等は repo 側 (`docs/changelog.md` 等) に集約する。コードに固有名を残さない。例外は外部の安定 ID (CVE / 上流 issue / 仕様番号) のみ。
+- **rot するメタ参照を書かない**: 「Survivor #N」「PR #M」「ADR-XXXX」「次 PR で対応」等はコードに書かない (履歴は git が正史)。固有名を残さない。例外は外部の安定 ID (CVE / 上流 issue / 仕様番号) のみ。
 - **目次的な区切りコメントを書かない**: `# rust`, `# path`, `# DB / data` のようなセクションラベルは ledger の `purpose` 等の構造化メタデータで代替する。grep / outline で十分追える場合は不要。
 - **「廃止/移行/旧体制」を書かない**: 削除した時点で消す。git history が経緯の正史。「旧 X は ...」のような時系列メタは書き残さない。
 - **書く時の言語は周辺コードに合わせる**: 1 ファイル内で日英混在させない (混ざっているなら片方に寄せる)。
@@ -90,8 +91,8 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 
 ## 詳細リンク
 
+- 「どの playbook をいつ使うか」: `docs/playbooks.md` (索引)
 - 「どう操作するか」: `docs/operations.md` (運用 cookbook、トラブルシュート、ロールバック、新マシン bootstrap)
-- 「何ができたか」: `docs/changelog.md` (Survivor → PR マトリクス、設計判断のサマリ、再考余地、継続条件)
 - README (人間向け): `README.md`
 - AWS architecture (ADR-0008): `modules/programs/aws.nix` 冒頭コメント
 
