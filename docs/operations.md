@@ -132,6 +132,29 @@ nix show-config | grep '^trusted-users'   # → root @admin
 
 以降の activation は `nix-community.cachix.org` から fetch する。
 
+### 3.3 Encrypted DNS (NextDNS DoH profile)
+
+ISP (ARTERIA/UCOM) は宛先を問わず UDP/TCP 53 を網内で透過傍受するため、平文 DNS の指定先は無意味。暗号化経路のみ有効。
+
+| 範囲                  | 手段                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 自宅 LAN 全体         | UCG: Settings → Security → Protection → Encrypted DNS → Custom に DoH stamp (`sdns://`, host `dns.nextdns.io`, path `/<profile-id>`) を投入 |
+| この Mac (外出先含む) | 下記 profile。profile ID は公開 repo に置かず引数で渡す                                                                                     |
+
+```bash
+bash ~/dotfiles/modules/settings/nextdns-profile.sh <profile-id>
+# System Settings > General > Device Management で承認
+```
+
+確認:
+
+```bash
+curl -s https://test.nextdns.io          # → "status":"ok", "profile":"<profile-id>"
+dig +short whoami.akamai.net             # → ISP (61.122.125.x) 以外
+```
+
+解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS (`networksetup -setdnsservers Wi-Fi ...`) は DHCP 既定のまま触らない。
+
 ## 4. トラブルシュート
 
 ### 4.1 activation が失敗した
