@@ -51,6 +51,7 @@ vim.keymap.set({ "x" }, "<C-c>", "y", { desc = "Copy selection" })
 vim.keymap.set({ "n" }, "<C-v>", '"+p', { desc = "Paste" })
 vim.keymap.set({ "i" }, "<C-v>", "<C-r>+", { desc = "Paste" })
 vim.keymap.set({ "x" }, "<C-v>", '"+p', { desc = "Paste" }) -- block visual stays on <C-q>
+vim.keymap.set({ "x" }, "<BS>", "x", { desc = "Delete selection" }) -- macOS delete key is <BS>
 
 -- system clipboard: LazyVim resets it on VeryLazy, so restore after that
 vim.api.nvim_create_autocmd("User", {

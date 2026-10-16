@@ -6,6 +6,8 @@
     enableNixpkgsReleaseCheck = false;
     sessionVariables = {
       GOPRIVATE = "github.com/HikaruEgashira/*,github.com/plenoai/*";
+      EDITOR = "nvim";
+      VISUAL = "nvim";
     };
 
     file.".npmrc" = {

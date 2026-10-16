@@ -49,7 +49,7 @@ in
 
       core = {
         whitespace = "trailing-space,space-before-tab";
-        editor = "zed --wait";
+        editor = "nvim";
         hooksPath = hooksDir;
       };
 

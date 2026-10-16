@@ -41,7 +41,7 @@
     /usr/bin/defaults write com.cmuxterm.app sidebarMatchTerminalBackground -bool true
     /usr/bin/defaults write com.cmuxterm.app browserThemeMode -string "system"
     /usr/bin/defaults write com.cmuxterm.app notificationSound -string "Pop"
-    /usr/bin/defaults write com.cmuxterm.app preferredEditorCommand -string "zed"
+    /usr/bin/defaults write com.cmuxterm.app preferredEditorCommand -string "nvim"
     /usr/bin/defaults write com.cmuxterm.app sendAnonymousTelemetry -bool false
     /usr/bin/defaults write com.cmuxterm.app workspacePresentationMode -string "minimal"
   '';

@@ -25,6 +25,8 @@
       keybind = cmd+z=send_byte:0x1a
       keybind = cmd+c=send_byte:0x03
       keybind = cmd+v=send_byte:0x16
+      keybind = cmd+s=send_byte:0x13
+      keybind = cmd+shift+z=send_byte:0x12
     '';
     force = true;
   };
