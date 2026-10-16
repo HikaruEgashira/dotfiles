@@ -31,7 +31,6 @@ let
     "${home}/.docker/config.json"
     "${home}/.codex/auth.json"
     "${home}/.claude/.credentials.json"
-    "${home}/.config/gh"
     "${home}/.config/gcloud"
     "${home}/.config/opencodex"
     "${home}/.config/secrets"
