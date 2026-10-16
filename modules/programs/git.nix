@@ -149,11 +149,15 @@ in
   home.activation.purgeStaleGitConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     gitconfig="$HOME/.gitconfig"
     [ -f "$gitconfig" ] || exit 0
-    for key in user.email user.name core.excludesfile; do
+    for key in user.email user.name core.excludesfile core.editor; do
       if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
         $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
       fi
     done
+    # `git lfs install` writes a PATH-dependent filter.lfs here; HM owns an absolute-path copy
+    if ${pkgs.git}/bin/git config --file "$gitconfig" --get-regexp '^filter\.lfs\.' >/dev/null 2>&1; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --remove-section filter.lfs || true
+    fi
     for host in github.com gist.github.com; do
       key="credential.https://$host.helper"
       if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
