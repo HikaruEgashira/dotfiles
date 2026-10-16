@@ -204,6 +204,74 @@
           type = "app";
           program = "${script}/bin/launchd-audit";
         };
+      xdgAuditAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          entries =
+            (import ./lib/xdg-entries.nix {
+              lib = pkgs.lib;
+              inherit ((mkConfig system).config.xdg)
+                configHome
+                cacheHome
+                dataHome
+                stateHome
+                ;
+            }).entries;
+          manifest = pkgs.writeText "xdg-entries.json" (builtins.toJSON entries);
+          script = pkgs.writeShellScriptBin "xdg-audit" ''
+            set -eu
+
+            exports=$(${pkgs.coreutils}/bin/env -u __HM_SESS_VARS_SOURCED -u __HM_ZSH_SESS_VARS_SOURCED ${pkgs.zsh}/bin/zsh -lic 'export -p' 2>/dev/null || true)
+            drift=""
+
+            report() { printf '  %-9s %-14s %s\n' "$1" "$2" "$3"; }
+
+            echo "## XDG entries ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
+            echo ""
+
+            while IFS=$'\t' read -r legacy target env override; do
+              if [ -e "$HOME/$legacy" ] && [ -e "$target" ]; then
+                report DRIFT "~/$legacy" "legacy と target が両方存在 (移設が skip された: $target)"
+                drift=1
+              elif [ -e "$HOME/$legacy" ]; then
+                report PENDING "~/$legacy" "未移設 → activation で $target へ移動する"
+              elif [ ! -e "$target" ]; then
+                report ABSENT "~/$legacy" "$target は未作成 (対象ツールが未使用なら問題なし)"
+              fi
+
+              [ -n "$env" ] || continue
+              line=$(${pkgs.gnugrep}/bin/grep -m1 "^export $env=" <<< "$exports" || true)
+              if [ -z "$line" ]; then
+                report DRIFT "$env" "宣言されているが login shell に export されていない"
+                drift=1
+                continue
+              fi
+              value=''${line#"export $env="}
+              case "$value" in \'*\') value=''${value#\'}; value=''${value%\'} ;; esac
+              if [ "$value" = "$target" ]; then
+                report OK "$env" "$value"
+              elif [ -n "$override" ]; then
+                report OVERRIDE "$env" "$value ($override 所有)"
+              else
+                report DRIFT "$env" "宣言 $target と live $value が不一致"
+                drift=1
+              fi
+            done < <(${pkgs.jq}/bin/jq -r '.[] | [.legacy, .target, (.env // ""), (.override // "")] | @tsv' ${manifest})
+
+            if [ -n "$drift" ]; then
+              echo ""
+              echo "drift あり: entries を直すか activation を打ち直す"
+              exit 1
+            fi
+            echo ""
+            echo "OK: XDG entries は宣言どおり"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/xdg-audit";
+        };
       # MEL: minimum closure that must always build (CI gate)
       melFor =
         system:
@@ -284,6 +352,7 @@
         launchd-audit = launchdAuditAppFor system;
         lint = lintAppFor system;
         update = updateAppFor system;
+        xdg-audit = xdgAuditAppFor system;
       });
 
       checks.x86_64-linux = {
