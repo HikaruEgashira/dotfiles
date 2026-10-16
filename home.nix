@@ -1,6 +1,7 @@
 {
   imports = [
     ./modules/home.nix
+    ./modules/programs/xdg.nix
     ./modules/packages.nix
     ./modules/fonts.nix
     ./modules/programs/git.nix

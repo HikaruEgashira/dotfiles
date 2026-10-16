@@ -50,9 +50,6 @@ _:
         export CARGO_TARGET_DIR="$HOME/.cargo-target"
         export RUSTC_WRAPPER=sccache
 
-        export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
-        mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
-
         command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
         typeset -U path PATH
         path=(
