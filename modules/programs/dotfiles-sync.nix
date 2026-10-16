@@ -16,6 +16,7 @@ let
         pkgs.git
         pkgs.nix
         pkgs.coreutils
+        pkgs.gnugrep
       ]
     }:$PATH
 
@@ -25,13 +26,14 @@ let
     head_before=""
     head_after=""
     outcome="error"
+    xdg_drift="not-run"
 
     write_metric() {
       ended_at=$(date -u +%s)
       wall_s=$(( ended_at - started_at ))
       ts=$(date -u +%FT%TZ)
-      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s"}\n' \
-        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" \
+      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s","xdg_drift":"%s"}\n' \
+        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" "$xdg_drift" \
         >>"${metricsFile}"
     }
     trap write_metric EXIT
@@ -61,6 +63,16 @@ let
 
     nix run ".#homeConfigurations.hikae.activationPackage" --no-warn-dirty
     outcome="activated"
+
+    # 報告のみ: drift があっても同期の成否は変えない (unknown は audit 自体の実行失敗)
+    audit_verdict=$(nix run ".#xdg-audit" 2>/dev/null | grep -o 'drift=[01]' | cut -d= -f2 | tail -n1 || true)
+    if [ "$audit_verdict" = "1" ]; then
+      xdg_drift="drift"
+    elif [ "$audit_verdict" = "0" ]; then
+      xdg_drift="none"
+    else
+      xdg_drift="unknown"
+    fi
   '';
 in
 {

@@ -115,5 +115,8 @@ assert lib.assertMsg (
   lib.length (lib.unique envNames) == lib.length envNames
 ) "xdg.entries: duplicate env name";
 {
-  inherit entries;
+  inherit
+    entries
+    mkEntry
+    ;
 }

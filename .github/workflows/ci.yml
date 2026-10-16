@@ -38,6 +38,9 @@ jobs:
             echo "==> $t"
             bash "$t"
           done
+      - name: Guard the XDG entry schema
+        timeout-minutes: 5
+        run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.xdg-entries-guards'
       - name: Build MEL (Minimum Equipment List)
         # MEL は essential 階層: 失敗したら全 PR をブロックする。
         # 通常 packages の breakage は eval gate のみ (warning 扱い)。

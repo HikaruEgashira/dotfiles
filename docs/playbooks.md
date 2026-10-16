@@ -18,6 +18,7 @@
 | package を足す    | `pkgs.<name>` で済む CLI / GUI | `docs/operations.md` §2.1 |
 | program を足す    | 設定ファイルが要る             | `docs/operations.md` §2.2 |
 | host を足す       | 2 台目以降                     | `docs/operations.md` §2.3 |
+| XDG 移設を足す    | dotdir を XDG へ寄せる         | `docs/operations.md` §2.4 |
 | Brewfile に逃がす | nixpkgs broken / kext / cask   | `docs/operations.md` §2.5 |
 
 ## オプトイン有効化

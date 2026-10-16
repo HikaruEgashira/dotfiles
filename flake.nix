@@ -262,16 +262,81 @@
             if [ -n "$drift" ]; then
               echo ""
               echo "drift あり: entries を直すか activation を打ち直す"
+              echo "drift=1"
               exit 1
             fi
             echo ""
             echo "OK: XDG entries は宣言どおり"
+            echo "drift=0"
           '';
         in
         {
           type = "app";
           program = "${script}/bin/xdg-audit";
         };
+      # 各 guard が実際に発火することを強制する (guard を消したら CI が落ちる)
+      xdgGuardCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          lib = pkgs.lib;
+          inherit ((mkConfig system).config.xdg)
+            configHome
+            cacheHome
+            dataHome
+            stateHome
+            ;
+          mkEntry =
+            (import ./lib/xdg-entries.nix {
+              inherit
+                lib
+                configHome
+                cacheHome
+                dataHome
+                stateHome
+                ;
+            }).mkEntry;
+
+          verdict =
+            expect: name: entry:
+            if (builtins.tryEval (builtins.deepSeq (mkEntry entry) true)).success == expect then
+              name
+            else
+              throw "xdg-entries-guards: '${name}' did not behave as expected";
+
+          cases = [
+            (verdict false "absolute legacy" {
+              legacy = "/go";
+              target = "${dataHome}/go";
+              env = "GOPATH";
+            })
+            (verdict false "parent escape" {
+              legacy = "../go";
+              target = "${dataHome}/go";
+              env = "GOPATH";
+            })
+            (verdict false "target outside XDG" {
+              legacy = "go";
+              target = "/etc/evil";
+              env = "GOPATH";
+            })
+            (verdict false "lowercase env" {
+              legacy = "go";
+              target = "${dataHome}/go";
+              env = "gopath";
+            })
+            (verdict true "valid entry" {
+              legacy = "go";
+              target = "${dataHome}/go";
+              env = "GOPATH";
+            })
+          ];
+        in
+        pkgs.runCommand "xdg-entries-guards" { } ''
+          cat > $out <<'EOF'
+          ${lib.concatStringsSep "\n" cases}
+          EOF
+        '';
       # MEL: minimum closure that must always build (CI gate)
       melFor =
         system:
@@ -355,10 +420,17 @@
         xdg-audit = xdgAuditAppFor system;
       });
 
-      checks.x86_64-linux = {
-        build = (mkConfig "x86_64-linux").activationPackage;
-        formatting = (treefmtFor "x86_64-linux").config.build.check self;
-        mel = melFor "x86_64-linux";
+      checks = {
+        x86_64-linux = {
+          build = (mkConfig "x86_64-linux").activationPackage;
+          formatting = (treefmtFor "x86_64-linux").config.build.check self;
+          mel = melFor "x86_64-linux";
+          "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
+        };
+        # ローカルの `nix flake check` でも guard を走らせる (CI は x86_64-linux 側を回す)
+        aarch64-darwin = {
+          "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
+        };
       };
     };
 }
