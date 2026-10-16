@@ -1,7 +1,6 @@
 # claude / codex の sandbox 許可を 1 箇所で定義し、各 CLI の設定レイヤに配る。
-# 方針は「sandbox は有効のまま、開発で弾かれない範囲まで許可を広げる」。
-# 書き込みは $HOME 配下 (uv/npm/mise 等のキャッシュ・ghq の repo を含む) と
-# ユーザが書ける OS 領域、通信は全ドメインを許す。
+# 方針は「読みは全許可・書きは $HOME とユーザ書き込み可能領域・シークレットだけ deny」。
+# live の settings.json / config.toml は触らず、wrapper が --settings / -c で重ねる。
 {
   config,
   lib,
@@ -21,6 +20,23 @@ let
     "/usr/local"
   ];
 
+  secrets = [
+    "${home}/.ssh"
+    "${home}/.aws"
+    "${home}/.gnupg"
+    "${home}/.netrc"
+    "${home}/.git-credentials"
+    "${home}/.kube"
+    "${home}/.password-store"
+    "${home}/.docker/config.json"
+    "${home}/.codex/auth.json"
+    "${home}/.claude/.credentials.json"
+    "${home}/.config/gh"
+    "${home}/.config/gcloud"
+    "${home}/.config/opencodex"
+    "${home}/.config/secrets"
+  ];
+
   claudeSettings = {
     sandbox = {
       enabled = true;
@@ -32,15 +48,31 @@ let
         allowLocalBinding = true;
         allowMachLookup = [ "*" ];
       };
-      filesystem.allowWrite = writable;
+      filesystem = {
+        allowWrite = writable;
+        denyRead = secrets;
+        denyWrite = secrets;
+      };
       allowAppleEvents = true;
     };
   };
 
+  # codex permission profile: "/" 読取、writable 書込、secrets deny (deny は同特異度に勝つ)
+  codexFilesystem = {
+    "/" = "read";
+  }
+  // lib.genAttrs writable (_: "write")
+  // lib.genAttrs secrets (_: "deny");
+  filesystemToml = "{${
+    lib.concatMapStringsSep "," (p: ''"${p}"="${codexFilesystem.${p}}"'') (
+      builtins.attrNames codexFilesystem
+    )
+  }}";
+
   codexArgs = [
-    ''sandbox_mode="workspace-write"''
-    "sandbox_workspace_write.network_access=true"
-    "sandbox_workspace_write.writable_roots=${builtins.toJSON writable}"
+    ''default_permissions="dev"''
+    "permissions.dev.filesystem=${filesystemToml}"
+    "permissions.dev.network={enabled=true}"
   ];
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
