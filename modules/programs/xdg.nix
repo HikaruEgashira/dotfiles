@@ -17,8 +17,6 @@ let
         ;
     }).entries;
 
-  declared = builtins.filter (e: e.env != null) entries;
-
   relocations = lib.concatMapStrings (e: ''
     if [ -e "$HOME/${e.legacy}" ] && [ ! -e "${e.target}" ]; then
       $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "${builtins.dirOf e.target}"
@@ -31,7 +29,7 @@ in
 {
   xdg.enable = true;
 
-  home.sessionVariables = (lib.listToAttrs (map (e: lib.nameValuePair e.env e.target) declared)) // {
+  home.sessionVariables = (lib.listToAttrs (map (e: lib.nameValuePair e.env e.target) entries)) // {
     TF_PLUGIN_CACHE_DIR = "${config.xdg.cacheHome}/terraform/plugin-cache";
   };
 

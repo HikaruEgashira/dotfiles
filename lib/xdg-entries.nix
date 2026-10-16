@@ -18,7 +18,7 @@ let
     {
       legacy,
       target,
-      env ? null,
+      env,
       override ? null,
     }:
     assert lib.assertMsg (
@@ -28,11 +28,8 @@ let
       r: lib.hasPrefix "${r}/" target
     ) roots) "xdg.mkEntry: target must be under an XDG root, got '${target}'";
     assert lib.assertMsg (
-      env == null || builtins.match "[A-Z][A-Z0-9_]*" env != null
-    ) "xdg.mkEntry: env must be null or an uppercase identifier, got '${env}'";
-    assert lib.assertMsg (
-      override == null || env != null
-    ) "xdg.mkEntry: override '${override}' requires env to be declared";
+      builtins.match "[A-Z][A-Z0-9_]*" env != null
+    ) "xdg.mkEntry: env must be an uppercase identifier, got '${env}'";
     {
       inherit
         legacy
@@ -106,7 +103,7 @@ let
     })
   ];
 
-  envNames = builtins.filter (e: e != null) (map (e: e.env) entries);
+  envNames = map (e: e.env) entries;
 in
 assert lib.assertMsg (
   lib.length (lib.unique (map (e: e.legacy) entries)) == lib.length entries
