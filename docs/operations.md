@@ -132,6 +132,33 @@ nix show-config | grep '^trusted-users'   # → root @admin
 
 以降の activation は `nix-community.cachix.org` から fetch する。
 
+### 3.3 Encrypted DNS (NextDNS DoH profile)
+
+ISP (ARTERIA/UCOM) は宛先を問わず UDP/TCP 53 を網内で透過傍受するため、平文 DNS の指定先は無意味。暗号化経路のみ有効。
+
+| 範囲                  | 手段                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 自宅 LAN 全体         | UCG: Settings → Security → Protection → Encrypted DNS → Custom に DoH stamp (`sdns://`, host `dns.nextdns.io`, path `/<profile-id>`) を投入 |
+| この Mac (外出先含む) | 下記 profile。profile ID は公開 repo に置かず引数で渡す                                                                                     |
+
+```bash
+bash ~/dotfiles/modules/settings/nextdns-profile.sh <profile-id>
+# System Settings > General > Device Management で承認
+```
+
+確認:
+
+```bash
+curl -sL https://test.nextdns.io                   # → "status":"ok", "protocol":"DOH", "deviceName":"<device-name>"
+dscacheutil -q host -a name whoami.akamai.net      # → NextDNS node (ISP 61.122.125.x / 163.139.x.x 以外)
+```
+
+`dig` / `nslookup` は mDNSResponder を迂回して UDP/53 を直接叩くため profile の効果を観測できない。system resolver を通す `dscacheutil` か `curl` で見る。UCG 側の Encrypted DNS は `dig @192.168.1.1 +short whoami.akamai.net` で観測できる。
+
+UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway に引き込むため、DNS を固定している端末 (Google Cast 等) も NextDNS に乗る。迂回経路として残るのは端末自身の DoT (853) / DoH のみで、DoT は UCG firewall で LAN→WAN tcp/853 を drop すれば塞げる。Tailscale は tailnet 設定で同じ NextDNS DoH を global resolver にしてあるので、有効化しても経路は変わらない (`clientName: tailscale` で観測)。
+
+解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `home.activation.wifiDnsFromDhcp` (`modules/programs/security.nix`) が activation ごとに空へ戻すので手で触らない。
+
 ## 4. トラブルシュート
 
 ### 4.1 activation が失敗した

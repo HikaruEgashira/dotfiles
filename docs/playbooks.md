@@ -28,6 +28,7 @@
 | Firewall posture   | 新マシン / 遮断を戻す | `docs/operations.md` §3.0 |
 | sudo Touch ID      | 新マシン / 解除       | `docs/operations.md` §3.1 |
 | cachix substituter | 新マシン / 撤回       | `docs/operations.md` §3.2 |
+| Encrypted DNS      | 新マシン / 回線変更   | `docs/operations.md` §3.3 |
 
 ## 復旧
 

@@ -32,4 +32,12 @@
       fi
     fi
   '';
+
+  # Wi-Fi service の静的 DNS は DHCP (gateway の encrypted DNS) と DoH profile を迂回して平文 53 を ISP に傍受させるので常に空に保つ
+  home.activation.wifiDnsFromDhcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if /usr/sbin/networksetup -getdnsservers Wi-Fi 2>/dev/null | grep -q '^[0-9a-f:.]*$'; then
+      run /usr/sbin/networksetup -setdnsservers Wi-Fi Empty
+      echo "wifi-dns: static resolvers cleared, DHCP is authoritative"
+    fi
+  '';
 }
