@@ -1,8 +1,10 @@
-_:
+{ config, ... }:
 
 {
   programs.zsh = {
     enable = true;
+    # ZDOTDIR 経由にすると ghostty の shell-integration が .zshrc を握って壊れるため従来配置に固定する
+    dotDir = config.home.homeDirectory;
     enableCompletion = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
