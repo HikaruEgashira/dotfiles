@@ -155,7 +155,9 @@ dscacheutil -q host -a name whoami.akamai.net      # → NextDNS node (ISP 61.12
 
 `dig` / `nslookup` は mDNSResponder を迂回して UDP/53 を直接叩くため profile の効果を観測できない。system resolver を通す `dscacheutil` か `curl` で見る。UCG 側の Encrypted DNS は `dig @192.168.1.1 +short whoami.akamai.net` で観測できる。
 
-解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS (`networksetup -setdnsservers Wi-Fi ...`) は DHCP 既定のまま触らない。
+UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway に引き込むため、DNS を固定している端末 (Google Cast 等) も NextDNS に乗る。迂回経路として残るのは端末自身の DoT (853) / DoH のみで、DoT は UCG firewall で LAN→WAN tcp/853 を drop すれば塞げる。Tailscale は tailnet 設定で同じ NextDNS DoH を global resolver にしてあるので、有効化しても経路は変わらない (`clientName: tailscale` で観測)。
+
+解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `home.activation.wifiDnsFromDhcp` (`modules/programs/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
 ## 4. トラブルシュート
 
