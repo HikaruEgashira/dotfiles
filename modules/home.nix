@@ -10,11 +10,13 @@
       VISUAL = "nvim";
     };
 
+    # env を継承しない起動経路 (mise 経由など) は NPM_CONFIG_CACHE を読まないため config 側でも固定する
     file.".npmrc" = {
       text = ''
         @NAMESPACE:registry=https://npm.pkg.github.com
         registry=https://npm.flatt.tech/
         //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
+        cache=~/.cache/npm
         allow-git=none
         allow-remote=none
         allow-file=none
