@@ -15,9 +15,6 @@ _:
     '';
 
     shellAliases = {
-      claude = "claudex";
-      c = "claudex";
-      con = "claudex -c continue";
       z = "zod .";
       q = "gh q bash ~/dotfiles/modules/settings/tmux-dev.sh";
       rel = "source ~/.zshrc";
