@@ -1,5 +1,7 @@
 # claude / codex の sandbox 許可を 1 箇所で定義し、各 CLI の設定レイヤに配る。
-# 書き込み可は nix が決めた XDG ルートとワークスペースのみ、通信は取得系ドメインのみ。
+# 方針は「sandbox は有効のまま、開発で弾かれない範囲まで許可を広げる」。
+# 書き込みは $HOME 配下 (uv/npm/mise 等のキャッシュ・ghq の repo を含む) と
+# ユーザが書ける OS 領域、通信は全ドメインを許す。
 {
   config,
   lib,
@@ -9,66 +11,29 @@
 
 let
   home = config.home.homeDirectory;
-  inherit (config.xdg) cacheHome configHome dataHome;
 
   writable = [
-    "${cacheHome}/uv"
-    "${dataHome}/uv"
-    "${cacheHome}/npm"
-    "${cacheHome}/pnpm"
-    "${cacheHome}/pip"
-    "${cacheHome}/mise"
-    "${dataHome}/mise"
-    "${dataHome}/go"
-    "${dataHome}/bun"
-    "${dataHome}/rustup"
-    "${cacheHome}/sccache"
-    "${cacheHome}/terraform"
-    # XDG 非対応ツールの macOS 既定キャッシュ
-    "${home}/Library/pnpm"
-    "${home}/Library/Caches/go-build"
-    "${home}/Library/Caches/pip"
-    "${home}/.cargo"
-    "${home}/.cargo-target"
-    "${home}/go"
-    "${home}/ghq"
-    "${home}/dotfiles"
-  ];
-
-  allowedDomains = [
-    "npm.flatt.tech"
-    "npm.pkg.github.com"
-    "registry.npmjs.org"
-    "pypi.flatt.tech"
-    "pypi.org"
-    "files.pythonhosted.org"
-    "crates.io"
-    "static.crates.io"
-    "index.crates.io"
-    "proxy.golang.org"
-    "sum.golang.org"
-    "registry.terraform.io"
-    "releases.hashicorp.com"
-    "github.com"
-    "api.github.com"
-    "codeload.github.com"
-    "objects.githubusercontent.com"
-    "raw.githubusercontent.com"
-    "ghcr.io"
-    "*.amazonaws.com"
-    "*.googleapis.com"
-    "api.anthropic.com"
-    "claude.ai"
+    home
+    "/tmp"
+    "/private/tmp"
+    "/private/var/folders"
+    "/opt/homebrew"
+    "/usr/local"
   ];
 
   claudeSettings = {
     sandbox = {
       enabled = true;
+      autoAllowBashIfSandboxed = true;
+      allowUnsandboxedCommands = true;
       network = {
-        inherit allowedDomains;
+        allowedDomains = [ "*" ];
+        allowAllUnixSockets = true;
         allowLocalBinding = true;
+        allowMachLookup = [ "*" ];
       };
       filesystem.allowWrite = writable;
+      allowAppleEvents = true;
     };
   };
 
@@ -82,7 +47,7 @@ let
     set -eu
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
-    exec "$real" --settings ${lib.escapeShellArg "${configHome}/claude/sandbox.json"} "$@"
+    exec "$real" --settings ${lib.escapeShellArg "${config.xdg.configHome}/claude/sandbox.json"} "$@"
   '';
 
   codexWrapper = pkgs.writeShellScript "codex-sandbox" ''
