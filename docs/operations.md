@@ -149,9 +149,11 @@ bash ~/dotfiles/modules/settings/nextdns-profile.sh <profile-id>
 確認:
 
 ```bash
-curl -s https://test.nextdns.io          # → "status":"ok", "profile":"<profile-id>"
-dig +short whoami.akamai.net             # → ISP (61.122.125.x) 以外
+curl -sL https://test.nextdns.io                   # → "status":"ok", "protocol":"DOH", "deviceName":"<device-name>"
+dscacheutil -q host -a name whoami.akamai.net      # → NextDNS node (ISP 61.122.125.x / 163.139.x.x 以外)
 ```
+
+`dig` / `nslookup` は mDNSResponder を迂回して UDP/53 を直接叩くため profile の効果を観測できない。system resolver を通す `dscacheutil` か `curl` で見る。UCG 側の Encrypted DNS は `dig @192.168.1.1 +short whoami.akamai.net` で観測できる。
 
 解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS (`networksetup -setdnsservers Wi-Fi ...`) は DHCP 既定のまま触らない。
 
