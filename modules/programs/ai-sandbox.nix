@@ -36,11 +36,8 @@ let
     "${home}/.config/secrets"
   ];
 
-  # sandbox 内の git commit が署名できるよう、署名鍵だけ read を戻す
-  # (allowed_signers は store 内の生成物なので carve-out 不要)
-  signingRead = lib.optionals (config.programs.git.signing.key != null) [
-    config.programs.git.signing.key
-  ];
+  # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
+  sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
 
   claudeSettings = {
     sandbox = {
@@ -55,7 +52,6 @@ let
       };
       filesystem = {
         allowWrite = writable;
-        allowRead = signingRead;
         denyRead = secrets;
         denyWrite = secrets;
       };
@@ -68,8 +64,7 @@ let
     "/" = "read";
   }
   // lib.genAttrs writable (_: "write")
-  // lib.genAttrs secrets (_: "deny")
-  // lib.genAttrs signingRead (_: "read");
+  // lib.genAttrs secrets (_: "deny");
   filesystemToml = "{${
     lib.concatMapStringsSep "," (p: ''"${p}"="${codexFilesystem.${p}}"'') (
       builtins.attrNames codexFilesystem
@@ -80,12 +75,15 @@ let
     ''default_permissions="dev"''
     "permissions.dev.filesystem=${filesystemToml}"
     "permissions.dev.network={enabled=true}"
+    # codex は env を渡さないので、agent socket だけ明示的に通す
+    "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
   ];
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
+    export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
     exec "$real" --settings ${lib.escapeShellArg "${config.xdg.configHome}/claude/sandbox.json"} "$@"
   '';
 

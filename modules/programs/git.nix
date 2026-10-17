@@ -7,6 +7,8 @@
 
 let
   hooksDir = "${config.xdg.configHome}/git/hooks";
+  userEmail = "39324739+HikaruEgashira@users.noreply.github.com";
+  signingPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9";
 
   preCommit = pkgs.writeShellScript "global-pre-commit" ''
     set -eu
@@ -43,15 +45,16 @@ in
     lfs.enable = true;
     signing = {
       format = "ssh";
-      key = "${config.home.homeDirectory}/.ssh/id_ed25519";
+      # key:: 形式で agent に委譲する (秘密鍵ファイルは読まない)
+      key = "key::${signingPubKey}";
       signByDefault = true;
       # 検証データは公開情報なので repo 所有。principal は commit email に揃え、鍵を替えたらここも更新する
-      allowedSigners = "39324739+HikaruEgashira@users.noreply.github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9\n";
+      allowedSigners = "${userEmail} ${signingPubKey}\n";
     };
 
     settings = {
       user.name = "HikaruEgashira";
-      user.email = "39324739+HikaruEgashira@users.noreply.github.com";
+      user.email = userEmail;
 
       core = {
         whitespace = "trailing-space,space-before-tab";
@@ -153,7 +156,6 @@ in
   # ~/.gitconfig overrides ~/.config/git/config; legacy keys must be unset
   home.activation.purgeStaleGitConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     gitconfig="$HOME/.gitconfig"
-    [ -f "$gitconfig" ] || exit 0
     for key in \
       user.email user.name core.excludesfile core.editor \
       user.signingkey commit.gpgsign gpg.format gpg.ssh.allowedSignersFile \
