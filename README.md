@@ -27,7 +27,7 @@ brew bundle --file=./Brewfile                        # residual GUI / kext / tap
 See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs/operations.md) for details.
 
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and re-activates daily at 09:00 when the working tree is clean.
-A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`.
+A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` and `activation-darwin.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). `activation-darwin` builds the real `aarch64-darwin` activation on the self-hosted runner `hikae` and reverts the bump when it breaks the build; the runner is registered per machine ([operations](docs/operations.md) §3.6).
 
 ## Layout
 
@@ -46,11 +46,12 @@ modules/
     dotfiles-sync.nix    launchd agent: daily git pull + home-manager switch
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
     git.nix              identity, signing, hooks (gitleaks pre-commit)
+    github-runner.nix    launchd agent: self-hosted GHA runner for darwin activation
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
     zsh.nix              shell init, aliases, secrets via dotenvx
   settings/              read-by-zsh helper scripts and cheatsheets
 Brewfile                 nixpkgs に無い / broken / kext 必須なものだけ
-.github/workflows/       CI (fmt + build) + weekly flake update
+.github/workflows/       CI (fmt + build) + weekly flake update + darwin activation repair
 ```
 
 ## Conventions

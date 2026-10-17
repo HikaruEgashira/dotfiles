@@ -1,0 +1,46 @@
+name: "activation-darwin"
+
+# 実デプロイ先は aarch64-darwin。linux CI は eval 止まりなので、flake.lock bump が
+# build を壊すケースは端末の self-hosted runner (label: hikae) でしか捕まえられない。
+# 壊れた tip が flake.lock 単独の bot commit なら main を 1 commit 戻す (revert は検証してから push)。
+# fork PR に自端末を使わせないため pull_request では起動しない。
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: activation-darwin
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  activation:
+    timeout-minutes: 60
+    runs-on: [self-hosted, hikae]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+          fetch-depth: 2 # repair は revert するので親 commit が要る
+      - name: Build activation package
+        timeout-minutes: 45
+        run: |
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+          nix build --no-link --print-build-logs '.#homeConfigurations.hikae.activationPackage'
+      - name: Repair a broken flake.lock bump
+        if: failure()
+        timeout-minutes: 20
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPAIR_PUSH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          set -o pipefail
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+          bash scripts/flake-lock-repair.sh . \
+            nix build --no-link '.#homeConfigurations.hikae.activationPackage' \
+            | tee -a "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,8 @@ on:
   pull_request:
     branches:
       - main
+  # flake-update の bot push は workflow を起動しないため、明示 dispatch を受ける
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

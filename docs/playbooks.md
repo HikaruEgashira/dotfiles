@@ -23,14 +23,15 @@
 
 ## オプトイン有効化
 
-| Playbook             | 使う時                | 手順                      |
-| -------------------- | --------------------- | ------------------------- |
-| Firewall posture     | 新マシン / 遮断を戻す | `docs/operations.md` §3.0 |
-| sudo Touch ID        | 新マシン / 解除       | `docs/operations.md` §3.1 |
-| cachix substituter   | 新マシン / 撤回       | `docs/operations.md` §3.2 |
-| Encrypted DNS        | 新マシン / 回線変更   | `docs/operations.md` §3.3 |
-| 署名鍵ローテーション | 鍵を替える / 端末追加 | `docs/operations.md` §3.4 |
-| 自動アップデート固定 | 新マシン (要 sudo)    | `docs/operations.md` §3.5 |
+| Playbook             | 使う時                 | 手順                      |
+| -------------------- | ---------------------- | ------------------------- |
+| Firewall posture     | 新マシン / 遮断を戻す  | `docs/operations.md` §3.0 |
+| sudo Touch ID        | 新マシン / 解除        | `docs/operations.md` §3.1 |
+| cachix substituter   | 新マシン / 撤回        | `docs/operations.md` §3.2 |
+| Encrypted DNS        | 新マシン / 回線変更    | `docs/operations.md` §3.3 |
+| 署名鍵ローテーション | 鍵を替える / 端末追加  | `docs/operations.md` §3.4 |
+| 自動アップデート固定 | 新マシン (要 sudo)     | `docs/operations.md` §3.5 |
+| self-hosted runner   | 新マシン / runner 停止 | `docs/operations.md` §3.6 |
 
 ## 復旧
 
