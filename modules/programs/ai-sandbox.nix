@@ -39,6 +39,13 @@ let
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
   sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
 
+  # sandbox からの永続化経路 (ログイン時に自動実行される plist) を塞ぐ
+  persistence = [
+    "${home}/Library/LaunchAgents"
+    "/Library/LaunchAgents"
+    "/Library/LaunchDaemons"
+  ];
+
   claudeSettings = {
     sandbox = {
       enabled = true;
@@ -53,7 +60,7 @@ let
       filesystem = {
         allowWrite = writable;
         denyRead = secrets;
-        denyWrite = secrets;
+        denyWrite = secrets ++ persistence;
       };
       allowAppleEvents = true;
     };
@@ -64,7 +71,8 @@ let
     "/" = "read";
   }
   // lib.genAttrs writable (_: "write")
-  // lib.genAttrs secrets (_: "deny");
+  // lib.genAttrs secrets (_: "deny")
+  // lib.genAttrs persistence (_: "deny");
   filesystemToml = "{${
     lib.concatMapStringsSep "," (p: ''"${p}"="${codexFilesystem.${p}}"'') (
       builtins.attrNames codexFilesystem

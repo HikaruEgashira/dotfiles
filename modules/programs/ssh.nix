@@ -60,6 +60,9 @@ in
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
+    extraConfig = ''
+      HashKnownHosts yes
+    '';
     matchBlocks = {
       "*" = {
         identityAgent = agentSocket;

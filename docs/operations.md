@@ -159,6 +159,64 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `home.activation.wifiDnsFromDhcp` (`modules/programs/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
+### 3.4 署名鍵をローテーションする
+
+署名鍵は agent が保持し、git は `key::<公開鍵>` (agent 委譲) で署名する。鍵を替えるときは **公開鍵が 2 箇所 (`signing.key` と `allowedSigners`) の単一 let に集約されている**ので、`modules/programs/git.nix` の `signingPubKey` 1 行だけ書き換える。
+
+1. 新しい鍵を作る (署名専用。SSH 認証には使わない):
+
+   ```bash
+   ssh-keygen -t ed25519 -C "$(git config user.email)" -f ~/.ssh/id_ed25519_new
+   ```
+
+2. GitHub に **Signing Key 種別**で登録する (auth key とは別枠。Web UI か下記):
+
+   ```bash
+   gh auth refresh -h github.com -s admin:ssh_signing_key   # token scope 追加
+   gh api -X POST /user/ssh_signing_keys -f title="$(hostname -s)" -f key="$(cat ~/.ssh/id_ed25519_new.pub)"
+   ```
+
+3. `modules/programs/ssh.nix` の `keyFile` と `modules/programs/git.nix` の `signingPubKey` を新鍵に更新し、適用する:
+
+   ```bash
+   nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
+   launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-add
+   ```
+
+4. 検証 (3 経路すべて):
+
+   ```bash
+   git commit --allow-empty -m "signing key check"
+   git log -1 --show-signature          # → Good "git" signature for <user noreply email>
+   gh api repos/HikaruEgashira/dotfiles/commits/$(git rev-parse HEAD) --jq .commit.verification
+   ~/.config/ai-sandbox/bin/codex sandbox -- /bin/sh -c 'git -C ~ verify-commit HEAD'   # sandbox 内でも鍵ファイルを読まずに署名できる
+   ```
+
+5. 旧鍵を GitHub と端末から消す (旧鍵の失効は取り消せないので、検証が通ってから):
+
+   ```bash
+   gh api -X DELETE /user/ssh_signing_keys/<id>
+   rm ~/.ssh/id_ed25519_new  # 不要になった方
+   ```
+
+`allowed_signers` は repo 管理 (公開情報) で、commit email を principal にしている。principal を変えない限り GitHub 側の verified 表示はアカウント登録鍵だけで決まる。
+
+### 3.5 macOS 自動アップデートを固定する (sudo 必須・未自動化)
+
+`/Library/Preferences/com.apple.SoftwareUpdate` が正で、書き込みに root が要るため activation には入れていない。新マシンで一度だけ:
+
+```bash
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticallyInstallMacOSUpdates -bool true
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall -bool true
+```
+
+確認:
+
+```bash
+defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'AutomaticDownload|AutomaticallyInstallMacOSUpdates|CriticalUpdateInstall'   # すべて 1
+```
+
 ## 4. トラブルシュート
 
 ### 4.1 activation が失敗した
