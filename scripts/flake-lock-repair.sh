@@ -32,7 +32,9 @@ if [ "$changed" != "flake.lock" ]; then
   exit 0
 fi
 
-git -c user.name="github-actions[bot]" -c user.email="$bot_mail" revert --no-edit "$head" >/dev/null
+# CI には署名鍵がないので revert は署名しない
+git -c user.name="github-actions[bot]" -c user.email="$bot_mail" -c commit.gpgsign=false \
+  revert --no-edit "$head" >/dev/null
 
 if ! "${build[@]}"; then
   echo "repair=manual (the previous flake.lock is broken too; nothing was pushed)"

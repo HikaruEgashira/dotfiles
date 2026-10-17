@@ -12,6 +12,17 @@ bot_mail="41898282+github-actions[bot]@users.noreply.github.com"
 
 git init --quiet --bare --initial-branch=main "$tmp/origin.git"
 git clone --quiet "$tmp/origin.git" "$tmp/work" 2>/dev/null
+
+# CI には署名鍵がない。署名を強制した config でも revert が通ることを固定する
+cat >"$tmp/gitconfig" <<'EOF'
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[user]
+	signingkey = /nonexistent/key.pub
+EOF
+
 cd "$tmp/work"
 git config user.name tester
 git config user.email tester@example.com
@@ -61,7 +72,7 @@ bump() {
 run_repair() {
   local build_cmd=$1
   set +e
-  out=$("$script" . "$build_cmd" 2>&1)
+  out=$(GIT_CONFIG_GLOBAL="$tmp/gitconfig" "$script" . "$build_cmd" 2>&1)
   status=$?
   set -e
 }
