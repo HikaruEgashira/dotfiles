@@ -36,6 +36,16 @@ let
     "${home}/.config/secrets"
   ];
 
+  # sandbox 内の git commit が署名・検証できるよう、署名に要るファイルだけ read を戻す
+  signingRead =
+    let
+      git = config.programs.git;
+      allowedSigners = git.settings.gpg.ssh.allowedSignersFile or null;
+    in
+    lib.optionals (git.signing.key != null) (
+      [ git.signing.key ] ++ lib.optional (allowedSigners != null) allowedSigners
+    );
+
   claudeSettings = {
     sandbox = {
       enabled = true;
@@ -49,6 +59,7 @@ let
       };
       filesystem = {
         allowWrite = writable;
+        allowRead = signingRead;
         denyRead = secrets;
         denyWrite = secrets;
       };
@@ -61,7 +72,8 @@ let
     "/" = "read";
   }
   // lib.genAttrs writable (_: "write")
-  // lib.genAttrs secrets (_: "deny");
+  // lib.genAttrs secrets (_: "deny")
+  // lib.genAttrs signingRead (_: "read");
   filesystemToml = "{${
     lib.concatMapStringsSep "," (p: ''"${p}"="${codexFilesystem.${p}}"'') (
       builtins.attrNames codexFilesystem
