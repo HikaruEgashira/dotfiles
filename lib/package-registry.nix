@@ -26,6 +26,40 @@ let
     else
       null;
 
+  # dsh's node-addon-require-builtin rejects nixpkgs' toolchain-built Node (Unsupported/no-getter),
+  # so the wrapper carries the nodejs.org build; npx there installs the prebuilt npm tree (~/.npm/_npx).
+  # shortcut: first run needs network, and nodejs.org version bumps are manual.
+  dshNode =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation rec {
+        pname = "node-darwin-arm64";
+        version = "24.22.0";
+        src = pkgs.fetchurl {
+          url = "https://nodejs.org/dist/v${version}/node-v${version}-darwin-arm64.tar.gz";
+          hash = "sha256-apck2bUKXyK0gWze1EG1qNndrlRhkaXlt++lpeLuJtU=";
+        };
+        dontConfigure = true;
+        dontBuild = true;
+        dontFixup = true;
+        installPhase = ''
+          cp -a . $out/
+        '';
+      }
+    else
+      null;
+
+  dsh =
+    if dshNode == null then
+      null
+    else
+      pkgs.writeShellApplication {
+        name = "dsh";
+        runtimeInputs = [ dshNode ];
+        text = ''
+          exec npx --yes @deepseek-ai/dsh@0.2.0-rc.2 "$@"
+        '';
+      };
+
   cross = [
     (mkEntry {
       pkg = pkgs.cachix;
@@ -448,6 +482,12 @@ let
       purpose = "edit";
       source = "github:can1357/oh-my-pi";
       reason = "Oh My Pi coding agent CLI";
+    })
+    (mkEntry {
+      pkg = dsh;
+      purpose = "edit";
+      source = "npm:@deepseek-ai/dsh";
+      reason = "DeepSeek Harness agent CLI (dsh)";
     })
   ];
 in
