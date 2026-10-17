@@ -36,15 +36,11 @@ let
     "${home}/.config/secrets"
   ];
 
-  # sandbox 内の git commit が署名・検証できるよう、署名に要るファイルだけ read を戻す
-  signingRead =
-    let
-      git = config.programs.git;
-      allowedSigners = git.settings.gpg.ssh.allowedSignersFile or null;
-    in
-    lib.optionals (git.signing.key != null) (
-      [ git.signing.key ] ++ lib.optional (allowedSigners != null) allowedSigners
-    );
+  # sandbox 内の git commit が署名できるよう、署名鍵だけ read を戻す
+  # (allowed_signers は store 内の生成物なので carve-out 不要)
+  signingRead = lib.optionals (config.programs.git.signing.key != null) [
+    config.programs.git.signing.key
+  ];
 
   claudeSettings = {
     sandbox = {

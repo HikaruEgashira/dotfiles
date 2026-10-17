@@ -45,6 +45,8 @@ in
       format = "ssh";
       key = "${config.home.homeDirectory}/.ssh/id_ed25519";
       signByDefault = true;
+      # 検証データは公開情報なので repo 所有。principal は commit email に揃え、鍵を替えたらここも更新する
+      allowedSigners = "39324739+HikaruEgashira@users.noreply.github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9\n";
     };
 
     settings = {
@@ -58,7 +60,6 @@ in
       };
 
       init.defaultBranch = "main";
-      gpg.ssh.allowedSignersFile = "${config.home.homeDirectory}/.ssh/allowed_signers";
       pull.rebase = true;
       fetch.prune = true;
 
@@ -155,7 +156,8 @@ in
     [ -f "$gitconfig" ] || exit 0
     for key in \
       user.email user.name core.excludesfile core.editor \
-      user.signingkey commit.gpgsign gpg.format gpg.ssh.allowedSignersFile; do
+      user.signingkey commit.gpgsign gpg.format gpg.ssh.allowedSignersFile \
+      coderabbit.machineId; do
       if ${pkgs.git}/bin/git config --file "$gitconfig" --get-all "$key" >/dev/null 2>&1; then
         $DRY_RUN_CMD ${pkgs.git}/bin/git config --file "$gitconfig" --unset-all "$key" || true
       fi
