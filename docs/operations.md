@@ -296,6 +296,8 @@ tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl             # 直近結果
 
 opencode v2 は background service (既定 `127.0.0.1:49374`) 経由で TUI を描画する。`~/.local/state/opencode/service.json` の `pid` が死んでいるのに、別の orphan `opencode serve --service` が port を掴んでいると、起動ごとに service 生成 → bind 失敗 → retry を繰り返し、TUI は空画面のまま返らない。
 
+interactive shell では `modules/programs/opencode/preflight.sh` が `opencode` / `opencode2` を包み、起動前に「`service.json` の pid は死んでいるのに port は LISTEN」の不一致を検出して orphan を落とし `service restart` するため、通常は手当て不要。以下は preflight を無効化している場合や、`opencode run` を script から直接叩く場合の復旧手順。
+
 ```bash
 lsof -nP -iTCP:49374 | grep LISTEN        # 掴んでいる pid を特定
 kill <pid>                                # orphan を落とす
@@ -303,6 +305,8 @@ opencode service restart && opencode service status
 ```
 
 判定: `~/.local/share/opencode/log/opencode.log` に `Managed service port 49374 ... already in use` が連続していたらこれ。`opencode service status` が `stopped` でも port が埋まっていれば orphan 確定。
+
+upstream (`sst/opencode`) への issue は当面立てない。preflight が interactive の主経路を自己修復し、上流の恒久修正 (stale `service.json` を検知して orphan を落とす) は調査コストが大きいため。再発が続くか非 interactive 経路で実害が出たら起票する。
 
 ## 5. 緊急時 / ロールバック
 
