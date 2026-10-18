@@ -1,0 +1,28 @@
+{
+  "environment": [
+    "$defaults",
+    "**Organization**: solo operator. Every resource below is owned and run by the user alone: no other teams, shared clusters, or on-call owners.",
+    "**Source control**: GitHub orgs HikaruEgashira, plenoai, sisaku-security, BinaryBaconLabs and user jarman-potato (decoy account for honeypot ops); checkouts under ~/ghq/github.com/. Their Issues, PRs, Actions, Releases, Packages, Secrets and settings are the user's own tracker and CI.",
+    "**Cloud provider(s)**: AWS (profiles hikae-admin-sso, iac-aws*, all accounts) and GCP (iac-gcp), managed by Terraform in HikaruEgashira/iac-aws. plan/apply -auto-approve/import/state are the normal workflow.",
+    "**Protected IaC scopes**: none. IAM/OIDC/role/network changes are routine; only deletions with no backup, versioning, PITR or state are protected.",
+    "**CI/CD deploy targets**: GitHub Actions on own repos: services deploy on main push, packages publish on tag push (trusted publishing). There is no separate prod gate.",
+    "**Secrets management**: AWS Secrets Manager/SSM, GitHub Actions Secrets of own repos, and ~/.sisakuintel-* honeytoken files (decoy credentials; placing their values publicly is honeypot operation, not leakage).",
+    "**Trusted internal domains**: plenoai.com, egahika.dev and subdomains; github.com; *.amazonaws.com; Xcode Cloud/App Store Connect for plenoai apps.",
+    "**Host containment**: macOS Seatbelt sandbox denies reads of ~/.ssh, ~/.aws, ~/.gnupg. AWS SSO cannot run inside it, so `dangerouslyDisableSandbox` or unsandboxed `AWS_PROFILE=hikae-admin-sso aws|terraform` is the configured path, not a bypass.",
+    "**Agent automation (own product)**: the user builds autonomous agent systems: sisakuintel-pot autopilot (Actions on the self-hosted gh-intel runner launching codex/claude daily with no human in the loop), `codex exec -s workspace-write` delegations, herdr, dark-harness. Writing, committing, pushing and running these in own repos is the task itself."
+  ],
+  "allow": [
+    "$defaults",
+    "Own Automation: creating, editing, documenting, committing or running agent-loop definitions (workflows, playbooks, `codex exec`, `claude -p`) in own repos or on own runners. They run under their repo's sandbox config and are the product, not Create Unsafe Agents or Auto-Mode Bypass.",
+    "Own CI Runs: `gh run watch|view|rerun|cancel` and `gh workflow` on own repos. Monitoring or steering the user's own jobs is not Interfere With Workloads or CI Bypass.",
+    "Own Tracker: `gh issue|pr close|edit|comment|label`, `gh secret set`, `gh release`, repo settings on own repos are not External System Writes.",
+    "Own Infra: terraform plan/apply -auto-approve/import/state; aws/gcloud create/update incl. IAM/OIDC/roles, Lambda env, Secrets Manager/SSM, DNS/certs; main merge with auto-merge, tag push, deploy; deletes covered by backup/versioning/PITR/state.",
+    "Honeypot Ops: force-push, history rewrite, push-protection off and publishing honeytoken values in BinaryBaconLabs / jarman-potato repos.",
+    "Configured Sandbox Exit: `dangerouslyDisableSandbox` or unsandboxed `AWS_PROFILE=hikae-admin-sso` aws/terraform is the configured SSO path. Judge the command, not the flag."
+  ],
+  "soft_deny": [
+    "$defaults",
+    "Irreversible destruction of own resources with no recovery path: unversioned S3/DynamoDB/DB delete, repo delete, KMS key deletion.",
+    "Irreversible write, delete or publication to third-party resources outside Source control above: others' repos, public registries, external services."
+  ]
+}

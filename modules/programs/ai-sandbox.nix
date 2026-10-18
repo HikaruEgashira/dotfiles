@@ -1,4 +1,4 @@
-# claude / codex の sandbox 許可を 1 箇所で定義し、各 CLI の設定レイヤに配る。
+# claude / codex の sandbox 許可と claude の auto mode 規則を 1 箇所で定義し、各 CLI の設定レイヤに配る。
 # 方針は「読みは全許可・書きは $HOME とユーザ書き込み可能領域・シークレットだけ deny」。
 # live の settings.json / config.toml は触らず、wrapper が --settings / -c で重ねる。
 {
@@ -47,6 +47,7 @@ let
   ];
 
   claudeSettings = {
+    autoMode = builtins.fromJSON (builtins.readFile ./claude/auto-mode.json);
     sandbox = {
       enabled = true;
       autoAllowBashIfSandboxed = true;
