@@ -292,6 +292,18 @@ tail -n20 ~/.cache/dotfiles-sync/{log,err}                # 出力確認
 tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl             # 直近結果
 ```
 
+### 4.5 `opencode` / `opencode2` が無言でハングする (managed service の stale PID)
+
+opencode v2 は background service (既定 `127.0.0.1:49374`) 経由で TUI を描画する。`~/.local/state/opencode/service.json` の `pid` が死んでいるのに、別の orphan `opencode serve --service` が port を掴んでいると、起動ごとに service 生成 → bind 失敗 → retry を繰り返し、TUI は空画面のまま返らない。
+
+```bash
+lsof -nP -iTCP:49374 | grep LISTEN        # 掴んでいる pid を特定
+kill <pid>                                # orphan を落とす
+opencode service restart && opencode service status
+```
+
+判定: `~/.local/share/opencode/log/opencode.log` に `Managed service port 49374 ... already in use` が連続していたらこれ。`opencode service status` が `stopped` でも port が埋まっていれば orphan 確定。
+
 ## 5. 緊急時 / ロールバック
 
 ### 5.1 直近の HM 適用を巻き戻す
