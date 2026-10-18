@@ -409,11 +409,11 @@
     {
       homeConfigurations.hikae = mkConfig "aarch64-darwin";
 
-      formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (
+      formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
       );
 
-      apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
+      apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (system: {
         audit = auditAppFor system;
         launchd-audit = launchdAuditAppFor system;
         lint = lintAppFor system;
@@ -422,13 +422,19 @@
       });
 
       checks = {
+        aarch64-linux = {
+          build = (mkConfig "aarch64-linux").activationPackage;
+          formatting = (treefmtFor "aarch64-linux").config.build.check self;
+          mel = melFor "aarch64-linux";
+          "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
+        };
         x86_64-linux = {
           build = (mkConfig "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
           mel = melFor "x86_64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
         };
-        # ローカルの `nix flake check` でも guard を走らせる (CI は x86_64-linux 側を回す)
+        # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
         aarch64-darwin = {
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
         };

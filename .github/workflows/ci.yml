@@ -13,7 +13,7 @@ permissions:
 jobs:
   validate:
     timeout-minutes: 30
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, arm64, hikae-flash]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         timeout-minutes: 5
@@ -29,7 +29,7 @@ jobs:
             extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
       - name: Run formatter check
         timeout-minutes: 5
-        run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
+        run: nix build --no-link --print-build-logs '.#checks.aarch64-linux.formatting'
       - name: Run linters (deadnix + shellcheck)
         timeout-minutes: 5
         run: nix run --accept-flake-config '.#lint'
@@ -42,19 +42,19 @@ jobs:
           done
       - name: Guard the XDG entry schema
         timeout-minutes: 5
-        run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.xdg-entries-guards'
+        run: nix build --no-link --print-build-logs '.#checks.aarch64-linux.xdg-entries-guards'
       - name: Build MEL (Minimum Equipment List)
         # MEL は essential 階層: 失敗したら全 PR をブロックする。
         # 通常 packages の breakage は eval gate のみ (warning 扱い)。
         timeout-minutes: 15
-        run: nix build --no-link --print-build-logs --accept-flake-config '.#checks.x86_64-linux.mel'
+        run: nix build --no-link --print-build-logs --accept-flake-config '.#checks.aarch64-linux.mel'
       - name: Evaluate home-manager configuration
         # 完全ビルドは crush 等の go テスト走行で 25min を超える上、
         # 実際にデプロイされるのは aarch64-darwin。eval だけでも cocoapods
         # のような platform-mismatch は捕捉できるので CI ではここで止める。
         timeout-minutes: 10
         run: |
-          nix eval --raw '.#checks.x86_64-linux.build.drvPath'
+          nix eval --raw '.#checks.aarch64-linux.build.drvPath'
           echo
           echo "evaluated successfully"
       - name: Eval determinism gate
@@ -62,8 +62,8 @@ jobs:
         # impurity が紛れ込んだサイン。eval だけなので cheap。build determinism は別途。
         timeout-minutes: 5
         run: |
-          h1=$(nix eval --raw '.#checks.x86_64-linux.build.drvPath')
-          h2=$(nix eval --raw --no-eval-cache '.#checks.x86_64-linux.build.drvPath')
+          h1=$(nix eval --raw '.#checks.aarch64-linux.build.drvPath')
+          h2=$(nix eval --raw --no-eval-cache '.#checks.aarch64-linux.build.drvPath')
           if [ "$h1" != "$h2" ]; then
             echo "FAIL: drvPath differs across evaluations"
             echo "  first:  $h1"

@@ -447,7 +447,7 @@ let
     })
   ];
 
-  # CI evaluates on x86_64-linux; entries here must not leak into `cross`
+  # CI evaluates on aarch64-linux; entries here must not leak into `cross`
   darwinOnly = lib.optionals isDarwin [
     (mkEntry {
       pkg = pkgs.cocoapods;
