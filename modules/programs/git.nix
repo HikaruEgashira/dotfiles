@@ -13,8 +13,19 @@ let
   preCommit = pkgs.writeShellScript "global-pre-commit" ''
     set -eu
 
-    if command -v gitleaks >/dev/null 2>&1; then
-      gitleaks git --staged --redact --verbose --no-banner
+    # Staged-diff secret/PII scan (dogfooding pleno-dlp; replaced gitleaks).
+    # Blocks on findings at or above high; skips with a warning when the
+    # binary (mise-managed) is not on PATH so commits never hang on tooling.
+    # Exit 1 = findings (block). Any other failure (old binary without the
+    # hooks command, crash) is a tooling problem and must not block commits.
+    if command -v pleno-dlp >/dev/null 2>&1; then
+      pleno-dlp hooks run git --fail-on high || {
+        rc=$?
+        [ "$rc" -eq 1 ] && exit 1
+        echo "pre-commit: pleno-dlp exited $rc; skipping secret scan" >&2
+      }
+    else
+      echo "pre-commit: pleno-dlp not found on PATH; skipping secret scan" >&2
     fi
 
     local_hook="$(git rev-parse --git-dir)/hooks/pre-commit"
