@@ -108,11 +108,6 @@ let
       reason = "primary find replacement";
     })
     (mkEntry {
-      pkg = pkgs.gitleaks;
-      purpose = "ops";
-      reason = "secret scanning hook";
-    })
-    (mkEntry {
       pkg = pkgs.pinact;
       purpose = "ops";
       reason = "GitHub Actions SHA pin";
