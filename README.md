@@ -1,6 +1,6 @@
 # dotfiles
 
-hikae's reproducible dev environment, declared as a Nix flake on top of [home-manager](https://github.com/nix-community/home-manager). Targets `aarch64-darwin`; CI evaluates the home-manager configuration and builds a minimum equipment closure on `x86_64-linux` to keep the modules portable.
+hikae's reproducible dev environment, declared as a Nix flake on top of [home-manager](https://github.com/nix-community/home-manager). Targets `aarch64-darwin`; CI evaluates the home-manager configuration and builds a minimum equipment closure on `aarch64-linux` to keep the modules portable.
 
 ## Install
 
@@ -27,7 +27,7 @@ brew bundle --file=./Brewfile                        # residual GUI / kext / tap
 See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs/operations.md) for details.
 
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and re-activates daily at 09:00 when the working tree is clean.
-A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` and `activation-darwin.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). `activation-darwin` builds the real `aarch64-darwin` activation on the self-hosted runner `hikae` and reverts the bump when it breaks the build; the runner is registered per machine ([operations](docs/operations.md) §3.6).
+A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` and `activation-darwin.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). `ci.yml` and the update job run on the self-hosted `aarch64-linux` runner `hikae-flash`; `activation-darwin` builds the real `aarch64-darwin` activation on the self-hosted runner `hikae` and reverts the bump when it breaks the build; both runners are registered per machine ([operations](docs/operations.md) §3.6).
 
 ## Layout
 
