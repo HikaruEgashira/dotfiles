@@ -10,29 +10,7 @@ let
   userEmail = "39324739+HikaruEgashira@users.noreply.github.com";
   signingPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9";
 
-  preCommit = pkgs.writeShellScript "global-pre-commit" ''
-    set -eu
-
-    # Staged-diff secret/PII scan (dogfooding pleno-dlp; replaced gitleaks).
-    # Blocks on findings at or above high; skips with a warning when the
-    # binary (mise-managed) is not on PATH so commits never hang on tooling.
-    # Exit 1 = findings (block). Any other failure (old binary without the
-    # hooks command, crash) is a tooling problem and must not block commits.
-    if command -v pleno-dlp >/dev/null 2>&1; then
-      pleno-dlp hooks run git --fail-on high || {
-        rc=$?
-        [ "$rc" -eq 1 ] && exit 1
-        echo "pre-commit: pleno-dlp exited $rc; skipping secret scan" >&2
-      }
-    else
-      echo "pre-commit: pleno-dlp not found on PATH; skipping secret scan" >&2
-    fi
-
-    local_hook="$(git rev-parse --git-dir)/hooks/pre-commit"
-    if [ -x "$local_hook" ]; then
-      exec "$local_hook" "$@"
-    fi
-  '';
+  preCommit = pkgs.writeShellScript "global-pre-commit" (builtins.readFile ./git/pre-commit.sh);
 
   ghCredentialHelper = "!${pkgs.gh}/bin/gh auth git-credential";
 
@@ -41,6 +19,11 @@ let
   lfsHook =
     name:
     pkgs.writeShellScript "git-lfs-${name}" ''
+      ${lib.optionalString (name == "post-checkout" || name == "post-merge") ''
+        if [ -x "$HOME/.local/bin/mise-trust-repo" ]; then
+          "$HOME/.local/bin/mise-trust-repo" >/dev/null 2>&1 || true
+        fi
+      ''}
       exec ${pkgs.git-lfs}/bin/git-lfs ${name} "$@"
     '';
   lfsHookNames = [
