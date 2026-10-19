@@ -24,6 +24,10 @@ untrusted)
   echo "mise ERROR Config files in $PWD/mise.toml are not trusted." >&2
   exit 1
   ;;
+untrusted-singular)
+  echo "mise ERROR Config file $PWD/mise.toml is not trusted." >&2
+  exit 1
+  ;;
 crash)
   echo "pleno-dlp crashed" >&2
   exit 2
@@ -80,6 +84,12 @@ run_case untrusted untrusted 0 "$tmp/bin:$tmp/tools"
 [ "$(cat "$tmp/untrusted.status")" -eq 0 ]
 grep -q local-hook "$tmp/untrusted.log"
 grep -q 'skipping secret scan' "$tmp/untrusted.output"
+
+# 単数形の untrusted 文言も tooling state として扱う
+run_case untrusted-singular untrusted-singular 0 "$tmp/bin:$tmp/tools"
+[ "$(cat "$tmp/untrusted-singular.status")" -eq 0 ]
+grep -q local-hook "$tmp/untrusted-singular.log"
+grep -q 'skipping secret scan' "$tmp/untrusted-singular.output"
 
 # rc 1 の実検出は従来どおり commit を止める
 run_case findings findings 0 "$tmp/bin:$tmp/tools"

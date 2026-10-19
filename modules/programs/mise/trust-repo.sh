@@ -21,6 +21,8 @@ fi
 [ -n "$mise_bin" ] || exit 0
 
 if ! "$mise_bin" trust --all "$root" >/dev/null 2>&1; then
-  echo "mise-trust-repo: failed to trust $root" >&2
-  exit 1
+  if ! "$mise_bin" trust "$root" >/dev/null 2>&1; then
+    echo "mise-trust-repo: failed to trust $root" >&2
+    exit 1
+  fi
 fi
