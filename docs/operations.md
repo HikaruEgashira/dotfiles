@@ -296,7 +296,7 @@ tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl             # 直近結果
 
 opencode v2 は background service (既定 `127.0.0.1:49374`) 経由で TUI を描画する。`~/.local/state/opencode/service.json` の `pid` が死んでいるのに、別の orphan `opencode serve --service` が port を掴んでいると、起動ごとに service 生成 → bind 失敗 → retry を繰り返し、TUI は空画面のまま返らない。
 
-interactive shell では `modules/programs/opencode/preflight.sh` が `opencode` / `opencode2` を包み、起動前に「`service.json` の pid は死んでいるのに port は LISTEN」の不一致を検出して orphan を落とし `service restart` するため、通常は手当て不要。以下は preflight を無効化している場合や、`opencode run` を script から直接叩く場合の復旧手順。
+interactive shell では `modules/programs/opencode/preflight.sh` が `opencode` / `opencode2` を包み、起動前に「`service.json` の pid は死んでいるのに port は LISTEN」の不一致を検出して orphan を落とし `service restart` するため、通常は手当て不要。同じ script を `~/.local/bin/opencode-health` として実行でき、launchd (`dev.egahika.opencode-service-health`) が毎日 09:05 に叩き、結果を `~/.cache/opencode-service-health.{log,err}` に残す。orphan が SIGTERM を無視した場合は SIGKILL に escalate し、それでも port が空かなければ TUI を起動せずエラーを返す。以下は preflight を無効化している場合や、PATH に `~/.local/bin` が無い script から `opencode run` を直接叩く場合の復旧手順。
 
 ```bash
 lsof -nP -iTCP:49374 | grep LISTEN        # 掴んでいる pid を特定

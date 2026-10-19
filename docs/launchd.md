@@ -14,15 +14,16 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 
 ## user domain (`~/Library/LaunchAgents`)
 
-| Label                           | 管理                                                 | 起動         | 備考                           |
-| ------------------------------- | ---------------------------------------------------- | ------------ | ------------------------------ |
-| `dev.egahika.dotfiles-sync`     | home-manager (`modules/programs/dotfiles-sync.nix`)  | 毎日 09:00   | main 追従 + 再 activation      |
-| `dev.egahika.clean-worktree`    | home-manager (`modules/programs/clean-worktree.nix`) | 毎週月 09:30 | merged worktree 掃除           |
-| `com.claude.caffeinate`         | home-manager (`modules/programs/claude.nix`)         | 常駐         | claude 実行中だけ sleep 抑止   |
-| `com.atlassian.twg.upkeep`      | **twg 自己管理** (`twg upkeep enable`)               | 12 分間隔    | OAuth refresh + upgrade check  |
-| `com.opencodex.proxy`           | **opencodex 自己管理** (`ocx service`)               | 常駐         | Codex provider proxy           |
-| `dev.egahika.github-runner`     | home-manager (`modules/programs/github-runner.nix`)  | 常駐         | self-hosted GHA runner `hikae` |
-| `com.google.GoogleUpdater.wake` | vendor (GoogleUpdater.app)                           | 1 時間間隔   | Chrome/Google app 更新         |
+| Label                                 | 管理                                                 | 起動         | 備考                                      |
+| ------------------------------------- | ---------------------------------------------------- | ------------ | ----------------------------------------- |
+| `dev.egahika.dotfiles-sync`           | home-manager (`modules/programs/dotfiles-sync.nix`)  | 毎日 09:00   | main 追従 + 再 activation                 |
+| `dev.egahika.clean-worktree`          | home-manager (`modules/programs/clean-worktree.nix`) | 毎週月 09:30 | merged worktree 掃除                      |
+| `dev.egahika.opencode-service-health` | home-manager (`modules/programs/opencode.nix`)       | 毎日 09:05   | stale service の preflight (`port 49374`) |
+| `com.claude.caffeinate`               | home-manager (`modules/programs/claude.nix`)         | 常駐         | claude 実行中だけ sleep 抑止              |
+| `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)               | 12 分間隔    | OAuth refresh + upgrade check             |
+| `com.opencodex.proxy`                 | **opencodex 自己管理** (`ocx service`)               | 常駐         | Codex provider proxy                      |
+| `dev.egahika.github-runner`           | home-manager (`modules/programs/github-runner.nix`)  | 常駐         | self-hosted GHA runner `hikae`            |
+| `com.google.GoogleUpdater.wake`       | vendor (GoogleUpdater.app)                           | 1 時間間隔   | Chrome/Google app 更新                    |
 
 twg / opencodex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
 

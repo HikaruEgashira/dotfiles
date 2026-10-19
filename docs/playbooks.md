@@ -41,6 +41,7 @@
 | CI 失敗            | PR の check が赤           | `docs/operations.md` §4.2 |
 | `git push` 不能    | `Device not configured`    | `docs/operations.md` §4.3 |
 | dotfiles-sync 停止 | 日次同期が来ない           | `docs/operations.md` §4.4 |
+| opencode ハング    | TUI が空画面のまま返らない | `docs/operations.md` §4.5 |
 | HM ロールバック    | 直近適用を戻したい         | `docs/operations.md` §5.1 |
 | main revert        | 悪い commit を戻したい     | `docs/operations.md` §5.2 |
 | cachix trust 撤回  | substituter を止めたい     | `docs/operations.md` §5.3 |
