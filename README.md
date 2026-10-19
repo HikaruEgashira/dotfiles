@@ -45,7 +45,8 @@ modules/
     codex.nix            ~/.codex/AGENTS.md via the Claude global guidance
     dotfiles-sync.nix    launchd agent: daily git pull + home-manager switch
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
-    git.nix              identity, signing, hooks (pleno-dlp pre-commit)
+    git.nix              identity, signing, hooks (trust-aware pleno-dlp pre-commit)
+    mise.nix             global mise trust paths + repo trust helper
     github-runner.nix    launchd agent: self-hosted GHA runner for darwin activation
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
     zsh.nix              shell init, aliases, secrets via dotenvx

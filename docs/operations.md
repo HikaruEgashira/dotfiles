@@ -11,6 +11,7 @@
 | launchd 棚卸し | `nix run ~/dotfiles#launchd-audit`                              | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                    |
 | XDG 棚卸し     | `nix run ~/dotfiles#xdg-audit`                                  | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                      |
 | 静的検査       | `cd ~/dotfiles && nix run .#lint`                               | statix + deadnix + shellcheck (CI と同一)                                                                                                                       |
+| mise trust     | `~/.local/bin/mise-trust-repo <repo>`                           | `~/ghq` 配下は config で trust 済み。外側の checkout は hooks が自動実行 (`docs/operations.md` §4.6)                                                            |
 | 整形           | `cd ~/dotfiles && nix fmt`                                      | nixfmt + prettier + shfmt                                                                                                                                       |
 | flake gate     | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                |
 | inputs 更新    | `cd ~/dotfiles && nix run .#update`                             | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する               |
@@ -307,6 +308,19 @@ opencode service restart && opencode service status
 判定: `~/.local/share/opencode/log/opencode.log` に `Managed service port 49374 ... already in use` が連続していたらこれ。`opencode service status` が `stopped` でも port が埋まっていれば orphan 確定。
 
 upstream (`sst/opencode`) への issue は当面立てない。preflight が interactive の主経路を自己修復し、上流の恒久修正 (stale `service.json` を検知して orphan を落とす) は調査コストが大きいため。再発が続くか非 interactive 経路で実害が出たら起票する。
+
+### 4.6 `git commit` が mise untrusted で止まる
+
+`~/ghq` 配下の checkout は `~/.config/mise/conf.d/trust.toml` の `trusted_config_paths` で最初から trust される。`~/ghq` の外にある checkout は global `post-checkout` / `post-merge` / `pre-commit` が `~/.local/bin/mise-trust-repo` を実行して repo 単位で trust する。
+
+手動で直す場合:
+
+```bash
+~/.local/bin/mise-trust-repo "$(git rev-parse --show-toplevel)"
+mise trust --show
+```
+
+pre-commit の secret scan は「untrusted による rc 1」を検出 (findings) と区別し、scan を skip して local hook へ進む。untrusted を理由に `--no-verify` で検査ごと飛ばさない。
 
 ## 5. 緊急時 / ロールバック
 

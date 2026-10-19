@@ -5,6 +5,7 @@
     ./modules/packages.nix
     ./modules/fonts.nix
     ./modules/programs/git.nix
+    ./modules/programs/mise.nix
     ./modules/programs/ssh.nix
     ./modules/programs/aws.nix
     ./modules/programs/cli-tools.nix
