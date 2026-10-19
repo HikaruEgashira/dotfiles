@@ -12,8 +12,8 @@ if command -v pleno-dlp >/dev/null 2>&1; then
   else
     rc=$?
     case "$scan_output" in
-    # rc 1 means findings, but an untrusted config is tooling state, not a finding.
-    *"are not trusted"*)
+    # rc 1 means findings, but an untrusted config (singular or plural) is tooling state, not a finding.
+    *"not trusted"*)
       printf '%s\n' "$scan_output" >&2
       echo "pre-commit: mise config is untrusted; skipping secret scan" >&2
       ;;

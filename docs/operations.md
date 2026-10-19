@@ -311,7 +311,7 @@ upstream (`sst/opencode`) への issue は当面立てない。preflight が int
 
 ### 4.6 `git commit` が mise untrusted で止まる
 
-`~/ghq` 配下の checkout は `~/.config/mise/conf.d/trust.toml` の `trusted_config_paths` で最初から trust される。`~/ghq` の外にある checkout は global `post-checkout` / `post-merge` / `pre-commit` が `~/.local/bin/mise-trust-repo` を実行して repo 単位で trust する。
+`~/ghq` 配下の checkout は `~/.config/mise/conf.d/trust.toml` の `trusted_config_paths` で最初から trust される。`XDG_CONFIG_HOME` を移している環境でも効くよう `MISE_TRUSTED_CONFIG_PATHS` も sessionVariables で同じパスに揃える。`~/ghq` の外にある checkout は global `post-checkout` / `post-merge` / `pre-commit` が `~/.local/bin/mise-trust-repo` を実行して repo 単位で trust する (`--all` 非対応の古い mise は plain trust に落ちる)。
 
 手動で直す場合:
 

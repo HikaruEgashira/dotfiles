@@ -17,6 +17,9 @@ cat >"$tmp/bin/mise" <<'EOF'
 #!/bin/sh
 set -u
 printf '%s\n' "$*" >>"${MISE_LOG:?}"
+if [ "${MISE_FAIL_ALL:-0}" = "1" ] && [ "$1" = "trust" ] && [ "$2" = "--all" ]; then
+  exit 1
+fi
 exit "${MISE_EXIT:-0}"
 EOF
 chmod +x "$tmp/bin/mise"
@@ -47,6 +50,18 @@ run_helper() {
 run_helper success "$tmp/bin:$tmp/tools"
 [ "$(cat "$tmp/success.status")" -eq 0 ]
 grep -qx "trust --all $repo" "$tmp/success.log"
+
+# --all を持たない古い mise は plain trust に落ちる
+export MISE_FAIL_ALL=1
+run_helper legacy "$tmp/bin:$tmp/tools"
+unset MISE_FAIL_ALL
+[ "$(cat "$tmp/legacy.status")" -eq 0 ]
+grep -qx "trust --all $repo" "$tmp/legacy.log"
+grep -qx "trust $repo" "$tmp/legacy.log"
+if grep -q 'failed to trust' "$tmp/legacy.output"; then
+  echo "legacy mise unexpectedly failed to trust" >&2
+  exit 1
+fi
 
 # Git hook は non-interactive なので PATH に mise が無くても installer 既定位置を使う
 rm -rf "$tmp/home/.local/bin/mise"
