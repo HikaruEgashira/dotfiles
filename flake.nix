@@ -163,6 +163,7 @@
             dev.egahika.dotfiles-sync
             dev.egahika.github-runner
             dev.egahika.clean-worktree
+            dev.egahika.opencode-service-health
             com.claude.caffeinate
             com.atlassian.twg.upkeep
             com.opencodex.proxy

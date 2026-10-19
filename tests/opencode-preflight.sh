@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
+# shellcheck disable=SC1090,SC1091,SC2030,SC2031
 # opencode preflight が stale service.json + orphan LISTEN を検出して自己修復することを固定する
 set -euo pipefail
 
@@ -13,8 +13,14 @@ mkdir -p "$tmp/bin" "$tmp/home/.local/state/opencode"
 # lsof は LISTEN 中の pid を返す。orphan が死ぬと何も返さず port 解放を模す
 cat >"$tmp/bin/lsof" <<'EOF'
 #!/bin/sh
-[ -n "${OPENCODE_TEST_LISTEN_PID:-}" ] || exit 1
-kill -0 "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null || exit 1
+listening() {
+  [ -n "${OPENCODE_TEST_LISTEN_PID:-}" ] || return 1
+  kill -0 "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null || return 1
+  case "$(ps -o stat= -p "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null)" in
+  Z*) return 1 ;;
+  esac
+}
+listening || exit 1
 printf '%s\n' "$OPENCODE_TEST_LISTEN_PID"
 EOF
 chmod +x "$tmp/bin/lsof"
@@ -26,7 +32,14 @@ printf '%s\n' "opencode $*" >>"${OPENCODE_TEST_LOG:?}"
 case "${1:-}" in
 service) exit 0 ;;
 esac
-if [ -n "${OPENCODE_TEST_LISTEN_PID:-}" ] && kill -0 "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null; then
+listening() {
+  [ -n "${OPENCODE_TEST_LISTEN_PID:-}" ] || return 1
+  kill -0 "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null || return 1
+  case "$(ps -o stat= -p "$OPENCODE_TEST_LISTEN_PID" 2>/dev/null)" in
+  Z*) return 1 ;;
+  esac
+}
+if listening; then
   printf '%s\n' "Managed service port 49374 on 127.0.0.1 is already in use" >>"$OPENCODE_TEST_LOG"
   exit 1
 fi
@@ -40,20 +53,36 @@ write_state() {
 
 start_dead_pid() {
   local p
-  sleep 300 &
+  sleep 300 >/dev/null 2>&1 &
   p=$!
   kill -9 "$p" 2>/dev/null || true
   wait "$p" 2>/dev/null || true
   printf '%s' "$p"
 }
 
+start_listener() {
+  sleep 300 >/dev/null 2>&1 &
+  printf '%s' "$!"
+}
+
+_test_pid_running() {
+  local stat
+  kill -0 "$1" 2>/dev/null || return 1
+  stat=$(ps -o stat= -p "$1" 2>/dev/null) || return 1
+  [ -n "$stat" ] || return 1
+  case "$stat" in
+  Z*) return 1 ;;
+  esac
+  return 0
+}
+
 run_disabled() {
   (
     set -euo pipefail
-    export HOME="$tmp/home" XDG_STATE_HOME= PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/disabled.log"
+    export HOME="$tmp/home" XDG_STATE_HOME='' PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/disabled.log"
     : >"$OPENCODE_TEST_LOG"
-    sleep 300 &
-    local orphan=$!
+    local orphan
+    orphan=$(start_listener)
     export OPENCODE_TEST_LISTEN_PID=$orphan
     write_state "$(start_dead_pid)"
 
@@ -79,17 +108,17 @@ run_disabled() {
 run_enabled() {
   (
     set -euo pipefail
-    export HOME="$tmp/home" XDG_STATE_HOME= PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/enabled.log"
+    export HOME="$tmp/home" XDG_STATE_HOME='' PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/enabled.log"
     : >"$OPENCODE_TEST_LOG"
-    sleep 300 &
-    local orphan=$!
+    local orphan
+    orphan=$(start_listener)
     export OPENCODE_TEST_LISTEN_PID=$orphan
     write_state "$(start_dead_pid)"
 
     source "$preflight"
     opencode --version
 
-    if kill -0 "$orphan" 2>/dev/null; then
+    if _test_pid_running "$orphan"; then
       kill "$orphan" 2>/dev/null || true
       printf '%s\n' "FAIL: preflight left the orphan alive" >&2
       return 1
@@ -108,17 +137,17 @@ run_enabled() {
 run_healthy() {
   (
     set -euo pipefail
-    export HOME="$tmp/home" XDG_STATE_HOME= PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/healthy.log"
+    export HOME="$tmp/home" XDG_STATE_HOME='' PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/healthy.log"
     : >"$OPENCODE_TEST_LOG"
-    sleep 300 &
-    local live=$!
+    local live
+    live=$(start_listener)
     export OPENCODE_TEST_LISTEN_PID=$live
     write_state "$live"
 
     source "$preflight"
     _opencode_preflight
 
-    if ! kill -0 "$live" 2>/dev/null; then
+    if ! _test_pid_running "$live"; then
       printf '%s\n' "FAIL: preflight killed a healthy service" >&2
       return 1
     fi
@@ -132,8 +161,58 @@ run_healthy() {
   )
 }
 
+run_sigkill_escalation() {
+  (
+    set -euo pipefail
+    export HOME="$tmp/home" XDG_STATE_HOME='' PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/escalation.log"
+    : >"$OPENCODE_TEST_LOG"
+    bash -c 'trap "" TERM; while :; do sleep 1; done' &
+    local orphan=$!
+    disown "$orphan" 2>/dev/null || true
+    export OPENCODE_TEST_LISTEN_PID=$orphan
+    write_state "$(start_dead_pid)"
+
+    source "$preflight"
+    _opencode_preflight
+
+    if _test_pid_running "$orphan"; then
+      kill -9 "$orphan" 2>/dev/null || true
+      printf '%s\n' "FAIL: SIGTERM-ignoring orphan survived preflight" >&2
+      return 1
+    fi
+    grep -q "opencode service restart" "$OPENCODE_TEST_LOG" || {
+      printf '%s\n' "FAIL: preflight did not restart after SIGKILL" >&2
+      return 1
+    }
+  )
+}
+
+run_health_command() {
+  (
+    set -euo pipefail
+    export HOME="$tmp/home" XDG_STATE_HOME='' PATH="$tmp/bin:$PATH" OPENCODE_TEST_LOG="$tmp/health.log"
+    : >"$OPENCODE_TEST_LOG"
+    local live
+    live=$(start_listener)
+    export OPENCODE_TEST_LISTEN_PID=$live
+    write_state "$live"
+
+    bash "$preflight" >"$tmp/health.out"
+
+    if ! grep -q "opencode: service healthy" "$tmp/health.out"; then
+      kill "$live" 2>/dev/null || true
+      printf '%s\n' "FAIL: health command did not report a healthy service" >&2
+      return 1
+    fi
+    kill "$live" 2>/dev/null || true
+    wait "$live" 2>/dev/null || true
+  )
+}
+
 run_disabled
 run_enabled
 run_healthy
+run_sigkill_escalation
+run_health_command
 
 printf '%s\n' "ok: preflight recovers a stale listener and leaves a healthy service alone"
