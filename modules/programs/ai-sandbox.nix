@@ -88,6 +88,11 @@ let
     "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
   ];
 
+  awsWrapper = pkgs.writeShellScript "aws-sandbox-notice" ''
+    ${builtins.readFile ../settings/aws-sandbox-notice.sh}
+    exec ${pkgs.awscli2}/bin/aws "$@"
+  '';
+
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
@@ -113,6 +118,7 @@ in
 
   home.file = {
     ".config/claude/sandbox.json".text = builtins.toJSON claudeSettings;
+    ".config/ai-sandbox/bin/aws".source = awsWrapper;
     ".config/ai-sandbox/bin/claude".source = claudeWrapper;
     ".config/ai-sandbox/bin/codex".source = codexWrapper;
   };
