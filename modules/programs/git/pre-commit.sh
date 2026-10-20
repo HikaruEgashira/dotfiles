@@ -32,5 +32,19 @@ fi
 
 local_hook="$(git rev-parse --git-dir)/hooks/pre-commit"
 if [ -x "$local_hook" ]; then
-  exec "$local_hook" "$@"
+  if local_output=$("$local_hook" "$@" 2>&1); then
+    [ -z "$local_output" ] || printf '%s\n' "$local_output"
+  else
+    rc=$?
+    printf '%s\n' "$local_output" >&2
+    case "$local_output" in
+    # A local hook can also die on the same untrusted config; keep trust state from blocking the commit.
+    *"not trusted"*)
+      echo "pre-commit: mise config is untrusted; skipping local hook" >&2
+      ;;
+    *)
+      exit "$rc"
+      ;;
+    esac
+  fi
 fi

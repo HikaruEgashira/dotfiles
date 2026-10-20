@@ -47,11 +47,22 @@ chmod +x "$tmp/home/.local/bin/mise-trust-repo"
 cat >"$tmp/repo/.git/hooks/pre-commit" <<'EOF'
 #!/usr/bin/env bash
 printf 'local-hook\n' >>"${LOCAL_HOOK_LOG:?}"
+case "${LOCAL_HOOK_MODE:-ok}" in
+ok) exit 0 ;;
+untrusted)
+  echo "mise ERROR Config files in $PWD/mise.toml are not trusted." >&2
+  exit 1
+  ;;
+findings)
+  echo "local-hook: staged secret found" >&2
+  exit 1
+  ;;
+esac
 EOF
 chmod +x "$tmp/repo/.git/hooks/pre-commit"
 
 run_case() {
-  local name=$1 mode=$2 trust_exit=$3 test_path=$4
+  local name=$1 mode=$2 trust_exit=$3 test_path=$4 local_mode=${5:-ok}
   local log="$tmp/$name.log"
   : >"$log"
   (
@@ -59,6 +70,7 @@ run_case() {
     export HOME="$tmp/home"
     export PATH="$test_path"
     export PLENO_DLP_MODE="$mode"
+    export LOCAL_HOOK_MODE="$local_mode"
     export TRUST_LOG="$tmp/$name.trust.log"
     export TRUST_EXIT="$trust_exit"
     export LOCAL_HOOK_LOG="$log"
@@ -90,6 +102,18 @@ run_case untrusted-singular untrusted-singular 0 "$tmp/bin:$tmp/tools"
 [ "$(cat "$tmp/untrusted-singular.status")" -eq 0 ]
 grep -q local-hook "$tmp/untrusted-singular.log"
 grep -q 'skipping secret scan' "$tmp/untrusted-singular.output"
+
+# local hook が trust 切れで落ちても commit は進む
+run_case local-untrusted ok 0 "$tmp/bin:$tmp/tools" untrusted
+[ "$(cat "$tmp/local-untrusted.status")" -eq 0 ]
+grep -q local-hook "$tmp/local-untrusted.log"
+grep -q 'skipping local hook' "$tmp/local-untrusted.output"
+
+# local hook の実検出は従来どおり commit を止める
+run_case local-findings ok 0 "$tmp/bin:$tmp/tools" findings
+[ "$(cat "$tmp/local-findings.status")" -eq 1 ]
+grep -q local-hook "$tmp/local-findings.log"
+grep -q 'local-hook: staged secret found' "$tmp/local-findings.output"
 
 # rc 1 の実検出は従来どおり commit を止める
 run_case findings findings 0 "$tmp/bin:$tmp/tools"

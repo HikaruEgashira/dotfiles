@@ -320,7 +320,7 @@ upstream (`sst/opencode`) への issue は当面立てない。preflight が int
 mise trust --show
 ```
 
-pre-commit の secret scan は「untrusted による rc 1」を検出 (findings) と区別し、scan を skip して local hook へ進む。untrusted を理由に `--no-verify` で検査ごと飛ばさない。
+pre-commit の secret scan は「untrusted による rc 1」を検出 (findings) と区別し、scan を skip して local hook へ進む。local hook 自体が trust 切れで落ちた場合も commit は止めず、skip した事実を stderr に残す。untrusted を理由に `--no-verify` で検査ごと飛ばさない。
 
 ## 5. 緊急時 / ロールバック
 
