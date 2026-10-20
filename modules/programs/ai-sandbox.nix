@@ -34,17 +34,47 @@ let
     "${home}/.config/gcloud"
     "${home}/.config/opencodex"
     "${home}/.config/secrets"
+    "${home}/.terraform.d/credentials.tfrc.json"
+    "${home}/.npmrc"
+    "${home}/.local/share/opencode"
+    "${home}/.claude.json"
+    "${home}/.zsh_history"
+    "${home}/.config/nix/nix.conf"
   ];
 
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
   sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
 
-  # sandbox からの永続化経路 (ログイン時に自動実行される plist) を塞ぐ
+  # sandbox からの永続化経路 (自動実行・自己書き換え・プロンプト注入) を塞ぐ
   persistence = [
     "${home}/Library/LaunchAgents"
     "/Library/LaunchAgents"
     "/Library/LaunchDaemons"
+    "${home}/.zshrc"
+    "${home}/.zshenv"
+    "${home}/.zprofile"
+    "${home}/.bashrc"
+    "${home}/.bash_profile"
+    "${home}/.profile"
+    "${home}/.config/git/hooks"
+    "${home}/.claude/CLAUDE.md"
+    "${home}/.codex/AGENTS.md"
+    "${home}/.config/opencode/AGENTS.md"
+    "${home}/.pi/agent/APPEND_SYSTEM.md"
+    "${home}/.claude/settings.json"
+    "${home}/.codex/config.toml"
+    "${home}/.config/opencode/opencode.json"
+    "${home}/.config/ai-sandbox"
+    "${home}/.config/claude/sandbox.json"
   ];
+
+  # codex は 1 path 1 verdict なので、自分が読む設定は write だけ deny できない
+  codexReadable = [
+    "${home}/.codex/AGENTS.md"
+    "${home}/.codex/config.toml"
+    "${home}/.config/ai-sandbox"
+  ];
+  codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;
 
   claudeSettings = {
     autoMode = builtins.fromJSON (builtins.readFile ./claude/auto-mode.json);
@@ -73,7 +103,7 @@ let
   }
   // lib.genAttrs writable (_: "write")
   // lib.genAttrs secrets (_: "deny")
-  // lib.genAttrs persistence (_: "deny");
+  // lib.genAttrs codexPersistence (_: "deny");
   filesystemToml = "{${
     lib.concatMapStringsSep "," (p: ''"${p}"="${codexFilesystem.${p}}"'') (
       builtins.attrNames codexFilesystem
