@@ -35,6 +35,7 @@ for path in "${secrets[@]}"; do
   assert_list_has secrets "$path"
 done
 
+# shellcheck disable=SC2016 # Match the literal Nix home interpolation.
 if grep -Fq '"${home}/.aws"' <<<"$(list_body writable)"; then
   printf '%s\n' 'FAIL: writable unexpectedly allows ~/.aws' >&2
   exit 1
