@@ -220,7 +220,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.6 self-hosted runner を登録する (macOS 端末ごとに一度)
 
-`activation-darwin` (`.github/workflows/activation-darwin.yml`) は label `hikae` の self-hosted runner で **aarch64-darwin の activation を build** し、flake.lock bump が壊していれば `scripts/flake-lock-repair.sh` が main を 1 commit 戻す。linux CI は eval 止まりなので、build 破壊を捕まえられるのはここだけ。
+`hikae` は Lambda MicroVM fleet 外で動く唯一の self-hosted runner。`activation-darwin` (`.github/workflows/activation-darwin.yml`) は label `hikae` の runner で **aarch64-darwin の activation を build** し、flake.lock bump が壊していれば `scripts/flake-lock-repair.sh` が main を 1 commit 戻す。実デプロイ先かつ linux CI は eval 止まりのため、build 破壊を捕まえられるのはここだけ。
 
 登録 (runner 本体は自己更新するため `~/actions-runner` に置き、plist は `modules/programs/github-runner.nix` の宣言管理):
 
