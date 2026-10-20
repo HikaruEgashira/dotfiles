@@ -35,7 +35,7 @@ for path in "${secrets[@]}"; do
   assert_list_has secrets "$path"
 done
 
-if grep -Fq "\"\${home}/.aws\"" <<<"$(list_body writable)"; then
+if grep -Fq '"${home}/.aws"' <<<"$(list_body writable)"; then
   printf '%s\n' 'FAIL: writable unexpectedly allows ~/.aws' >&2
   exit 1
 fi
