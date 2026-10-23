@@ -42,6 +42,14 @@
     role_session_name = local-apply
     source_profile    = hikae-admin-sso
 
+    # ARTEX の MicroVM オーケストレーション (ローカル launchd)。
+    # 長期キーを持たず、hikae-admin-sso から artex-microvm-run を引受ける。
+    [profile artex-microvm]
+    region            = ap-northeast-1
+    role_arn          = arn:aws:iam::951872725222:role/artex-microvm-run
+    role_session_name = artex-local
+    source_profile    = hikae-admin-sso
+
     # lab-seccamp26d2 (931932531320, seccamp-2026-d2 の terraform 対象)。
     # iac-aws-apply@lab の trust は OrganizationAccountAccessRole のみのため 2-hop chain。
     [profile seccamp-lab-apply]
