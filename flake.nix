@@ -162,6 +162,8 @@
             known='
             dev.egahika.dotfiles-sync
             dev.egahika.github-runner
+            dev.egahika.artex
+            dev.egahika.artex-postgres
             dev.egahika.clean-worktree
             dev.egahika.opencode-service-health
             com.claude.caffeinate

@@ -23,6 +23,8 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)               | 12 分間隔    | OAuth refresh + upgrade check             |
 | `com.opencodex.proxy`                 | **opencodex 自己管理** (`ocx service`)               | 常駐         | Codex provider proxy                      |
 | `dev.egahika.github-runner`           | home-manager (`modules/programs/github-runner.nix`)  | 常駐         | self-hosted GHA runner `hikae`            |
+| `dev.egahika.artex`                   | home-manager (`modules/programs/artex.nix`)          | 常駐         | `127.0.0.1:8787`、入口は tailscale serve  |
+| `dev.egahika.artex-postgres`          | home-manager (`modules/programs/artex.nix`)          | 常駐         | ARTEX 用 Postgres `127.0.0.1:5432`        |
 | `com.google.GoogleUpdater.wake`       | vendor (GoogleUpdater.app)                           | 1 時間間隔   | Chrome/Google app 更新                    |
 
 twg / opencodex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。

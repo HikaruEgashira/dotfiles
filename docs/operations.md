@@ -251,6 +251,24 @@ gh api -X DELETE "repos/HikaruEgashira/dotfiles/actions/runners/$(gh api repos/H
 rm -rf ~/actions-runner
 ```
 
+### 3.7 ARTEX を tailnet だけに公開する (module: `modules/programs/artex.nix`)
+
+ARTEX と Postgres は loopback (`127.0.0.1:8787` / `:8788` / `:5432`) でしか待ち受けない。外部入口は `tailscale serve` だけにして、LAN や公衆網からは到達できないようにする。serve の設定は tailscaled 側の状態に保存され、再起動後も残る。ACL 上この端末に到達できる tailnet node (tagged device を含む) は全て接続できるため、絞る場合は tailnet ACL で制御する。
+
+```bash
+tailscale serve --bg --https=443 http://127.0.0.1:8787
+tailscale serve status
+```
+
+binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルとし、宣言管理するのは launchd の起動条件だけにする。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+
+確認 (tailnet 内の別端末から接続でき、LAN IP では拒否される):
+
+```bash
+curl -sf https://$(tailscale status --json | jq -r '.Self.DNSName | rtrimstr(".")')/api/health
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788|5432) '   # 全て 127.0.0.1
+```
+
 ## 4. トラブルシュート
 
 ### 4.1 activation が失敗した
