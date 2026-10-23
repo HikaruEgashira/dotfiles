@@ -166,6 +166,7 @@
             dev.egahika.artex-postgres
             dev.egahika.clean-worktree
             dev.egahika.opencode-service-health
+            dev.egahika.pi-extensions-update
             com.claude.caffeinate
             com.atlassian.twg.upkeep
             com.opencodex.proxy
