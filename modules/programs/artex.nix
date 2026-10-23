@@ -8,7 +8,7 @@
 let
   home = config.home.homeDirectory;
   stateDir = "${home}/.local/share/artex";
-  # binary・data・secrets は stateful (stateDir)、起動条件だけ宣言管理する。待受は loopback 限定で、外部入口は tailscale serve のみ
+  # binary・data・secrets は stateful (stateDir)、起動条件だけ宣言管理する。待受は loopback 限定で受信は公開しない
   run = pkgs.writeShellScript "artex-run" ''
     # server が exec する aws (MicroVM 操作) / npx (MCP) / rg を launchd の最小 PATH に足す
     export PATH=${
