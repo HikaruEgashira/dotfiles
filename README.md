@@ -39,6 +39,7 @@ modules/
   packages.nix           CLI / GUI / build deps via nixpkgs
   fonts.nix              Cica + PlemolJP NF (fontconfig)
   programs/
+    artex.nix            launchd agents: ARTEX + Postgres on loopback, exposed only via tailscale serve
     aws.nix              ~/.aws/config; readonly default + step-up MFA role
     cli-tools.nix        fzf / bat / lsd / aria2 / starship
     cmux.nix             cmux settings.json + macOS defaults
