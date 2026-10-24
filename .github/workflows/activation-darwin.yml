@@ -30,8 +30,8 @@ jobs:
       - name: Build activation package
         timeout-minutes: 45
         run: |
-          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
-          nix build --no-link --print-build-logs '.#homeConfigurations.hikae.activationPackage'
+          export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
+          nix build --no-link --print-build-logs '.#darwinConfigurations.hikae.system'
       - name: Repair a broken flake.lock bump
         if: failure()
         timeout-minutes: 20
@@ -40,7 +40,7 @@ jobs:
           REPAIR_PUSH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         run: |
           set -o pipefail
-          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+          export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
           bash scripts/flake-lock-repair.sh . \
-            nix build --no-link '.#homeConfigurations.hikae.activationPackage' \
+            nix build --no-link '.#darwinConfigurations.hikae.system' \
             | tee -a "$GITHUB_STEP_SUMMARY"

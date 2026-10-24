@@ -492,7 +492,7 @@ let
       reason = "Hugging Face Hub CLI (hf / huggingface-cli)";
     })
 
-    # GUI apps are Brewfile casks: nix pins stale builds that hijack LaunchServices,
+    # GUI apps are homebrew casks (modules/darwin/homebrew.nix): nix pins stale builds that hijack LaunchServices,
     # and each flake.lock bump re-downloads hundreds of MiB (see docs/operations.md).
 
     (mkEntry {

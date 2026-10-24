@@ -1,12 +1,14 @@
 # Agent Primer — `~/dotfiles`
 
-このリポジトリは Nix flake + home-manager で aarch64-darwin 上の開発環境を再現可能に管理する。AI エージェント (Claude Code 等) は本ドキュメントを起点に、どこに何を書くかを判断する。
+このリポジトリは Nix flake + nix-darwin + home-manager で aarch64-darwin 上の開発環境を再現可能に管理する。nix-darwin がマシン層 (`/etc`, `defaults`, sudo/PAM, firewall, launchd, Homebrew)、home-manager がユーザー層を担う。AI エージェント (Claude Code 等) は本ドキュメントを起点に、どこに何を書くかを判断する。
 
 ## レイアウト 5 行
 
 ```
 flake.nix              substituter / formatter / checks / apps を宣言
-home.nix               モジュールを束ねる
+hosts/<host>/          darwin system の入口 (modules/darwin/* を import)
+modules/darwin/*.nix   システム層 (nix.conf, firewall, sudo/PAM, homebrew)
+home.nix               ユーザーモジュールを束ねる
 modules/programs/*.nix 設定が要るプログラム (zsh, git, tmux, ghostty, etc.)
 modules/packages.nix   設定不要な home.packages を ledger 経由で宣言
 lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
@@ -18,7 +20,7 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pkgs.<name>` だけで足りる package | `lib/package-registry.nix` (`mkEntry { pkg; purpose; reason; }`)                                                                                                                                                                                                                            |
 | 設定が要る program                 | `modules/programs/<name>.nix` を新規作成、`home.nix` に `imports` 追加                                                                                                                                                                                                                      |
-| GUI / kext / nixpkgs に無いもの    | `Brewfile` (理由をコメントで残す)                                                                                                                                                                                                                                                           |
+| GUI / kext / nixpkgs に無いもの    | `modules/darwin/homebrew.nix` の `casks` / `brews` / `masApps` (理由をコメントで残す)                                                                                                                                                                                                                                                         |
 | CLI 補助・チートシート             | `modules/settings/<topic>.{sh,md}`                                                                                                                                                                                                                                                          |
 | AI agent のユーザー設定            | 共有 system prompt は `modules/programs/claude/CLAUDE.md` が single source (`claude.nix` → `~/.claude/CLAUDE.md`、`codex.nix` → `~/.codex/AGENTS.md`、`pi.nix` → `~/.pi/agent/APPEND_SYSTEM.md`); `opencode.nix` はこれを ponytail と連結して `~/.config/opencode/AGENTS.md` に配置。Claude `settings.json` / opencode `opencode.json` は repo 管理せず live が source of truth (例外: auto mode 規則は `modules/programs/claude/auto-mode.json` を `ai-sandbox.nix` が `--settings` で重ねる); MCP は `claude mcp add --scope user` で `~/.claude.json` に登録 |
 | playbook (運用手順)                | 索引は `docs/playbooks.md`、本文は `docs/operations.md` / `docs/launchd.md`                                                                                                                                                                                                                  |
@@ -29,23 +31,23 @@ lib/{ledger,package-registry}.nix  パッケージ ledger のデータ層
 
 | コマンド                                                        | 効果                                              |
 | --------------------------------------------------------------- | ------------------------------------------------- |
-| `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | activation を実行 (本番適用)                      |
+| `nix run ~/dotfiles#switch`                                     | darwin system を適用 (root / Touch ID 承認)       |
 | `nix fmt`                                                       | treefmt で nix / md / yaml / sh / json を整形     |
 | `nix flake check`                                               | formatter + home-manager build + apps eval        |
 | `nix run .#update`                                              | 全 inputs を latest に bump + eval gate (`--activate` で適用) |
 | `nix run .#audit`                                               | Package Ledger の purpose 別集計と全エントリ表    |
 | `nix run .#lint`                                                | deadnix + shellcheck (CI でも実行)                |
-| `brew bundle --file=~/dotfiles/Brewfile`                        | nix で扱えない GUI / kext / cask の同期           |
+| `nix run ~/dotfiles#xdg-audit`                                  | 宣言した XDG entry と live の drift を報告         |
 
-設定変更は適用までがタスク完了の定義。commit / push に加えて activation を実行し、反映先ファイルを確認する。Claude Code の sandbox 内で activation を実行すると `~/.claude/CLAUDE.md` のリンク作成だけが `Operation not permitted` で失敗し他は成功するため、activation は sandbox 外 (`dangerouslyDisableSandbox`) で実行し、直後に `ls -la ~/.claude/CLAUDE.md` で確認する。
+設定変更は適用までがタスク完了の定義。commit / push に加えて `nix run .#switch` を実行し、反映先ファイルを確認する。switch は root (sudo) が要るため sandbox 外で実行し、`nix store ping` と `readlink /run/current-system` で完了を確認する。
 
 ## 規約 (Secure By Design)
 
 - **declarative 優先**: シェルから `git config --global` 等で永続変更しない。`programs.git.settings` に書く。`~/.gitconfig` の設定は HM-管理の `~/.config/git/config` を上書きするため、レガシーが残っていれば `home.activation` で `--unset-all` する。
 - **ledger 経由**: `home.packages` を直接書かない。`lib/package-registry.nix` に `mkEntry` で宣言し、purpose (`build`/`edit`/`ops`/`comm`/`observe`/`play`/`util` の 7 値) と `reason` を記す。
-- **逃げ場の明文化**: `Brewfile` に書く時は理由を行コメントで残し、nix 化のトリガーが何かを書く (例: codex CLI の nix 化が ripgrep の brew 削除のトリガー)。
-- **ローカルソースビルド禁止**: 手元での source build (= 上流リポのコードを `buildPhase` で実行する derivation) はサプライチェーンリスク (依存ツリー全域でのコンパイル時 RCE 機会) が高いため、`lib/package-registry.nix` に追加するのは `cache.nixos.org` から output がそのまま取れる pkg のみ。`overrideAttrs` で version / src / 環境変数 / `doCheck` を変えて結果ハッシュを変質させるパッチも (cache を逸脱して再コンパイルを誘発するので) 禁止。nixpkgs binary cache が無いものは `Brewfile` (署名付きの bottle / cask) か、上流公式の署名済みインストーラ (例: `curl https://mise.run \| sh`) に逃がす。検証: `nix path-info --derivation` でその pkg の output ハッシュを取り `https://cache.nixos.org/$HASH.narinfo` に HEAD して 200 を確認する。ハッシュ固定の fetchurl / fetchzip / VSIX unpack 系 (`buildPhase` 空 + `unpack-vsix-setup-hook` 等の copy-only hook) と HM の config-derived ラッパー (`hm_*`, `home-manager-*`, `*-config`, `home-manager-fonts`) は対象外 — 上流コードを動かさない。
-- **CI ゲート 5 段**: treefmt formatter / home-manager eval / determinism gate / lint (deadnix + shellcheck) / `checks.aarch64-linux.xdg-entries-guards` (XDG entry の assert が生きていること)。緑にしてから merge。
+- **逃げ場の明文化**: `modules/darwin/homebrew.nix` に書く時は理由を行コメントで残し、nix 化のトリガーが何かを書く (例: codex CLI の nix 化が ripgrep の brew 削除のトリガー)。
+- **ローカルソースビルド禁止**: 手元での source build (= 上流リポのコードを `buildPhase` で実行する derivation) はサプライチェーンリスク (依存ツリー全域でのコンパイル時 RCE 機会) が高いため、`lib/package-registry.nix` に追加するのは `cache.nixos.org` から output がそのまま取れる pkg のみ。`overrideAttrs` で version / src / 環境変数 / `doCheck` を変えて結果ハッシュを変質させるパッチも (cache を逸脱して再コンパイルを誘発するので) 禁止。nixpkgs binary cache が無いものは `modules/darwin/homebrew.nix` (署名付きの bottle / cask) か、上流公式の署名済みインストーラ (例: `curl https://mise.run \| sh`) に逃がす。検証: `nix path-info --derivation` でその pkg の output ハッシュを取り `https://cache.nixos.org/$HASH.narinfo` に HEAD して 200 を確認する。ハッシュ固定の fetchurl / fetchzip / VSIX unpack 系 (`buildPhase` 空 + `unpack-vsix-setup-hook` 等の copy-only hook) と HM の config-derived ラッパー (`hm_*`, `home-manager-*`, `*-config`, `home-manager-fonts`) は対象外 — 上流コードを動かさない。
+- **CI ゲート 5 段**: treefmt formatter / home-manager eval / determinism gate / lint (deadnix + shellcheck) / `checks.aarch64-linux.xdg-entries-guards` (XDG entry の assert が生きていること)。darwin 側は `checks.aarch64-darwin.darwin-eval` と self-hosted runner の `activation-darwin` が担う。緑にしてから merge。
 - **シークレット**: `~/.aws/credentials` の long-term AKIA 撤去 (IAM Identity Center 移行) は継続中。新規秘密は `direnv` (`.envrc`) 経由でセッション局所に閉じ、commit しない。
 - **git transport は HTTPS only**: `programs.git.settings.url` の `insteadOf` で `git@github.com:` / `ssh://git@github.com/` を `https://github.com/` に強制 rewrite し、認証は `gh auth git-credential` (HTTPS + token) に一本化する。SSH 鍵による git auth は使わない (commit signing 用の SSH 鍵は別軸で維持)。
 
@@ -80,7 +82,7 @@ direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
 - daily 09:00 launchd で `dotfiles-sync` が `main` 追従。clean tree のみ。
 - weekly GitHub Actions が `flake.lock` を main に直接 push (CI は push 後に検証)。
 - 各 sync の結果は `~/.cache/dotfiles-sync/metrics.jsonl` に追記される (`outcome` / `wall_s` / `head_before` / `head_after`)。
-- 2 台目以降の追加: `hosts/<host>/default.nix` を作成し、`flake.nix` の `mkConfig` を host / system 引数化して `homeConfigurations.<host>` を追加する。`home.nix` は universal な base としてそのまま、host 固有 override (proxy / 別 identity / screenlock など) は host モジュール側に書く。
+- 2 台目以降の追加: `hosts/<host>/default.nix` を作成し、`flake.nix` の `darwinConfigurations` に `mkDarwin` で追加する。`home.nix` は universal な base としてそのまま、host 固有 override (proxy / 別 identity / screenlock など) は host モジュール側に書く。
 
 ## エージェントが避けるべき変更
 

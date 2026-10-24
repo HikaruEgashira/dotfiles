@@ -9,13 +9,6 @@
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
 
-    envExtra = ''
-      # nix-installer PR#714 gates /etc/zshenv behind SSH_CONNECTION
-      if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
-          . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-      fi
-    '';
-
     shellAliases = {
       z = "zod .";
       q = "gh q bash ~/dotfiles/modules/settings/tmux-dev.sh";

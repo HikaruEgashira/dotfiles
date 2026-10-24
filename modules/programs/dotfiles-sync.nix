@@ -27,13 +27,14 @@ let
     head_after=""
     outcome="error"
     xdg_drift="not-run"
+    pending="unknown"
 
     write_metric() {
       ended_at=$(date -u +%s)
       wall_s=$(( ended_at - started_at ))
       ts=$(date -u +%FT%TZ)
-      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s","xdg_drift":"%s"}\n' \
-        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" "$xdg_drift" \
+      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s","xdg_drift":"%s","pending":"%s"}\n' \
+        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" "$xdg_drift" "$pending" \
         >>"${metricsFile}"
     }
     trap write_metric EXIT
@@ -61,8 +62,15 @@ let
       head_after=$(git rev-parse HEAD)
     fi
 
-    nix run ".#homeConfigurations.hikae.activationPackage" --no-warn-dirty
-    outcome="activated"
+    # 適用は root (darwin-rebuild) なので、ここでは build まで通して未適用を記録するだけに留める
+    built=$(nix build --no-link --print-out-paths ".#darwinConfigurations.hikae.system")
+    outcome="built"
+    current=$(readlink -f /run/current-system 2>/dev/null || echo "")
+    if [ "$built" != "$current" ]; then
+      pending="yes"
+    else
+      pending="no"
+    fi
 
     # 報告のみ: drift があっても同期の成否は変えない (unknown は audit 自体の実行失敗)
     audit_verdict=$(nix run ".#xdg-audit" 2>/dev/null | grep -o 'drift=[01]' | cut -d= -f2 | tail -n1 || true)

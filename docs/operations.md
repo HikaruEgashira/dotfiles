@@ -4,20 +4,20 @@
 
 ## 1. 日常運用
 
-| やりたいこと     | コマンド                                                        | 備考                                                                                                                                                            |
-| ---------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 設定を反映       | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | 冪等。`--accept-flake-config` は trusted-users 設定後は不要                                                                                                     |
-| ledger 棚卸し    | `nix run ~/dotfiles#audit`                                      | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                 |
-| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                              | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                    |
-| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                                  | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                      |
-| 静的検査         | `cd ~/dotfiles && nix run .#lint`                               | statix + deadnix + shellcheck (CI と同一)                                                                                                                       |
-| 整形             | `cd ~/dotfiles && nix fmt`                                      | nixfmt + prettier + shfmt                                                                                                                                       |
-| flake gate       | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                |
-| inputs 更新      | `cd ~/dotfiles && nix run .#update`                             | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する               |
-| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run`              | 週次 launchd と同じ処理 (nix 世代削除 + GC + optimise + キャッシュ prune) を手で回す。実削除は `--dry-run` を外す                                               |
-| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after / xdg_drift`。`xdg_drift` は同期後の XDG entry 監査結果 (`none`/`drift`/`unknown`/`not-run`、同期の成否は変えない) |
+| やりたいこと     | コマンド                                           | 備考                                                                                                                                                 |
+| ---------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 設定を反映       | `nix run ~/dotfiles#switch`                        | `sudo darwin-rebuild switch --flake ~/dotfiles#hikae`。root が要るので Touch ID で承認する                                                           |
+| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                      |
+| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                         |
+| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                           |
+| 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                            |
+| 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                            |
+| flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                     |
+| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する    |
+| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | 週次 launchd と同じ処理 (nix 世代削除 + GC + optimise + キャッシュ prune) を手で回す。実削除は `--dry-run` を外す                                    |
+| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「build は通ったが未適用」を意味する。適用は `nix run .#switch` |
 
-clean な `main` は `origin/main` と同じでも activation を毎回実行し、失敗時は次回に再試行する。
+clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
 
 ## 2. 何かを追加する
 
@@ -38,9 +38,9 @@ clean な `main` は `origin/main` と同じでも activation を毎回実行し
 
 ### 2.3 新しい host (2 台目以降) を足す
 
-1. `hosts/<HOST>/default.nix` を新規作成。host 固有の override (proxy / 別 identity / screenlock) を書く。
-2. `flake.nix` の `mkConfig` を host / system 引数化し、`homeConfigurations` に `<HOST>` エントリを追加する。
-3. 新 host で `nix run github:HikaruEgashira/dotfiles#homeConfigurations.<HOST>.activationPackage`。
+1. `hosts/<HOST>/default.nix` を新規作成し、`modules/darwin/*` を import する。host 固有の override (proxy / 別 identity / screenlock) もここに書く。
+2. `flake.nix` の `darwinConfigurations` に `<HOST> = mkDarwin "aarch64-darwin";` を追加する。`home-manager.users.<user>` と `system.primaryUser` も host 側で切り替える。
+3. 新 host で `nix run nix-darwin/master -- switch --flake github:HikaruEgashira/dotfiles#<HOST>`。
 
 ### 2.4 XDG entry を足す / 移設する
 
@@ -53,39 +53,20 @@ clean な `main` は `origin/main` と同じでも activation を毎回実行し
 
 ### 2.5 nixpkgs に無い GUI / kext を足す
 
-1. `Brewfile` に `cask "<NAME>"` で追加。
-2. 直前のコメント行に nix 化できない理由を残す (例: `# nixpkgs broken`, `# kext required`)。
-3. nix 化できるようになったら Brewfile から削除し `lib/package-registry.nix` に移す。
+1. `modules/darwin/homebrew.nix` の `casks` / `brews` / `masApps` に追加。
+2. 直前のコメントに nix 化できない理由を残す (例: `# nixpkgs broken`, `# kext required`)。
+3. 次回 switch で `brew bundle` が走る。即時反映だけしたい場合は `brew bundle --file=<generated>` を待たず `nix run .#switch` を回す。
+4. nix 化できるようになったら homebrew から削除し `lib/package-registry.nix` に移す。
 
 npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@version` / `uvx --from pkg==version` を包む (初回実行時のみネットワーク)。常駐 daemon は npx のキャッシュ path が入れ替わるため、`npm install -g --prefix ~/.local/share/npm-global pkg@version` で固定 prefix に入れ、`~/.local/share/npm-global/bin` を PATH に置く。
 
 ## 3. オプトイン機能を有効化する
 
-### 3.0 Firewall posture (module: `modules/programs/security.nix`)
+### 3.0 Firewall posture (module: `modules/darwin/security.nix`)
 
-activation が毎回適用できるように、各実機で一度だけ3つの setter に引数まで限定した passwordless sudo を許可する。既存の広い規則があれば追記せず、下記3行だけに置き換える:
+`networking.applicationFirewall` が activation (root) で global on + stealth on + blockall on を適用し、同じ activation の末尾で実効値を読み戻して検証する。sudoers の追加設定は要らない。
 
-```bash
-sudo visudo -f /etc/sudoers.d/firewall
-```
-
-ファイルの内容:
-
-```sudoers
-hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
-hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
-hikae ALL=(root) NOPASSWD: /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
-```
-
-activation で適用される内容: global on + stealth on + blockall on。blockall は ALF の非必須な受信を遮断するため、忘れた dev server の `*:PORT` bind は LAN から通常到達できなくなる。ALF だけで全受信を保証せず、必要な受信サービスにも影響する。
-
-activation を待たず今すぐ適用する場合:
-
-```bash
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
-```
+blockall は ALF の非必須な受信を遮断するため、忘れた dev server の `*:PORT` bind は LAN から通常到達できなくなる。ALF だけで全受信を保証せず、必要な受信サービスにも影響する。
 
 確認:
 
@@ -93,47 +74,36 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
 /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate --getstealthmode --getblockall
 ```
 
-global は `(State = 1)` または `(State = 2)`、stealth は `on`、blockall は `blocking all non-essential incoming connections` を確認する。activation も同じ実効値を検証し、setter失敗や不一致を終了コード1にする。
+global は `(State = 1)` または `(State = 2)`、stealth は `on`、blockall は `blocking all non-essential incoming connections` を確認する。activation も同じ実効値を検証し、setter 失敗や不一致を終了コード 1 にする (`nix run .#switch` が失敗する)。
 
-一時的に blockall だけを解除する場合（次回 activation で on に戻る）:
+一時的に blockall だけを解除する場合 (次回 switch で on に戻る):
 
 ```bash
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off
 ```
 
-完全に撤回する場合は、module の変更を git で戻し、記録した変更前の3値へ復元してから、不要になった `/etc/sudoers.d/firewall` の3規則を削除する。
+完全に撤回する場合は `networking.applicationFirewall.*` を module から外して switch する。旧方式の `/etc/sudoers.d/firewall` は migration で撤去済み。
 
 ### 3.1 sudo で Touch ID を使う
 
-```bash
-~/dotfiles/scripts/sudo-touchid.sh status
-~/dotfiles/scripts/sudo-touchid.sh enable
-```
-
-無効化するとき:
+`security.pam.services.sudo_local.touchIdAuth` が `/etc/pam.d/sudo_local` を宣言管理する。`reattach` も有効なので tmux / screen 内の sudo でも効く。状態確認は:
 
 ```bash
-~/dotfiles/scripts/sudo-touchid.sh disable
+grep -E 'pam_tid|pam_reattach' /etc/pam.d/sudo_local
 ```
 
-このスクリプトは macOS Ventura+ の `/etc/pam.d/sudo_local` を更新する (OS 更新で上書きされない)。旧 `/etc/pam.d/sudo` 内の inline 行は enable / disable 時に掃除する。
+無効化するときは `modules/darwin/security.nix` の該当行を外して switch する。
 
-### 3.2 cachix substituter を実効化 (Survivor #1)
+### 3.2 cachix substituter を実効化
 
-1 度だけ:
-
-```bash
-echo 'extra-trusted-users = @admin' | sudo tee -a /etc/nix/nix.custom.conf
-sudo launchctl kickstart -k system/systems.determinate.nix-daemon
-```
+`modules/darwin/nix.nix` の `nix.settings` が `/etc/nix/nix.conf` を生成する (`trusted-users = root @admin` を含む)。手で追記する設定は無い。
 
 確認:
 
 ```bash
 nix show-config | grep '^trusted-users'   # → root @admin
+nix show-config | grep '^substituters'    # → cache.nixos.org と nix-community.cachix.org
 ```
-
-以降の activation は `nix-community.cachix.org` から fetch する。
 
 ### 3.3 Encrypted DNS (NextDNS DoH profile)
 
@@ -160,7 +130,7 @@ dscacheutil -q host -a name whoami.akamai.net      # → NextDNS node (ISP 61.12
 
 UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway に引き込むため、DNS を固定している端末 (Google Cast 等) も NextDNS に乗る。迂回経路として残るのは端末自身の DoT (853) / DoH のみで、DoT は UCG firewall で LAN→WAN tcp/853 を drop すれば塞げる。Tailscale は tailnet 設定で同じ NextDNS DoH を global resolver にしてあるので、有効化しても経路は変わらない (`clientName: tailscale` で観測)。
 
-解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `home.activation.wifiDnsFromDhcp` (`modules/programs/security.nix`) が activation ごとに空へ戻すので手で触らない。
+解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `system.activationScripts.wifiDnsFromDhcp` (`modules/darwin/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
 ### 3.4 署名鍵をローテーションする
 
@@ -182,7 +152,7 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 3. `modules/programs/ssh.nix` の `keyFile` と `modules/programs/git.nix` の `signingPubKey` を新鍵に更新し、適用する:
 
    ```bash
-   nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
+   nix run ~/dotfiles#switch
    launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-add
    ```
 
@@ -204,15 +174,9 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 `allowed_signers` は repo 管理 (公開情報) で、commit email を principal にしている。principal を変えない限り GitHub 側の verified 表示はアカウント登録鍵だけで決まる。
 
-### 3.5 macOS 自動アップデートを固定する (sudo 必須・未自動化)
+### 3.5 macOS 自動アップデートを固定する
 
-`/Library/Preferences/com.apple.SoftwareUpdate` が正で、書き込みに root が要るため activation には入れていない。新マシンで一度だけ:
-
-```bash
-sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true
-sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticallyInstallMacOSUpdates -bool true
-sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall -bool true
-```
+`system.defaults.CustomSystemPreferences."com.apple.SoftwareUpdate"` (`modules/darwin/system.nix`) が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する。手で `sudo defaults write` する必要は無い。
 
 確認:
 
@@ -234,7 +198,7 @@ tar xzf runner.tar.gz && rm runner.tar.gz
 ./config.sh --unattended --replace --url https://github.com/HikaruEgashira/dotfiles \
   --token "$(gh api -X POST repos/HikaruEgashira/dotfiles/actions/runners/registration-token --jq .token)" \
   --name "$name" --labels hikae --work _work
-nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
+nix run ~/dotfiles#switch
 ```
 
 確認:
@@ -266,10 +230,11 @@ tailscale serve status                                      # No serve config
 
 ## 4. トラブルシュート
 
-### 4.1 activation が失敗した
+### 4.1 switch が失敗した
 
 1. eval で `infinite recursion` → 直近の module 編集を疑う。`git diff HEAD~1` で範囲を絞る。
-2. 完全に動かなくなった → `home-manager generations` で旧 gen を確認し、`/nix/store/<HASH>-home-manager-generation/activate` を直接実行で巻き戻し。
+2. `/etc` の衝突 → `Unexpected files in /etc, aborting activation` が出たら、表示された file を `.before-nix-darwin` に rename して再実行する。nix-darwin は中身が未知の `/etc` を上書きしない。
+3. 完全に動かなくなった → `darwin-rebuild --list-generations` で旧 gen を確認し、`sudo darwin-rebuild --rollback` で戻す。
 
 ### 4.2 CI が落ちた
 
@@ -287,7 +252,7 @@ tailscale serve status                                      # No serve config
 `~/.gitconfig` の credential.helper が brew 由来 path に hardcode された旧症状 (PR #15 で修正済)。再発したら:
 
 ```bash
-nix run ~/dotfiles#homeConfigurations.hikae.activationPackage
+nix run ~/dotfiles#switch
 ```
 
 で `home.activation.purgeStaleGhCredentialHelper` が走り、HM-managed `~/.config/git/config` の helper を再生する。それでも直らない場合:
@@ -337,16 +302,48 @@ age -e -r "$(age-keygen -y age-key.txt)" -o env.age "$plain"
 
 キー名を増減したら `modules/programs/zsh.nix` の `_SECRETS_GEN` を上げる。番号を据え置くと、古い番号を継承したシェルが新しいキーを永久に読まない。
 
-## 5. 緊急時 / ロールバック
+### 4.7 nix-daemon / `/nix` がおかしい
 
-### 5.1 直近の HM 適用を巻き戻す
+daemon は nix-darwin 管理 (`org.nixos.nix-daemon`)、`/etc/nix/nix.conf` は `nix.settings` の生成物。
 
 ```bash
-home-manager generations | head -3            # 直近 gen を確認
-/nix/store/<PREVIOUS-HASH>-home-manager-generation/activate
+launchctl print system/org.nixos.nix-daemon | grep -E 'state|program'
+nix store ping
+sudo launchctl kickstart -k system/org.nixos.nix-daemon   # 設定変更を反映
+sudo tail -n50 /var/log/nix-daemon.log                     # logFile 未設定なら unified log: sudo log show --last 5m --predicate 'process == "nix-daemon"'
 ```
 
-`<PREVIOUS-HASH>` は `home-manager generations` の 2 行目 (1 つ前) の store path。
+`/nix` が mount されていない (再起動後に `nix` が消えた) 場合:
+
+```bash
+mount | grep ' /nix '
+sudo mount -t apfs "LABEL=Nix Store" /nix   # 手動で戻す
+sudo diskutil info "Nix Store" | grep -E 'Volume Name|Mount Point'
+```
+
+`/etc/fstab` の `LABEL=Nix\\ Store` 行が消えている場合は、行を戻してから再起動する。mount が戻らない場合に限り、migration の退避物から mount 専用の plist を戻す:
+
+```bash
+ls /var/backups/nix-darwin-migration/
+sudo cp /var/backups/nix-darwin-migration/<stamp>/systems.determinate.nix-store.plist /Library/LaunchDaemons/
+sudo launchctl load -w /Library/LaunchDaemons/systems.determinate.nix-store.plist
+```
+
+## 5. 緊急時 / ロールバック
+
+### 5.1 直近の switch を巻き戻す
+
+```bash
+darwin-rebuild --list-generations | head -3   # 直近 gen を確認
+sudo darwin-rebuild --rollback                # 1 つ前へ
+```
+
+home-manager generation 単体を戻す必要がある場合 (nix-darwin 経由で管理されているので通常は不要):
+
+```bash
+home-manager generations | head -3
+/nix/store/<PREVIOUS-HASH>-home-manager-generation/activate
+```
 
 ### 5.2 1 つ前の commit に main を戻す
 
@@ -358,27 +355,18 @@ git -C ~/dotfiles push                          # CI 緑で auto-merge
 
 ### 5.3 cachix substituter trust を撤回
 
-```bash
-sudo sed -i '' '/^extra-trusted-users = @admin$/d' /etc/nix/nix.custom.conf
-sudo launchctl kickstart -k system/systems.determinate.nix-daemon
-```
-
-これで PR #12 の効果のみ無効化、他の改善は影響なし。
+`modules/darwin/nix.nix` の `nix.settings` から `nix-community.cachix.org` の substituter / public key を外して switch する (`/etc/nix/nix.conf` は生成物なので直接編集しない)。
 
 ## 6. 新マシン bootstrap (将来の自分のため)
 
 ```bash
-# 1) Determinate Nix を入れる (curl オフィシャル installer)
-curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+# 1) upstream Nix を入れる (daemon と /nix volume は installer が作る)
+curl -fsSL https://nixos.org/nix/install | sh -s -- --daemon
 
-# 2) trusted-users を即足す (Survivor #1 を最初から効かせる)
-echo 'extra-trusted-users = @admin' | sudo tee -a /etc/nix/nix.custom.conf
-sudo launchctl kickstart -k system/systems.determinate.nix-daemon
-
-# 3) リポを clone & apply
+# 2) リポを clone して nix-darwin を適用する
 gh repo clone HikaruEgashira/dotfiles ~/dotfiles
-nix run ~/dotfiles#homeConfigurations.hikae.activationPackage --accept-flake-config
+nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
-# 4) brew 部分 (kext / GUI / cask)
-brew bundle --file=~/dotfiles/Brewfile
+# 3) Homebrew は switch 内の activation が homebrew module 経由で同期する
+#    (手で brew bundle は叩かない)
 ```

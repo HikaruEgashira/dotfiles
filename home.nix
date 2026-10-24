@@ -26,7 +26,6 @@
     ./modules/programs/artex.nix
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
-    ./modules/programs/security.nix
   ];
 
   programs.home-manager.enable = true;

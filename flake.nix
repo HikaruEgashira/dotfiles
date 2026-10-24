@@ -12,6 +12,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -30,6 +34,7 @@
     {
       self,
       nixpkgs,
+      nix-darwin,
       home-manager,
       treefmt-nix,
       herdr,
@@ -49,7 +54,8 @@
           config.allowUnfree = true;
         };
 
-      mkConfig =
+      # linux CI 用: home.nix を aarch64/x86_64-linux で eval し platform mismatch を捕まえる
+      mkHome =
         system:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
@@ -58,6 +64,38 @@
             ./home.nix
           ];
         };
+
+      mkDarwin =
+        system:
+        nix-darwin.lib.darwinSystem {
+          specialArgs.dotfilesPath = self;
+          modules = [
+            ./hosts/macbook-air/default.nix
+            home-manager.darwinModules.home-manager
+            {
+              nixpkgs = {
+                hostPlatform = system;
+                inherit overlays;
+                config.allowUnfree = true;
+              };
+              system.configurationRevision = self.rev or self.dirtyRev or null;
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs.dotfilesPath = self;
+                users.hikae = import ./home.nix;
+              };
+            }
+          ];
+        };
+
+      # XDG entry の live 定義は darwin では nix-darwin 経由の home-manager が持つ
+      xdgConfigFor =
+        system:
+        if system == "aarch64-darwin" then
+          (mkDarwin system).config.home-manager.users.hikae.xdg
+        else
+          (mkHome system).config.xdg;
 
       treefmtFor =
         system:
@@ -217,7 +255,7 @@
           entries =
             (import ./lib/xdg-entries.nix {
               lib = pkgs.lib;
-              inherit ((mkConfig system).config.xdg)
+              inherit (xdgConfigFor system)
                 configHome
                 cacheHome
                 dataHome
@@ -286,7 +324,7 @@
         let
           pkgs = pkgsFor system;
           lib = pkgs.lib;
-          inherit ((mkConfig system).config.xdg)
+          inherit (xdgConfigFor system)
             configHome
             cacheHome
             dataHome
@@ -390,51 +428,75 @@
 
             echo
             echo "==> eval gate"
-            ${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.activationPackage.drvPath > /dev/null
-
-            echo
-            echo "==> pi: $(${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.pkgs.pi-coding-agent.version)"
+            ${pkgs.nix}/bin/nix eval --raw .#darwinConfigurations.hikae.system.drvPath > /dev/null
 
             if [ "$activate" -eq 0 ]; then
               echo
-              echo "Done — flake.lock updated. Apply with: nix run .#update -- --activate"
+              echo "Done — flake.lock updated. Apply with: nix run .#switch"
               exit 0
             fi
 
             echo
             echo "==> activate: applying new generation"
-            ${pkgs.nix}/bin/nix run .#homeConfigurations.hikae.activationPackage
+            ${pkgs.nix}/bin/nix run .#switch
           '';
         in
         {
           type = "app";
           program = "${script}/bin/update";
         };
+      switchAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          darwin-rebuild = nix-darwin.packages.${system}.darwin-rebuild;
+          script = pkgs.writeShellScriptBin "switch" ''
+            set -eu
+            root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
+            exec /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#hikae"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/switch";
+        };
+      darwinEvalCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        builtins.seq (mkDarwin system).system.drvPath (pkgs.runCommand "darwin-eval" { } "touch $out");
     in
     {
-      homeConfigurations.hikae = mkConfig "aarch64-darwin";
+      darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
       );
 
-      apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (system: {
-        audit = auditAppFor system;
-        launchd-audit = launchdAuditAppFor system;
-        lint = lintAppFor system;
-        update = updateAppFor system;
-        xdg-audit = xdgAuditAppFor system;
-      });
+      apps = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (
+        system:
+        {
+          audit = auditAppFor system;
+          launchd-audit = launchdAuditAppFor system;
+          lint = lintAppFor system;
+          update = updateAppFor system;
+          xdg-audit = xdgAuditAppFor system;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "aarch64-darwin") {
+          switch = switchAppFor system;
+        }
+      );
 
       checks = {
         aarch64-linux = {
-          build = (mkConfig "aarch64-linux").activationPackage;
+          build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
           mel = melFor "aarch64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
-          build = (mkConfig "x86_64-linux").activationPackage;
+          build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
           mel = melFor "x86_64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
@@ -442,6 +504,7 @@
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
         aarch64-darwin = {
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
+          "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
         };
       };
     };
