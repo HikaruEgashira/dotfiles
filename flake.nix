@@ -165,6 +165,7 @@
             dev.egahika.artex
             dev.egahika.artex-postgres
             dev.egahika.clean-worktree
+            dev.egahika.disk-maintenance
             dev.egahika.opencode-service-health
             dev.egahika.pi-extensions-update
             com.claude.caffeinate
