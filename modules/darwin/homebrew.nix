@@ -7,6 +7,7 @@ _:
     user = "hikae";
 
     # activation は brew を upgrade/cleanup しない (差分は brew 側の auto-update に任せる)
+    # ponytail: cleanup=none なので削除した entry はディスクに残る。棚卸しは `brew bundle cleanup --file=$(nix eval --raw .#darwinConfigurations.hikae.config.homebrew.brewfile)` で手動実行する
     onActivation = {
       autoUpdate = false;
       upgrade = false;

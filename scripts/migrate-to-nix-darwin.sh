@@ -49,13 +49,12 @@ done < <(
   find . -type l | sed 's|^\./||' | sort
 )
 
-# 2. DetSys 固有で built tree に無い設定も退避する
-for rel in nix/nix.custom.conf; do
-  [ -f "/etc/$rel" ] || continue
-  sudo mkdir -p "$backup/etc/$(dirname "$rel")"
-  sudo mv "/etc/$rel" "$backup/etc/$rel"
-  echo "  /etc/$rel"
-done
+# 2. DetSys 固有で built tree に無い設定も退避する (extra-trusted-users は nix.settings が引き取る)
+if [ -f /etc/nix/nix.custom.conf ]; then
+  sudo mkdir -p "$backup/etc/nix"
+  sudo mv /etc/nix/nix.custom.conf "$backup/etc/nix/nix.custom.conf"
+  echo "  /etc/nix/nix.custom.conf"
+fi
 
 # 3. 世代を記録する (darwin-rebuild switch が行うのと同じ操作。daemon 停止前に済ませる)
 say "recording the system generation"
