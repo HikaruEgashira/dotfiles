@@ -92,10 +92,14 @@
       # XDG entry の live 定義は darwin では nix-darwin 経由の home-manager が持つ
       xdgConfigFor =
         system:
-        if system == "aarch64-darwin" then
-          (mkDarwin system).config.home-manager.users.hikae.xdg
-        else
-          (mkHome system).config.xdg;
+        let
+          hm =
+            if system == "aarch64-darwin" then
+              (mkDarwin system).config.home-manager.users.hikae
+            else
+              (mkHome system).config;
+        in
+        hm.xdg // { launchdAgents = hm.launchd.agents or { }; };
 
       treefmtFor =
         system:
@@ -189,6 +193,10 @@
         system:
         let
           pkgs = pkgsFor system;
+          lib = pkgs.lib;
+          hmLabels = lib.mapAttrsToList (_: a: a.config.Label) (
+            lib.filterAttrs (_: a: a.enable) (xdgConfigFor system).launchdAgents
+          );
           script = pkgs.writeShellScriptBin "launchd-audit" ''
             set -eu
             if [ "$(${pkgs.coreutils}/bin/uname -s)" != "Darwin" ]; then
@@ -196,16 +204,9 @@
               exit 0
             fi
 
-            # Intended non-Apple agents (see docs/launchd.md). Everything else is drift.
+            # home-manager が宣言する label は config から導出し、vendor の自己管理 agent だけを手書きする
             known='
-            dev.egahika.dotfiles-sync
-            dev.egahika.artex
-            dev.egahika.artex-postgres
-            dev.egahika.clean-worktree
-            dev.egahika.disk-maintenance
-            dev.egahika.opencode-service-health
-            dev.egahika.pi-extensions-update
-            com.claude.caffeinate
+            ${lib.concatStringsSep "\n            " hmLabels}
             com.atlassian.twg.upkeep
             com.opencodex.proxy
             com.google.GoogleUpdater.wake

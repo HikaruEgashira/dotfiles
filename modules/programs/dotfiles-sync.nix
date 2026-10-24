@@ -27,14 +27,15 @@ let
     head_after=""
     outcome="error"
     xdg_drift="not-run"
+    launchd_drift="not-run"
     pending="unknown"
 
     write_metric() {
       ended_at=$(date -u +%s)
       wall_s=$(( ended_at - started_at ))
       ts=$(date -u +%FT%TZ)
-      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s","xdg_drift":"%s","pending":"%s"}\n' \
-        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" "$xdg_drift" "$pending" \
+      printf '{"ts":"%s","outcome":"%s","wall_s":%d,"head_before":"%s","head_after":"%s","xdg_drift":"%s","launchd_drift":"%s","pending":"%s"}\n' \
+        "$ts" "$outcome" "$wall_s" "$head_before" "$head_after" "$xdg_drift" "$launchd_drift" "$pending" \
         >>"${metricsFile}"
     }
     trap write_metric EXIT
@@ -80,6 +81,13 @@ let
       xdg_drift="none"
     else
       xdg_drift="unknown"
+    fi
+
+    # 宣言外の launchd agent が常駐していれば drift として記録する (runner 登録等の検出)
+    if nix run ".#launchd-audit" >/dev/null 2>&1; then
+      launchd_drift="none"
+    else
+      launchd_drift="drift"
     fi
   '';
 in
