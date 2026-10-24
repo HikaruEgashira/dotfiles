@@ -4,17 +4,18 @@
 
 ## 1. 日常運用
 
-| やりたいこと   | コマンド                                                        | 備考                                                                                                                                                            |
-| -------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 設定を反映     | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | 冪等。`--accept-flake-config` は trusted-users 設定後は不要                                                                                                     |
-| ledger 棚卸し  | `nix run ~/dotfiles#audit`                                      | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                 |
-| launchd 棚卸し | `nix run ~/dotfiles#launchd-audit`                              | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                    |
-| XDG 棚卸し     | `nix run ~/dotfiles#xdg-audit`                                  | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                      |
-| 静的検査       | `cd ~/dotfiles && nix run .#lint`                               | statix + deadnix + shellcheck (CI と同一)                                                                                                                       |
-| 整形           | `cd ~/dotfiles && nix fmt`                                      | nixfmt + prettier + shfmt                                                                                                                                       |
-| flake gate     | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                |
-| inputs 更新    | `cd ~/dotfiles && nix run .#update`                             | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する               |
-| 同期実績       | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after / xdg_drift`。`xdg_drift` は同期後の XDG entry 監査結果 (`none`/`drift`/`unknown`/`not-run`、同期の成否は変えない) |
+| やりたいこと     | コマンド                                                        | 備考                                                                                                                                                            |
+| ---------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 設定を反映       | `nix run ~/dotfiles#homeConfigurations.hikae.activationPackage` | 冪等。`--accept-flake-config` は trusted-users 設定後は不要                                                                                                     |
+| ledger 棚卸し    | `nix run ~/dotfiles#audit`                                      | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                 |
+| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                              | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                    |
+| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                                  | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                      |
+| 静的検査         | `cd ~/dotfiles && nix run .#lint`                               | statix + deadnix + shellcheck (CI と同一)                                                                                                                       |
+| 整形             | `cd ~/dotfiles && nix fmt`                                      | nixfmt + prettier + shfmt                                                                                                                                       |
+| flake gate       | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                |
+| inputs 更新      | `cd ~/dotfiles && nix run .#update`                             | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する               |
+| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run`              | 週次 launchd と同じ処理 (nix 世代削除 + GC + optimise + キャッシュ prune) を手で回す。実削除は `--dry-run` を外す                                               |
+| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`                 | `outcome / wall_s / head_before / head_after / xdg_drift`。`xdg_drift` は同期後の XDG entry 監査結果 (`none`/`drift`/`unknown`/`not-run`、同期の成否は変えない) |
 
 clean な `main` は `origin/main` と同じでも activation を毎回実行し、失敗時は次回に再試行する。
 
