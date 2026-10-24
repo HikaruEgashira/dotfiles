@@ -63,29 +63,29 @@ in
     extraConfig = ''
       HashKnownHosts yes
     '';
-    matchBlocks = {
+    settings = {
       "*" = {
-        identityAgent = agentSocket;
-        identityFile = [ "none" ];
+        IdentityAgent = agentSocket;
+        IdentityFile = [ "none" ];
       };
       "*.exe.xyz" = {
-        compression = true;
-        extraOptions.TCPKeepAlive = "yes";
-        serverAliveInterval = 15;
-        serverAliveCountMax = 6;
-        extraOptions.IPQoS = "lowdelay throughput";
-        controlMaster = "auto";
-        controlPath = "~/.ssh/mux-%r@%h:%p";
-        controlPersist = "10m";
+        Compression = true;
+        TCPKeepAlive = "yes";
+        ServerAliveInterval = 15;
+        ServerAliveCountMax = 6;
+        IPQoS = "lowdelay throughput";
+        ControlMaster = "auto";
+        ControlPath = "~/.ssh/mux-%r@%h:%p";
+        ControlPersist = "10m";
       };
       vultr = {
-        hostname = "45.76.196.181";
-        user = "linuxuser";
+        HostName = "45.76.196.181";
+        User = "linuxuser";
       };
       vultr2 = {
-        hostname = "45.76.196.181";
-        user = "linuxuser";
-        localForwards = [
+        HostName = "45.76.196.181";
+        User = "linuxuser";
+        LocalForward = [
           {
             bind.port = 12345;
             host.address = "2001:19f0:7001:5e49:5400:04ff:fef5:64b7";
@@ -94,12 +94,12 @@ in
         ];
       };
       "github.com" = {
-        hostname = "ssh.github.com";
-        user = "git";
-        port = 443;
-        extraOptions.TCPKeepAlive = "yes";
-        serverAliveInterval = 15;
-        serverAliveCountMax = 6;
+        HostName = "ssh.github.com";
+        User = "git";
+        Port = 443;
+        TCPKeepAlive = "yes";
+        ServerAliveInterval = 15;
+        ServerAliveCountMax = 6;
       };
     };
   };
