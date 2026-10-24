@@ -25,7 +25,7 @@ nix flake check                                     # evaluate outputs and build
 See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs/operations.md) for details.
 
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and builds the darwin system daily at 09:00 when the working tree is clean. Because activation needs root, it records `pending=yes` in `~/.cache/dotfiles-sync/metrics.jsonl` instead of switching; apply with `nix run .#switch`.
-A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` and `activation-darwin.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). `ci.yml` and the update job run on the self-hosted `aarch64-linux` runner `hikae-flash`; `activation-darwin` builds the real `aarch64-darwin` system on the self-hosted runner `hikae` and reverts the bump when it breaks the build; both runners are registered per machine ([operations](docs/operations.md) §3.6).
+A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). No self-hosted runner is registered on a personal machine: the real `aarch64-darwin` build is verified locally by `dotfiles-sync` and `nix run .#switch`.
 
 ## Layout
 
@@ -51,7 +51,6 @@ modules/
     dotfiles-sync.nix    launchd agent: daily git pull + system build
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
     git.nix              identity, signing, hooks (pleno-dlp pre-commit)
-    github-runner.nix    launchd agent: self-hosted GHA runner for darwin activation
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
     zsh.nix              shell init, aliases, secrets via age
   settings/              read-by-zsh helper scripts and cheatsheets

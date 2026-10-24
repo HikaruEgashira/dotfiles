@@ -184,39 +184,6 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'AutomaticDownload|AutomaticallyInstallMacOSUpdates|CriticalUpdateInstall'   # すべて 1
 ```
 
-### 3.6 self-hosted runner を登録する (macOS 端末ごとに一度)
-
-`hikae` は Lambda MicroVM fleet 外で動く唯一の self-hosted runner。`activation-darwin` (`.github/workflows/activation-darwin.yml`) は label `hikae` の runner で **aarch64-darwin の activation を build** し、flake.lock bump が壊していれば `scripts/flake-lock-repair.sh` が main を 1 commit 戻す。実デプロイ先かつ linux CI は eval 止まりのため、build 破壊を捕まえられるのはここだけ。
-
-登録 (runner 本体は自己更新するため `~/actions-runner` に置き、plist は `modules/programs/github-runner.nix` の宣言管理):
-
-```bash
-name=$(hostname -s)
-mkdir -p ~/actions-runner && cd ~/actions-runner
-curl -sSL -o runner.tar.gz https://github.com/actions/runner/releases/download/v2.338.0/actions-runner-osx-arm64-2.338.0.tar.gz
-tar xzf runner.tar.gz && rm runner.tar.gz
-./config.sh --unattended --replace --url https://github.com/HikaruEgashira/dotfiles \
-  --token "$(gh api -X POST repos/HikaruEgashira/dotfiles/actions/runners/registration-token --jq .token)" \
-  --name "$name" --labels hikae --work _work
-nix run ~/dotfiles#switch
-```
-
-確認:
-
-```bash
-gh api repos/HikaruEgashira/dotfiles/actions/runners --jq '.runners[] | "\(.name) \(.status)"'
-launchctl print gui/$(id -u)/dev.egahika.github-runner | grep state
-```
-
-解除 (登録 token は 1 時間で失効するので secret 管理は不要):
-
-```bash
-name=$(hostname -s)
-launchctl bootout gui/$(id -u)/dev.egahika.github-runner
-gh api -X DELETE "repos/HikaruEgashira/dotfiles/actions/runners/$(gh api repos/HikaruEgashira/dotfiles/actions/runners --jq ".runners[] | select(.name==\"$name\") | .id")"
-rm -rf ~/actions-runner
-```
-
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
 ARTEX と Postgres は loopback (`127.0.0.1:8787` / `:8788` / `:5432`) でしか待ち受けない。Mac は受信を一切公開しない (ALF blockall を維持し、`tailscale serve` / Funnel は使わない)。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
@@ -245,7 +212,6 @@ tailscale serve status                                      # No serve config
 | `Evaluate home-manager configuration` | platform-mismatch (darwin-only pkg を `cross` に入れた等)。`darwinOnly` に移す         |
 | `Eval determinism gate`               | `builtins.currentTime` / IFD など impurity が混入した。当該 commit を切り戻し          |
 | `Build MEL`                           | MEL essential pkg のいずれかが破損。nixpkgs を一時 pin or 該当 pkg を MEL から外す ADR |
-| `activation-darwin` (self-hosted)     | 実端末の build 失敗。flake.lock bump なら workflow が自動 revert、それ以外は §5.2      |
 
 ### 4.3 `git push` が `Device not configured` で fail する
 

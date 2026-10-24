@@ -199,7 +199,6 @@
             # Intended non-Apple agents (see docs/launchd.md). Everything else is drift.
             known='
             dev.egahika.dotfiles-sync
-            dev.egahika.github-runner
             dev.egahika.artex
             dev.egahika.artex-postgres
             dev.egahika.clean-worktree
