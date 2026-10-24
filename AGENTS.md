@@ -18,13 +18,13 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 
 | コマンド | 効果 |
 | --- | --- |
-| `nix run .#switch` | darwin system を適用 (sudo)。`readlink /run/current-system` で確認 |
+| `nix run .#switch` | ユーザー層を root なしで適用。OS 層 (`modules/darwin`, `hosts`) に差分がある時だけ sudo で darwin-rebuild が走る |
 | `nix fmt` / `nix run .#lint` | 整形 / deadnix + shellcheck |
 | `nix flake check` | formatter + eval + guards |
 | `nix run .#update` | 全 inputs を bump + eval gate |
 | `nix run .#audit` / `.#xdg-audit` / `.#launchd-audit` | ledger 集計 / XDG drift / launchd drift |
 
-タスク完了 = commit + push + `nix run .#switch` + 反映先の確認。switch は sandbox 外で実行する。
+タスク完了 = commit + push + `nix run .#switch` + 反映先の確認。OS 層を変えた時の switch は sandbox 外で実行する。
 
 ## 規約
 

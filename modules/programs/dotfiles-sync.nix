@@ -63,15 +63,17 @@ let
       head_after=$(git rev-parse HEAD)
     fi
 
-    # 適用は root (darwin-rebuild) なので、ここでは build まで通して未適用を記録するだけに留める
+    # OS 層は root が要るので build して未適用を記録するだけ。ユーザー層は root 不要なのでここで適用する
     built=$(nix build --no-link --print-out-paths ".#darwinConfigurations.hikae.system")
-    outcome="built"
     current=$(readlink -f /run/current-system 2>/dev/null || echo "")
     if [ "$built" != "$current" ]; then
       pending="yes"
     else
       pending="no"
     fi
+    home=$(nix build --no-link --print-out-paths ".#homeConfigurations.hikae.activationPackage")
+    "$home/activate" >/dev/null
+    outcome="applied"
 
     # 報告のみ: drift があっても同期の成否は変えない (unknown は audit 自体の実行失敗)
     audit_verdict=$(nix run ".#xdg-audit" 2>/dev/null | grep -o 'drift=[01]' | cut -d= -f2 | tail -n1 || true)

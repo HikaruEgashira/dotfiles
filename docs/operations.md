@@ -4,18 +4,18 @@
 
 ## 1. 日常運用
 
-| やりたいこと     | コマンド                                           | 備考                                                                                                                                                 |
-| ---------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 設定を反映       | `nix run ~/dotfiles#switch`                        | `sudo darwin-rebuild switch --flake ~/dotfiles#hikae`。root が要るので Touch ID で承認する                                                           |
-| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                      |
-| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                         |
-| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                           |
-| 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                            |
-| 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                            |
-| flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                     |
-| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する    |
-| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | 週次 launchd と同じ処理 (nix 世代削除 + GC + optimise + キャッシュ prune) を手で回す。実削除は `--dry-run` を外す                                    |
-| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「build は通ったが未適用」を意味する。適用は `nix run .#switch` |
+| やりたいこと     | コマンド                                           | 備考                                                                                                                                                                                        |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 設定を反映       | `nix run ~/dotfiles#switch`                        | ユーザー層 (`homeConfigurations.hikae`) を root なしで activate。OS 層に差分がある時だけ `sudo darwin-rebuild switch` が走り Touch ID で承認する                                            |
+| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                                             |
+| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                                                |
+| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                                                  |
+| 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                                                                   |
+| 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                                                                   |
+| flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                            |
+| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                           |
+| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | 週次 launchd と同じ処理 (nix 世代削除 + GC + optimise + キャッシュ prune) を手で回す。実削除は `--dry-run` を外す                                                                           |
+| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch` |
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
 
@@ -201,7 +201,7 @@ tailscale serve status                                      # No serve config
 
 1. eval で `infinite recursion` → 直近の module 編集を疑う。`git diff HEAD~1` で範囲を絞る。
 2. `/etc` の衝突 → `Unexpected files in /etc, aborting activation` が出たら、表示された file を `.before-nix-darwin` に rename して再実行する。nix-darwin は中身が未知の `/etc` を上書きしない。
-3. 完全に動かなくなった → `darwin-rebuild --list-generations` で旧 gen を確認し、`sudo darwin-rebuild --rollback` で戻す。
+3. 完全に動かなくなった → §5.1 の手順で層ごとに 1 つ前の generation へ戻す。
 
 ### 4.2 CI が落ちた
 
@@ -299,16 +299,18 @@ sudo launchctl load -w /Library/LaunchDaemons/systems.determinate.nix-store.plis
 
 ### 5.1 直近の switch を巻き戻す
 
-```bash
-darwin-rebuild --list-generations | head -3   # 直近 gen を確認
-sudo darwin-rebuild --rollback                # 1 つ前へ
-```
-
-home-manager generation 単体を戻す必要がある場合 (nix-darwin 経由で管理されているので通常は不要):
+ユーザー層 (root 不要):
 
 ```bash
 home-manager generations | head -3
 /nix/store/<PREVIOUS-HASH>-home-manager-generation/activate
+```
+
+OS 層:
+
+```bash
+darwin-rebuild --list-generations | head -3   # 直近 gen を確認
+sudo darwin-rebuild --rollback                # 1 つ前へ
 ```
 
 ### 5.2 1 つ前の commit に main を戻す

@@ -15,7 +15,7 @@ Run these from the repository so the formatter and update app target the right p
 
 ```bash
 cd ~/dotfiles
-nix run .#switch                                     # sudo darwin-rebuild switch --flake .#hikae
+nix run .#switch                                     # user layer as $USER; darwin-rebuild via sudo only when the OS layer changed
 nix run .#update                                     # bump inputs + eval gate; add -- --activate to apply
 nix fmt                                             # format nix/yaml/md/sh/json
 nix flake check                                     # evaluate outputs and build checks for the current system
@@ -24,7 +24,7 @@ nix flake check                                     # evaluate outputs and build
 `nix flake update` takes input names, not a directory. To update directly from another directory, use `nix flake update --flake ~/dotfiles` (without the update app's eval gate).
 See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs/operations.md) for details.
 
-A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` and builds the darwin system daily at 09:00 when the working tree is clean. Because activation needs root, it records `pending=yes` in `~/.cache/dotfiles-sync/metrics.jsonl` instead of switching; apply with `nix run .#switch`.
+A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` daily at 09:00 when the working tree is clean, activates the user layer, and builds the darwin system. The OS layer needs root, so it records `pending=yes` in `~/.cache/dotfiles-sync/metrics.jsonl` instead of switching it; apply with `nix run .#switch`.
 A weekly GitHub Actions job (`flake-update.yml`) commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). No self-hosted runner is registered on a personal machine: the real `aarch64-darwin` build is verified locally by `dotfiles-sync` and `nix run .#switch`.
 
 ## Layout

@@ -54,7 +54,7 @@
           config.allowUnfree = true;
         };
 
-      # linux CI 用: home.nix を aarch64/x86_64-linux で eval し platform mismatch を捕まえる
+      # ユーザー層は root 権限なしで activate する。linux でも eval して platform mismatch を捕まえる
       mkHome =
         system:
         home-manager.lib.homeManagerConfiguration {
@@ -71,7 +71,6 @@
           specialArgs.dotfilesPath = self;
           modules = [
             ./hosts/macbook-air/default.nix
-            home-manager.darwinModules.home-manager
             {
               nixpkgs = {
                 hostPlatform = system;
@@ -79,25 +78,14 @@
                 config.allowUnfree = true;
               };
               system.configurationRevision = self.rev or self.dirtyRev or null;
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs.dotfilesPath = self;
-                users.hikae = import ./home.nix;
-              };
             }
           ];
         };
 
-      # XDG entry の live 定義は darwin では nix-darwin 経由の home-manager が持つ
       xdgConfigFor =
         system:
         let
-          hm =
-            if system == "aarch64-darwin" then
-              (mkDarwin system).config.home-manager.users.hikae
-            else
-              (mkHome system).config;
+          hm = (mkHome system).config;
         in
         hm.xdg // { launchdAgents = hm.launchd.agents or { }; };
 
@@ -429,6 +417,7 @@
             echo
             echo "==> eval gate"
             ${pkgs.nix}/bin/nix eval --raw .#darwinConfigurations.hikae.system.drvPath > /dev/null
+            ${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.activationPackage.drvPath > /dev/null
 
             if [ "$activate" -eq 0 ]; then
               echo
@@ -453,7 +442,12 @@
           script = pkgs.writeShellScriptBin "switch" ''
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
-            exec /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#hikae"
+            system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.hikae.system")
+            if [ "$(readlink /run/current-system)" != "$system" ]; then
+              /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#hikae"
+            fi
+            home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.hikae.activationPackage")
+            exec "$home/activate"
           '';
         in
         {
@@ -466,9 +460,18 @@
           pkgs = pkgsFor system;
         in
         builtins.seq (mkDarwin system).system.drvPath (pkgs.runCommand "darwin-eval" { } "touch $out");
+      homeEvalCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        builtins.seq (mkHome system).activationPackage.drvPath (
+          pkgs.runCommand "home-eval" { } "touch $out"
+        );
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
+      homeConfigurations.hikae = mkHome "aarch64-darwin";
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
@@ -505,6 +508,7 @@
         aarch64-darwin = {
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
+          "home-eval" = homeEvalCheckFor "aarch64-darwin";
         };
       };
     };

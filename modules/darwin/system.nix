@@ -15,8 +15,7 @@ _:
     };
   };
 
-  # home-manager.users が homeDirectory を読むためだけの宣言。既存 account の uid/home と一致させ、
-  # 変更が起きないようにする (dscl は uid 不一致のときだけ動く)
+  # 既存 account の uid/home と一致させ、activation の dscl が何も変更しないようにする
   users.users.hikae = {
     name = "hikae";
     uid = 501;
