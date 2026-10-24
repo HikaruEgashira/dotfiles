@@ -7,7 +7,7 @@
 let
   registry = import ../../lib/package-registry.nix { inherit pkgs lib; };
   sayHookRevision = "1a2e8625f019e6be59802a26f5eeec4a9ae3eee0";
-  sayHookBin = "${registry.sayHook}/bin/say-hook";
+  sayHookBin = if registry.sayHook == null then "" else "${registry.sayHook}/bin/say-hook";
   sayHookVoiceId = "fUjY9K2nAIwlALOwSiwc";
   sayHookVoiceName = "Yui - Japanese girl female Anime voice";
 
@@ -36,12 +36,14 @@ in
 {
   home = {
     activation = {
-      sayHook = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-        $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
-          ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
-          ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
-          ${sayHookBin} check
-      '';
+      sayHook = lib.hm.dag.entryAfter [ "linkGeneration" ] (
+        lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
+          $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
+            ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
+            ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
+            ${sayHookBin} check
+        ''
+      );
 
       # Seed のみ。herdr GUI からの保存を潰さないよう、既存ファイルは上書きしない。
       # SAY_BIN が旧パスを指したままの seed だけは再生成する。
