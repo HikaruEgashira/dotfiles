@@ -21,6 +21,9 @@
     };
 
     initContent = builtins.concatStringsSep "\n" [
+      # 未設定だと複数行貼り付けの `#` 行末コメントが引数として実行される
+      "setopt interactive_comments"
+
       ''
         ghq-fzf-cd-widget() {
           local dir
