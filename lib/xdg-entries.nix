@@ -91,12 +91,6 @@ let
       env = "GOPATH";
     })
     (mkEntry {
-      legacy = ".rustup";
-      target = "${dataHome}/rustup";
-      env = "RUSTUP_HOME";
-      override = "mise";
-    })
-    (mkEntry {
       legacy = ".npm";
       target = "${cacheHome}/npm";
       env = "NPM_CONFIG_CACHE";

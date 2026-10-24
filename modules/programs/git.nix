@@ -19,11 +19,6 @@ let
   lfsHook =
     name:
     pkgs.writeShellScript "git-lfs-${name}" ''
-      ${lib.optionalString (name == "post-checkout" || name == "post-merge") ''
-        if [ -x "$HOME/.local/bin/mise-trust-repo" ]; then
-          "$HOME/.local/bin/mise-trust-repo" >/dev/null 2>&1 || true
-        fi
-      ''}
       exec ${pkgs.git-lfs}/bin/git-lfs ${name} "$@"
     '';
   lfsHookNames = [

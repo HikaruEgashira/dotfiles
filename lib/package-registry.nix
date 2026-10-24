@@ -60,6 +60,60 @@ let
         '';
       };
 
+  # 上流が darwin-arm64 の release を出している CLI は fetchurl で固定する (buildPhase を実行しない)
+  sayHook =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation {
+        pname = "say-hook";
+        version = "0.5.1";
+        src = pkgs.fetchurl {
+          url = "https://github.com/HikaruEgashira/say-hook/releases/download/v0.5.1/say-hook-v0.5.1-darwin-arm64.tar.gz";
+          hash = "sha256-NowD1nIuTd+3u/KSvmceXC4SNgoSV7k8lYGRo+M3Dzo=";
+        };
+        sourceRoot = ".";
+        dontFixup = true;
+        installPhase = ''
+          install -Dm755 say-hook "$out/bin/say-hook"
+        '';
+      }
+    else
+      null;
+
+  plenoDlp =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation {
+        pname = "pleno-dlp";
+        version = "0.67.3";
+        src = pkgs.fetchurl {
+          url = "https://github.com/plenoai/pleno-dlp/releases/download/v0.67.3/pleno-dlp_darwin_arm64.tar.gz";
+          hash = "sha256-HxYlpFfWyOLZnH4FJFoqHOp0euS7Ul+GGlfU86sy6zk=";
+        };
+        sourceRoot = ".";
+        dontFixup = true;
+        installPhase = ''
+          install -Dm755 pleno-dlp "$out/bin/pleno-dlp"
+        '';
+      }
+    else
+      null;
+
+  # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
+  evenTerminal = pkgs.writeShellApplication {
+    name = "even-terminal";
+    runtimeInputs = [ pkgs.nodejs ];
+    text = ''
+      exec npx --yes @evenrealities/even-terminal@0.10.5 "$@"
+    '';
+  };
+
+  otelHooks = pkgs.writeShellApplication {
+    name = "otel-hooks";
+    runtimeInputs = [ pkgs.uv ];
+    text = ''
+      exec uvx --from otel-hooks==0.13.0 otel-hooks "$@"
+    '';
+  };
+
   cross = [
     (mkEntry {
       pkg = pkgs.cachix;
@@ -80,6 +134,94 @@ let
       pkg = pkgs.devenv;
       purpose = "build";
       reason = "dev shells per project";
+    })
+
+    (mkEntry {
+      pkg = pkgs.rustc;
+      purpose = "build";
+      reason = "Rust compiler";
+    })
+    (mkEntry {
+      pkg = pkgs.cargo;
+      purpose = "build";
+      reason = "Rust package manager";
+    })
+    (mkEntry {
+      pkg = pkgs.go;
+      purpose = "build";
+      reason = "Go toolchain";
+    })
+    (mkEntry {
+      pkg = pkgs.python3;
+      purpose = "build";
+      reason = "CPython for ad-hoc scripts";
+    })
+    (mkEntry {
+      pkg = pkgs.nodejs;
+      purpose = "build";
+      reason = "Node.js runtime and npm";
+    })
+    (mkEntry {
+      pkg = pkgs.bun;
+      purpose = "build";
+      reason = "Bun runtime";
+    })
+    (mkEntry {
+      pkg = pkgs.ruby;
+      purpose = "build";
+      reason = "Ruby toolchain";
+    })
+    (mkEntry {
+      pkg = pkgs.jdk;
+      purpose = "build";
+      reason = "JVM for sbt and scala";
+    })
+    (mkEntry {
+      pkg = pkgs.sbt;
+      purpose = "build";
+      reason = "Scala build tool";
+    })
+    (mkEntry {
+      pkg = pkgs.scala;
+      purpose = "build";
+      reason = "Scala compiler";
+    })
+    (mkEntry {
+      pkg = pkgs.uv;
+      purpose = "build";
+      reason = "Python package runner";
+    })
+    (mkEntry {
+      pkg = pkgs.terraform;
+      purpose = "ops";
+      reason = "Terraform CLI";
+    })
+    (mkEntry {
+      pkg = pkgs.direnv;
+      purpose = "util";
+      reason = "per-directory env from .envrc";
+    })
+    (mkEntry {
+      pkg = pkgs.agent-browser;
+      purpose = "util";
+      reason = "browser automation CLI for agents";
+    })
+    (mkEntry {
+      pkg = pkgs.google-clasp;
+      purpose = "ops";
+      reason = "Google Apps Script CLI";
+    })
+    (mkEntry {
+      pkg = evenTerminal;
+      purpose = "util";
+      source = "npm:@evenrealities/even-terminal";
+      reason = "Even Realities glasses terminal";
+    })
+    (mkEntry {
+      pkg = otelHooks;
+      purpose = "observe";
+      source = "pypi:otel-hooks";
+      reason = "OpenTelemetry hook helper";
     })
 
     (mkEntry {
@@ -231,7 +373,7 @@ let
       reason = "SQL -> Go codegen";
     })
     (mkEntry {
-      pkg = pkgs.dotenvx;
+      pkg = pkgs.age;
       purpose = "ops";
       reason = "encrypted .env loader";
     })
@@ -484,9 +626,26 @@ let
       source = "npm:@deepseek-ai/dsh";
       reason = "DeepSeek Harness agent CLI (dsh)";
     })
+    (mkEntry {
+      pkg = sayHook;
+      purpose = "util";
+      source = "github:HikaruEgashira/say-hook";
+      reason = "herdr の読み上げ通知フック";
+    })
+    (mkEntry {
+      pkg = plenoDlp;
+      purpose = "ops";
+      source = "github:plenoai/pleno-dlp";
+      reason = "pre-commit の secret scan";
+    })
   ];
 in
 {
-  inherit cross darwinOnly darwinArmOnly;
+  inherit
+    cross
+    darwinOnly
+    darwinArmOnly
+    sayHook
+    ;
   all = cross ++ darwinOnly ++ darwinArmOnly;
 }
