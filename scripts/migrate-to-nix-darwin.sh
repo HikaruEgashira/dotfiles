@@ -15,8 +15,17 @@ die() {
 [ "$(uname -s)" = "Darwin" ] || die "macOS only"
 [ "$(id -u)" -ne 0 ] || die "root ではなく primary user で実行する"
 
-say "building darwin system"
-system_path=$(nix build --no-link --print-out-paths "$root#darwinConfigurations.hikae.system")
+say "resolving the darwin system"
+if system_path=$(nix build --no-link --print-out-paths "$root#darwinConfigurations.hikae.system"); then
+  :
+else
+  # daemon を落とした後の再実行では build できない。記録済み generation を使う
+  system_path=$(readlink -f /nix/var/nix/profiles/system 2>/dev/null || true)
+  case "$system_path" in
+  */darwin-system-*) say "nix-daemon is down; reusing $system_path" ;;
+  *) die "darwin system を build できず、再利用できる generation も無い" ;;
+  esac
+fi
 etc_dir=$(readlink -f "$system_path/etc")
 
 backup=/var/backups/nix-darwin-migration/$(date -u +%Y%m%dT%H%M%SZ)
@@ -33,6 +42,16 @@ keepalive=$!
 trap 'kill "$keepalive" 2>/dev/null || true' EXIT
 
 sudo mkdir -p "$backup"
+
+# 0. nix-darwin は /usr/local/bin/determinate-nixd の存在で activation を拒否する。
+#    移行後の状態では Determinate は動いていないので、痕跡を退避して所有権を upstream に返す
+say "removing the Determinate installer markers"
+for f in /usr/local/bin/determinate-nixd /nix/receipt.json; do
+  [ -e "$f" ] || continue
+  sudo mkdir -p "$backup$(dirname "$f")"
+  sudo mv "$f" "$backup$f"
+  echo "  $f"
+done
 
 # 1. nix-darwin が持つ /etc の leaf file と衝突する実ファイルを退避する
 #    (activation は未知の中身を上書きせず abort する)
@@ -58,9 +77,13 @@ fi
 
 # 3. 世代を記録する (darwin-rebuild switch が行うのと同じ操作。daemon 停止前に済ませる)
 say "recording the system generation"
-sudo /nix/var/nix/profiles/default/bin/nix-env \
-  -p /nix/var/nix/profiles/system \
-  --set "$system_path"
+if [ "$(readlink -f /nix/var/nix/profiles/system 2>/dev/null || true)" = "$system_path" ]; then
+  echo "  already recorded"
+else
+  sudo /nix/var/nix/profiles/default/bin/nix-env \
+    -p /nix/var/nix/profiles/system \
+    --set "$system_path"
+fi
 
 # 4. Determinate Nix の daemon を外す。store の mount は /etc/fstab の LABEL 行に任せる
 say "unloading Determinate Nix launch daemons"
