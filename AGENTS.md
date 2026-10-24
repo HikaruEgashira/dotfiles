@@ -32,7 +32,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - `home.packages` を直接書かず ledger 経由にする。purpose は `build/edit/ops/comm/observe/play/util`。
 - ローカル source build 禁止。`cache.nixos.org` から output が取れる pkg だけを registry に入れ、無いものは Homebrew か上流の署名済みインストーラへ逃がす。`overrideAttrs` でハッシュを変質させるパッチも禁止。
 - git transport は HTTPS only。認証は `gh auth git-credential`。
-- secret は `~/.config/secrets/env.age` に入れ `secret get NAME` で取り出す。shell env に export せず、commit も `home.file` へのハードコードもしない。
+- 新規 secret は `direnv` でセッション局所に閉じ、commit も `home.file` へのハードコードもしない。
 - `flake.lock` は週次 workflow が更新する。手動で書き換えない。
 - CI を緑にしてから merge。
 

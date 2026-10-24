@@ -6,7 +6,6 @@
     ./modules/fonts.nix
     ./modules/programs/git.nix
     ./modules/programs/ssh.nix
-    ./modules/programs/secrets.nix
     ./modules/programs/aws.nix
     ./modules/programs/cli-tools.nix
     ./modules/programs/nvim/default.nix

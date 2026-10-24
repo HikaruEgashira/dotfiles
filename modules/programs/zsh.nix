@@ -60,6 +60,21 @@
         export PATH
       ''
 
+      # child shells inherit; skip the decrypt on re-entry
+      ''
+        # _SECRETS_GEN は「どの世代のキー一覧を読み込み済みか」を表す番号。
+        # 下の while が読むキー一覧を変えたら、この番号も上げること。上げ忘れると、古い番号を
+        # 持った親プロセス (herdr / tmux 等) 配下のシェルが古い環境を永久に引き継ぎ、
+        # 新しいキーが永遠に生えてこない。
+        if [ "''${_SECRETS_GEN-}" != "1" ] && [ -r "$HOME/.config/secrets/env.age" ] && command -v age >/dev/null 2>&1; then
+          while IFS='=' read -r key value; do
+            [ -n "$key" ] && export "$key=$value"
+          done < <(age -d -i "$HOME/.config/secrets/age-key.txt" "$HOME/.config/secrets/env.age")
+          [ -n "''${FLATT_GUARD_TOKEN-}" ] && export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
+          export _SECRETS_GEN=1
+        fi
+      ''
+
       (builtins.readFile ../settings/send-claude.zsh)
     ];
   };

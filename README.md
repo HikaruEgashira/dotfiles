@@ -52,8 +52,7 @@ modules/
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
     git.nix              identity, signing, hooks (pleno-dlp pre-commit)
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
-    secrets.nix          launchd socket broker: `secret get NAME`, per-tool env wrappers
-    zsh.nix              shell init, aliases
+    zsh.nix              shell init, aliases, secrets via age
   settings/              read-by-zsh helper scripts and cheatsheets
 .github/workflows/       CI (fmt + build) + weekly flake update + darwin activation repair
 ```

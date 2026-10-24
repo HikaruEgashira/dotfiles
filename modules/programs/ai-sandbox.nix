@@ -40,7 +40,6 @@ let
     "${home}/.claude.json"
     "${home}/.zsh_history"
     "${home}/.config/nix/nix.conf"
-    "${home}/.local/state/secrets.sock"
   ];
 
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
@@ -85,10 +84,7 @@ let
       allowUnsandboxedCommands = true;
       network = {
         allowedDomains = [ "*" ];
-        allowUnixSockets = [
-          sshAuthSock
-          "/nix/var/nix/daemon-socket/socket"
-        ];
+        allowAllUnixSockets = true;
         allowLocalBinding = true;
         allowMachLookup = [ "*" ];
       };

@@ -255,7 +255,7 @@ upstream (`sst/opencode`) への issue は当面立てない。preflight が int
 
 ### 4.6 secret を rotate する
 
-`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。シェルは秘密を export しない。launchd の `dev.egahika.secrets-broker` が `~/.local/state/secrets.sock` (0600) で待ち受け、`secret get NAME` が 1 key ずつ取り出す。sandbox はこの socket を allowlist から外しているため agent には届かない。
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。シェルは起動時に `age -d` で復号して export する。復号結果は環境変数として子プロセスへ継承されるため、`_SECRETS_GEN` を持つ親 (herdr / tmux) 配下では再復号しない。
 
 ```bash
 cd ~/.config/secrets
@@ -266,7 +266,7 @@ $EDITOR "$plain"
 age -e -r "$(age-keygen -y age-key.txt)" -o env.age "$plain"
 ```
 
-broker は問い合わせごとに復号するので、rotate 後の再起動は不要。tool に env として渡したい時は `secret run NAME -- cmd` か、`modules/programs/secrets.nix` の `wrappers` に tool と key の対応を足す。
+キー名を増減したら `modules/programs/zsh.nix` の `_SECRETS_GEN` を上げる。番号を据え置くと、古い番号を継承したシェルが新しいキーを永久に読まない。
 
 ### 4.7 nix-daemon / `/nix` がおかしい
 
