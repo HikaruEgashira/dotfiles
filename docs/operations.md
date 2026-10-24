@@ -82,7 +82,7 @@ global は `(State = 1)` または `(State = 2)`、stealth は `on`、blockall �
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off
 ```
 
-完全に撤回する場合は `networking.applicationFirewall.*` を module から外して switch する。旧方式の `/etc/sudoers.d/firewall` は migration で撤去済み。
+完全に撤回する場合は `networking.applicationFirewall.*` を module から外して switch する。firewall 用の sudoers ルールは持たない (root の activation が直接設定する)。
 
 ### 3.1 sudo で Touch ID を使う
 

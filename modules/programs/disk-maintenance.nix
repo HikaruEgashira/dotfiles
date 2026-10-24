@@ -26,7 +26,7 @@
             pkgs.findutils
             pkgs.gawk
           ]
-          + ":/nix/var/nix/profiles/default/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          + ":/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "${config.home.homeDirectory}/.cache/disk-maintenance.log";
       StandardErrorPath = "${config.home.homeDirectory}/.cache/disk-maintenance.err";

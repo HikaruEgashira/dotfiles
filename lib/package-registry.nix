@@ -135,6 +135,11 @@ let
       purpose = "build";
       reason = "dev shells per project";
     })
+    (mkEntry {
+      pkg = pkgs.nixd;
+      purpose = "edit";
+      reason = "nix language server for editor diagnostics";
+    })
 
     (mkEntry {
       pkg = pkgs.rustc;
