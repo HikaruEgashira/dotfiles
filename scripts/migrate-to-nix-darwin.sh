@@ -21,10 +21,9 @@ if system_path=$(nix build --no-link --print-out-paths "$root#darwinConfiguratio
 else
   # daemon を落とした後の再実行では build できない。記録済み generation を使う
   system_path=$(readlink -f /nix/var/nix/profiles/system 2>/dev/null || true)
-  case "$system_path" in
-  */darwin-system-*) say "nix-daemon is down; reusing $system_path" ;;
-  *) die "darwin system を build できず、再利用できる generation も無い" ;;
-  esac
+  [ -x "${system_path:-}/activate" ] ||
+    die "darwin system を build できず、再利用できる generation も無い"
+  say "nix-daemon is down; reusing $system_path"
 fi
 etc_dir=$(readlink -f "$system_path/etc")
 
