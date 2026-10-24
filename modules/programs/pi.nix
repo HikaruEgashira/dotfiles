@@ -27,7 +27,7 @@ let
         pkgs.jq
         pkgs.coreutils
       ]
-    }:${home}/.nix-profile/bin:${home}/.local/share/mise/shims:/usr/bin:/bin:/usr/sbin:/sbin
+    }:${home}/.nix-profile/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
     # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions

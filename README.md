@@ -46,11 +46,10 @@ modules/
     codex.nix            ~/.codex/AGENTS.md via the Claude global guidance
     dotfiles-sync.nix    launchd agent: daily git pull + home-manager switch
     ghostty.nix          terminal config + cmd+* → tmux prefix bridge
-    git.nix              identity, signing, hooks (trust-aware pleno-dlp pre-commit)
-    mise.nix             global mise trust paths + repo trust helper
+    git.nix              identity, signing, hooks (pleno-dlp pre-commit)
     github-runner.nix    launchd agent: self-hosted GHA runner for darwin activation
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
-    zsh.nix              shell init, aliases, secrets via dotenvx
+    zsh.nix              shell init, aliases, secrets via age
   settings/              read-by-zsh helper scripts and cheatsheets
 Brewfile                 nixpkgs に無い / broken / kext 必須なものだけ
 .github/workflows/       CI (fmt + build) + weekly flake update + darwin activation repair

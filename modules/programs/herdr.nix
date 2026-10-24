@@ -1,8 +1,13 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
+  registry = import ../../lib/package-registry.nix { inherit pkgs lib; };
   sayHookRevision = "1a2e8625f019e6be59802a26f5eeec4a9ae3eee0";
-  sayHookVersion = "v0.5.1";
-  sayHookBinPath = ".local/share/mise/installs/github-hikaru-egashira-say-hook/${sayHookVersion}/say-hook";
+  sayHookBin = if registry.sayHook == null then "" else "${registry.sayHook}/bin/say-hook";
   sayHookVoiceId = "fUjY9K2nAIwlALOwSiwc";
   sayHookVoiceName = "Yui - Japanese girl female Anime voice";
 
@@ -23,35 +28,32 @@ let
   '';
 
   sayHookEnvSeed = pkgs.writeText "say-hook.env" ''
-    SAY_BIN="$HOME/${sayHookBinPath}"
+    SAY_BIN=${lib.escapeShellArg sayHookBin}
     ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId}
     ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName}
   '';
 in
 {
   home = {
-    file.".config/mise/conf.d/say-hook.toml".text = ''
-      [tools]
-      "github:HikaruEgashira/say-hook" = "${sayHookVersion}"
-    '';
-
     activation = {
-      sayHook = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-        $DRY_RUN_CMD "$HOME/.local/bin/mise" unuse --global --no-prune github:HikaruEgashira/say-hook
-        $DRY_RUN_CMD "$HOME/.local/bin/mise" install github:HikaruEgashira/say-hook@${sayHookVersion}
-        $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
-          ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
-          ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
-          "$HOME/${sayHookBinPath}" check
-      '';
+      sayHook = lib.hm.dag.entryAfter [ "linkGeneration" ] (
+        lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
+          $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
+            ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
+            ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
+            ${sayHookBin} check
+        ''
+      );
 
       # Seed のみ。herdr GUI からの保存を潰さないよう、既存ファイルは上書きしない。
+      # SAY_BIN が旧パスを指したままの seed だけは再生成する。
       herdrSeed = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-        if [ ! -e "$HOME/.config/herdr/config.toml" ]; then
-          $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -D -m 0644 ${herdrConfigSeed} "$HOME/.config/herdr/config.toml"
+        if [ ! -e "${config.home.homeDirectory}/.config/herdr/config.toml" ]; then
+          $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -D -m 0644 ${herdrConfigSeed} "${config.home.homeDirectory}/.config/herdr/config.toml"
         fi
-        if [ ! -e "$HOME/.config/herdr/plugins/config/hikaruegashira.say-hook/.env" ]; then
-          $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -D -m 0644 ${sayHookEnvSeed} "$HOME/.config/herdr/plugins/config/hikaruegashira.say-hook/.env"
+        say_hook_env="${config.home.homeDirectory}/.config/herdr/plugins/config/hikaruegashira.say-hook/.env"
+        if [ ! -e "$say_hook_env" ] || ${pkgs.gnugrep}/bin/grep -q '^SAY_BIN=.*mise' "$say_hook_env"; then
+          $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -D -m 0644 ${sayHookEnvSeed} "$say_hook_env"
         fi
       '';
 

@@ -52,12 +52,11 @@
         export CARGO_TARGET_DIR="$HOME/.cargo-target"
         export RUSTC_WRAPPER=sccache
 
-        command -v mise &>/dev/null && eval "$(mise activate zsh)" 2>/dev/null || true
         typeset -U path PATH
         path=(
           "$HOME/.local/bin"
+          "$HOME/.local/share/npm-global/bin"
           "$HOME/.opencode/bin"
-          "$HOME/.local/share/mise/shims"
           "$HOME/.pdtm/go/bin"
           "$HOME/.spicetify"
           /opt/homebrew/bin
@@ -67,22 +66,18 @@
         export PATH
       ''
 
-      # child shells inherit; skip the dotenvx round-trip on re-entry
+      # child shells inherit; skip the decrypt on re-entry
       ''
-        # _DOTENVX_KEYS_LOADED は「どの世代のキー一覧を読み込み済みか」を表す番号。
-        # 下の for のキー一覧を変えたら、この番号も上げること。上げ忘れると、古い番号を
+        # _SECRETS_GEN は「どの世代のキー一覧を読み込み済みか」を表す番号。
+        # 下の while が読むキー一覧を変えたら、この番号も上げること。上げ忘れると、古い番号を
         # 持った親プロセス (herdr / tmux 等) 配下のシェルが古い環境を永久に引き継ぎ、
         # 新しいキーが永遠に生えてこない。
-        if [ "''${_DOTENVX_KEYS_LOADED-}" != "3" ] && [ -f "$HOME/.config/secrets/.env.keys" ] && command -v dotenvx >/dev/null 2>&1; then
-          export DOTENV_PRIVATE_KEY=$(sed -n 's/^DOTENV_PRIVATE_KEY=//p' "$HOME/.config/secrets/.env.keys")
-          eval "$(cd "$HOME/.config/secrets" && dotenvx run --quiet -- sh -c '
-            for k in ORCA_KEY FLATT_GUARD_TOKEN TYPESAFE_API_KEY; do
-              v=$(printenv "$k")
-              [ -n "$v" ] && printf "export %s=%q\n" "$k" "$v"
-            done
-          ')"
+        if [ "''${_SECRETS_GEN-}" != "1" ] && [ -r "$HOME/.config/secrets/env.age" ] && command -v age >/dev/null 2>&1; then
+          while IFS='=' read -r key value; do
+            [ -n "$key" ] && export "$key=$value"
+          done < <(age -d -i "$HOME/.config/secrets/age-key.txt" "$HOME/.config/secrets/env.age")
           [ -n "''${FLATT_GUARD_TOKEN-}" ] && export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
-          export _DOTENVX_KEYS_LOADED=3
+          export _SECRETS_GEN=1
         fi
       ''
 

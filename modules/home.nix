@@ -10,7 +10,7 @@
       VISUAL = "nvim";
     };
 
-    # env を継承しない起動経路 (mise 経由など) は NPM_CONFIG_CACHE を読まないため config 側でも固定する
+    # env を継承しない起動経路 (GUI / launchd) は NPM_CONFIG_CACHE を読まないため config 側でも固定する
     file.".npmrc" = {
       text = ''
         @NAMESPACE:registry=https://npm.pkg.github.com

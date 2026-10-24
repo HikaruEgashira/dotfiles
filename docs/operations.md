@@ -11,7 +11,6 @@
 | launchd 棚卸し | `nix run ~/dotfiles#launchd-audit`                              | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                    |
 | XDG 棚卸し     | `nix run ~/dotfiles#xdg-audit`                                  | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                      |
 | 静的検査       | `cd ~/dotfiles && nix run .#lint`                               | statix + deadnix + shellcheck (CI と同一)                                                                                                                       |
-| mise trust     | `~/.local/bin/mise-trust-repo <repo>`                           | `~/ghq` 配下は config で trust 済み。外側の checkout は hooks が自動実行 (`docs/operations.md` §4.6)                                                            |
 | 整形           | `cd ~/dotfiles && nix fmt`                                      | nixfmt + prettier + shfmt                                                                                                                                       |
 | flake gate     | `nix flake check ~/dotfiles --accept-flake-config`              | formatter + eval + apps + checks                                                                                                                                |
 | inputs 更新    | `cd ~/dotfiles && nix run .#update`                             | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する               |
@@ -48,7 +47,7 @@ clean な `main` は `origin/main` と同じでも activation を毎回実行し
 2. legacy は `$HOME` 相対で、ドット始まりとは限らない (例: Go の既定 GOPATH は `~/go`)。
 3. 移設対象にしてよいのは「そのツールが `$XDG_*_HOME` を尊重する env を持つ」「legacy path を他の module が所有していない」「XDG 非対応の固定 path をツールが持たない」の 3 条件を満たすもの。
    - 除外例: `~/.aws` (`modules/programs/aws.nix` が config を所有し、`sso/` `cli/` の cache は固定 path)、`~/.terraform.d` (terraform が `checkpoint_*` を固定 path に書く)。
-4. env を継承しない起動経路 (GUI / mise 経由) が legacy path を作り直すことがある。ツールが**書かない** config ファイルなら HM が所有してよい (`~/.npmrc` の `cache=` が実例)。ツール自身が書くファイル (`go env -w` の `GOENV`) は綱引きになるので所有しない。
+4. env を継承しない起動経路 (GUI / launchd) が legacy path を作り直すことがある。ツールが**書かない** config ファイルなら HM が所有してよい (`~/.npmrc` の `cache=` が実例)。ツール自身が書くファイル (`go env -w` の `GOENV`) は綱引きになるので所有しない。
 5. `nix run ~/dotfiles#xdg-audit` が exit 0 になることを確認してから commit する。
 
 ### 2.5 nixpkgs に無い GUI / kext を足す
@@ -56,6 +55,8 @@ clean な `main` は `origin/main` と同じでも activation を毎回実行し
 1. `Brewfile` に `cask "<NAME>"` で追加。
 2. 直前のコメント行に nix 化できない理由を残す (例: `# nixpkgs broken`, `# kext required`)。
 3. nix 化できるようになったら Brewfile から削除し `lib/package-registry.nix` に移す。
+
+npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@version` / `uvx --from pkg==version` を包む (初回実行時のみネットワーク)。常駐 daemon は npx のキャッシュ path が入れ替わるため、`npm install -g --prefix ~/.local/share/npm-global pkg@version` で固定 prefix に入れ、`~/.local/share/npm-global/bin` を PATH に置く。
 
 ## 3. オプトイン機能を有効化する
 
@@ -320,18 +321,20 @@ opencode service restart && opencode service status
 
 upstream (`sst/opencode`) への issue は当面立てない。preflight が interactive の主経路を自己修復し、上流の恒久修正 (stale `service.json` を検知して orphan を落とす) は調査コストが大きいため。再発が続くか非 interactive 経路で実害が出たら起票する。
 
-### 4.6 `git commit` が mise untrusted で止まる
+### 4.6 secret を rotate する
 
-`~/ghq` 配下の checkout は `~/.config/mise/conf.d/trust.toml` の `trusted_config_paths` で最初から trust される。`XDG_CONFIG_HOME` を移している環境でも効くよう `MISE_TRUSTED_CONFIG_PATHS` も sessionVariables で同じパスに揃える。`~/ghq` の外にある checkout は global `post-checkout` / `post-merge` / `pre-commit` が `~/.local/bin/mise-trust-repo` を実行して repo 単位で trust する (`--all` 非対応の古い mise は plain trust に落ちる)。
-
-手動で直す場合:
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。シェルは起動時に `age -d` で復号して export する。復号結果は環境変数として子プロセスへ継承されるため、`_SECRETS_GEN` を持つ親 (herdr / tmux) 配下では再復号しない。
 
 ```bash
-~/.local/bin/mise-trust-repo "$(git rev-parse --show-toplevel)"
-mise trust --show
+cd ~/.config/secrets
+plain=$(mktemp)
+trap 'rm -f "$plain"' EXIT
+age -d -i age-key.txt env.age >"$plain"
+$EDITOR "$plain"
+age -e -r "$(age-keygen -y age-key.txt)" -o env.age "$plain"
 ```
 
-pre-commit の secret scan は「untrusted による rc 1」を検出 (findings) と区別し、scan を skip して local hook へ進む。local hook 自体が trust 切れで落ちた場合も commit は止めず、skip した事実を stderr に残す。untrusted を理由に `--no-verify` で検査ごと飛ばさない。
+キー名を増減したら `modules/programs/zsh.nix` の `_SECRETS_GEN` を上げる。番号を据え置くと、古い番号を継承したシェルが新しいキーを永久に読まない。
 
 ## 5. 緊急時 / ロールバック
 
