@@ -54,6 +54,7 @@
 
         typeset -U path PATH
         path=(
+          "$HOME/.nix-profile/bin"
           "$HOME/.local/bin"
           "$HOME/.local/share/npm-global/bin"
           "$HOME/.opencode/bin"
