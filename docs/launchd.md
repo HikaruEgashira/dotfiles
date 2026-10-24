@@ -28,7 +28,7 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.artex-postgres`          | home-manager (`modules/programs/artex.nix`)          | 常駐         | ARTEX 用 Postgres `127.0.0.1:5432`             |
 | `com.google.GoogleUpdater.wake`       | vendor (GoogleUpdater.app)                           | 1 時間間隔   | Chrome/Google app 更新                         |
 
-npm の extension (`pi-subagents`, `@hikae/pi-prompt-enhancer`) は `~/.pi/agent/settings.json` でバージョン固定して起動時の更新通知を止めており、固定先は `pi-extensions-update` が日次で最新へ進める（`latest` の解決は npm の `min-release-age` に従うため、冷却期間中の版は入らない）。git の extension (ponytail) は cooldown の対象外なので pi 自身に更新させる。
+npm の extension (`pi-subagents`, `@hikae/pi-prompt-enhancer`) は `~/.pi/agent/settings.json` でバージョン固定して起動時の更新通知を止めており、固定先は `pi-extensions-update` が日次で最新へ進める（`latest` の解決は npm の `min-release-age` に従うため、冷却期間中の版は入らない）。git の extension (ponytail) は upstream の main HEAD を追うと任意の新コミットが pi 内で実行されるため、sha 固定 (`git:.../ponytail@<sha>`) にして手動でしか動かさない（更新は sha を差し替えて `pi update --extensions`）。
 
 twg / opencodex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
 

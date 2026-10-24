@@ -13,7 +13,9 @@ let
   # npm extension は settings.json でバージョン固定しないと起動時に更新通知が出る。
   # pi の更新チェックは npm の min-release-age (~/.npmrc) を見ないため、冷却期間中の版があると
   # 「Package Updates Available」が消えない。固定して通知対象から外し、固定先をこのジョブが進める。
-  # git パッケージ (ponytail) は cooldown の対象外なので pi に任せる。
+  # git extension (ponytail) は sha 固定で upstream の main HEAD を追させない。設定した ref への
+  # reset を `pi update --extensions` が行うので、更新は sha を差し替える手動操作だけになる:
+  #   git ls-remote https://github.com/DietrichGebert/ponytail HEAD
   pinnedNpmExtensions = [
     "@hikae/pi-prompt-enhancer"
     "pi-subagents"
@@ -27,7 +29,7 @@ let
       ]
     }:${home}/.nix-profile/bin:${home}/.local/share/mise/shims:/usr/bin:/bin:/usr/sbin:/sbin
 
-    # git パッケージは pi 自身に更新させる
+    # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions
 
     # "latest" の解決は npm の min-release-age に従うので、冷却期間を終えた版だけが入る
