@@ -5,24 +5,33 @@
 # 空き率に置き、回収できる段を順に試して目標に届いた時点で止める。
 # 各段の「失うもの」:
 #   1-3 nix    : 未参照 path と古い generation。再ビルドで戻る
-#   4-5 cache  : 再取得できるキャッシュ
+#   4   cache  : 再取得できるキャッシュ
+#   5   codex  : current 以外の Codex CLI release。auto-update が戻す
 #   6   trash  : 7 日以上放置されたゴミ箱
-#   7   podman : --podman-machine で明示指定した停止済み VM のみ (image は再 pull できる)
+#   7   podman : CACHE_AGE_DAYS 起動していない停止済み VM と --podman-machine で指定した VM (image は再 pull できる)
+# 空き率に関係なく毎回消すもの:
+#   tombstone  : 退役した tool の state。宣言 (registry / xdg) に無いので存在自体が drift
+# ladder の外 (手動、SSO セッションが要る):
+#   --archive PATH : S3 (GLACIER_IR) へ退避し、size / sha256 を照合してからローカルを消す
 set -euo pipefail
 
 TARGET_PCT=${TARGET_PCT:-10}
 CACHE_AGE_DAYS=30
 TRASH_AGE_DAYS=7
+ARCHIVE_BUCKET=${ARCHIVE_BUCKET:-hikae-archive-951872725222}
 PODMAN_MACHINE=
+ARCHIVE_PATH=
 DRY_RUN=0
 
 usage() {
-  cat >&2 <<'EOF'
+  cat >&2 <<USAGE
 usage: disk-maintenance.sh [-n|--dry-run] [--days N] [--target PCT] [--podman-machine NAME]
+       disk-maintenance.sh [-n|--dry-run] --archive PATH
   --days N             キャッシュと nix generation の保持日数 (既定 30)
   --target PCT         目標空き率 % (既定 10、環境変数 TARGET_PCT)
   --podman-machine N   指定した停止済み podman VM を削除して回収する
-EOF
+  --archive PATH       HOME 配下の PATH を s3://$ARCHIVE_BUCKET へ退避し、検証後にローカルを消す (環境変数 ARCHIVE_BUCKET)
+USAGE
   exit "${1:-0}"
 }
 
@@ -39,6 +48,10 @@ while [ $# -gt 0 ]; do
     ;;
   --podman-machine)
     PODMAN_MACHINE="$2"
+    shift
+    ;;
+  --archive)
+    ARCHIVE_PATH="$2"
     shift
     ;;
   -h | --help) usage ;;
@@ -70,6 +83,19 @@ CACHES=(
   "$HOME/Library/Caches/pnpm"
   "$HOME/Library/Caches/bun"
   "$HOME/Library/Caches/node-gyp"
+  "$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle"
+)
+
+# 存在してはいけない path。退役済みで、再出現は env 漏れ (GOPATH 無しの process) か sandbox の fallback
+TOMBSTONES=(
+  "$HOME/go"                                     # GOPATH は ~/.local/share/go へ移設済み (xdg-entries)
+  "$HOME/Library/pnpm"                           # pnpm store は XDG_DATA_HOME 配下。XDG 以前の store
+  "$HOME/.local/share/mise"                      # mise は nix へ置換済み (registry に無い)
+  "$HOME/.config/mise"                           # 同上
+  "$HOME/.local/state/mise"                      # 同上
+  "$HOME/.cache/mise"                            # 同上
+  "/opt/homebrew/share/android-commandlinetools" # cask は uninstall 済み。sdkmanager が落とした ndk が残る (#167)
+  "/opt/homebrew/share/google-cloud-sdk"         # 同上
 )
 
 avail_mib() { df -Pk "$HOME" | awk 'NR==2 {print int($4 / 1024)}'; }
@@ -91,6 +117,17 @@ pace() { # label
   delta=$((after - BEFORE))
   echo "  -> $1: ${delta}MiB 増 (空き ${after}MiB)"
   BEFORE=$after
+}
+
+step_tombstones() {
+  local path
+  for path in "${TOMBSTONES[@]}"; do
+    [ -e "$path" ] || continue
+    echo "==> tombstone: $path ($(du -sh "$path" 2>/dev/null | cut -f1))"
+    # go の module cache は書込不可で rm が止まる
+    run chmod -R u+w "$path"
+    run rm -rf "$path"
+  done
 }
 
 step_nix_generations() {
@@ -137,6 +174,17 @@ step_caches() {
   for dir in "${CACHES[@]}"; do prune "$dir"; done
 }
 
+step_codex_releases() {
+  local dir=$HOME/.codex/packages/standalone current rel
+  [ -L "$dir/current" ] || return 0
+  echo "==> codex: current 以外の standalone release"
+  current=$(readlink "$dir/current")
+  for rel in "$dir"/releases/*; do
+    [ -e "$rel" ] && [ "$rel" != "$current" ] || continue
+    run rm -rf "$rel"
+  done
+}
+
 step_trash() {
   echo "==> trash: ${TRASH_AGE_DAYS}d 以上前の項目"
   [ -d "$HOME/.Trash" ] || return 0
@@ -148,37 +196,106 @@ step_trash() {
   find "$HOME/.Trash" -mindepth 1 -maxdepth 1 -mtime "+$TRASH_AGE_DAYS" -exec rm -rf {} + 2>/dev/null || true
 }
 
-step_podman_machine() {
-  [ -n "$PODMAN_MACHINE" ] || return 0
+step_podman() {
   command -v podman >/dev/null || return 0
-  echo "==> podman: machine $PODMAN_MACHINE を削除 (image は再 pull)"
-  run podman machine rm --force "$PODMAN_MACHINE"
+  if [ -n "$PODMAN_MACHINE" ]; then
+    echo "==> podman: machine $PODMAN_MACHINE を削除 (image は再 pull)"
+    run podman machine rm --force "$PODMAN_MACHINE"
+  fi
+  # BSD date は -d を持たない
+  date --version >/dev/null 2>&1 || return 0
+  echo "==> podman: ${CACHE_AGE_DAYS}d 起動していない停止済み machine"
+  local cutoff name info
+  cutoff=$(date -d "${CACHE_AGE_DAYS} days ago" +%s)
+  for name in $(podman machine list --format '{{.Name}}' 2>/dev/null); do
+    name=${name%\*} # 既定 machine は Name 末尾に * が付く
+    info=$(podman machine inspect --format '{{.State}} {{.LastUp.Format "2006-01-02T15:04:05Z07:00"}}' "$name" 2>/dev/null) || continue
+    case "$info" in stopped\ *) ;; *) continue ;; esac
+    [ "$(date -d "${info#stopped }" +%s)" -lt "$cutoff" ] || continue
+    run podman machine rm --force "$name"
+  done
+}
+
+archive() { # path
+  local src=$1 key payload tmp='' size sha remote
+  [ -e "$src" ] || {
+    echo "存在しない: $src" >&2
+    exit 1
+  }
+  src=$(cd "$(dirname "$src")" && pwd)/$(basename "$src")
+  # key を HOME 相対にするため HOME 外は受けない
+  case "$src" in "$HOME"/*) ;; *)
+    echo "HOME 配下のみ退避できる: $src" >&2
+    exit 1
+    ;;
+  esac
+  key=$(hostname -s)/${src#"$HOME"/}
+  [ -d "$src" ] && key=$key.tar.zst
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] $src ($(du -sh "$src" | cut -f1)) -> s3://$ARCHIVE_BUCKET/$key"
+    return 0
+  fi
+  command -v aws >/dev/null || {
+    echo "aws が無い" >&2
+    exit 1
+  }
+  aws sts get-caller-identity >/dev/null 2>&1 || {
+    echo "AWS SSO セッションが無い: aws sso login" >&2
+    exit 1
+  }
+  if [ -d "$src" ]; then
+    tmp=$(mktemp -d)
+    payload=$tmp/$(basename "$src").tar.zst
+    echo "==> tar: $src"
+    tar --zstd -cf "$payload" -C "$(dirname "$src")" "$(basename "$src")"
+  else
+    payload=$src
+  fi
+  size=$(wc -c <"$payload" | tr -d ' ')
+  sha=$(shasum -a 256 "$payload" | cut -d' ' -f1)
+  echo "==> upload: s3://$ARCHIVE_BUCKET/$key ($((size / 1048576))MiB, sha256 $sha)"
+  aws s3 cp "$payload" "s3://$ARCHIVE_BUCKET/$key" --storage-class GLACIER_IR --metadata "sha256=$sha"
+  remote=$(aws s3api head-object --bucket "$ARCHIVE_BUCKET" --key "$key" --query '[ContentLength, Metadata.sha256]' --output text)
+  [ "$remote" = "$size"$'\t'"$sha" ] || {
+    echo "検証失敗 (ローカルは残す): local=$size $sha remote=$remote" >&2
+    exit 1
+  }
+  rm -rf "$src"
+  [ -z "$tmp" ] || rm -rf "$tmp"
+  echo "==> archived: $src -> s3://$ARCHIVE_BUCKET/$key"
 }
 
 report_candidates() {
   echo "!! 目標空き率 ${TARGET_PCT}% に届いていない。判断が要る候補:" >&2
+  local staged odd
+  staged=$(du -sh /System/Volumes/Preboot/*/cryptex1/proposed 2>/dev/null | cut -f1)
+  [ -z "$staged" ] || echo "  $staged  適用待ち macOS 更新 (Preboot)。sudo softwareupdate で適用: docs/operations.md 7.1" >&2
   if command -v podman >/dev/null; then
     while IFS='|' read -r name last disk; do
       [ -n "$name" ] || continue
-      echo "  podman machine $name (${disk}, 最終起動 ${last}) — 停止して削除すると回収" >&2
+      echo "  podman machine $name (${disk}, 最終起動 ${last}) — --podman-machine $name で回収" >&2
     done < <(podman machine list --format '{{.Name}}|{{.LastUp}}|{{.DiskSize}}' 2>/dev/null)
   fi
-  local odd
-  for odd in "$HOME/.local/share/artex/import" "$HOME/.local/share/containers/podman/machine"; do
-    [ -e "$odd" ] && echo "  $(du -sh "$odd" 2>/dev/null | cut -f1) $odd" >&2
+  for odd in "$HOME/.local/share/artex/import" "$HOME/Documents/Codex"; do
+    [ -e "$odd" ] && echo "  $(du -sh "$odd" 2>/dev/null | cut -f1)  $odd — $0 --archive <path> で S3 へ退避: docs/operations.md 7.2" >&2
   done
-  echo "  20G 前後は APFS の OS 側 (Preboot / ステージ済み更新)。sudo が要るので手で: docs/operations.md「容量」" >&2
 }
+
+if [ -n "$ARCHIVE_PATH" ]; then
+  archive "$ARCHIVE_PATH"
+  exit 0
+fi
 
 BEFORE=$(avail_mib)
 echo "start: 空き $(free_pct)% (${BEFORE}MiB)"
+step_tombstones
 
 if ! below_target; then
   echo "空き率が目標以上なので何もしない"
   exit 0
 fi
 
-for step in nix_generations nix_gc nix_optimise caches trash podman_machine; do
+for step in nix_generations nix_gc nix_optimise caches codex_releases trash podman; do
   below_target || break
   "step_$step"
   pace "$step"

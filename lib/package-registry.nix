@@ -440,9 +440,9 @@ let
       reason = "background task queue";
     })
     (mkEntry {
-      pkg = pkgs.rclone;
+      pkg = pkgs.zstd;
       purpose = "ops";
-      reason = "cloud storage sync";
+      reason = "disk-maintenance --archive の tar.zst (bsdtar は外部 zstd を呼ぶ)";
     })
     (mkEntry {
       pkg = pkgs.git-lfs;

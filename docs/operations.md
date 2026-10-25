@@ -4,18 +4,18 @@
 
 ## 1. 日常運用
 
-| やりたいこと     | コマンド                                           | 備考                                                                                                                                                                                                  |
-| ---------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 設定を反映       | `nix run ~/dotfiles#switch`                        | ユーザー層 (`homeConfigurations.hikae`) を root なしで activate。OS 層に差分がある時だけ `sudo darwin-rebuild switch` が走り Touch ID で承認する                                                      |
-| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                                                       |
-| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                                                          |
-| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                                                            |
-| 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                                                                             |
-| 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                                                                             |
-| flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                                      |
-| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                                     |
-| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | 空き率が 10% 未満のときだけ、nix 世代削除 → GC → optimise → キャッシュ → ゴミ箱 → `--podman-machine` の順に回収し、目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す |
-| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`           |
+| やりたいこと     | コマンド                                           | 備考                                                                                                                                                                                                                                                                                                                            |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 設定を反映       | `nix run ~/dotfiles#switch`                        | ユーザー層 (`homeConfigurations.hikae`) を root なしで activate。OS 層に差分がある時だけ `sudo darwin-rebuild switch` が走り Touch ID で承認する                                                                                                                                                                                |
+| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                                                                                                                                                                                 |
+| launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                                                                                                                                                                                    |
+| XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                                                                                                                                                                                      |
+| 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                                                                                                                                                                                                       |
+| 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                                                                                                                                                                                                       |
+| flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                                                                                                                                                                |
+| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                                                                                                                                                               |
+| 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | tombstone (退役 tool の state) は毎回消し、空き率が 10% 未満のときだけ nix 世代削除 → GC → optimise → キャッシュ → Codex 旧 release → ゴミ箱 → 30 日起動の無い podman VM の順に回収して目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す。手元に要らない大物は `--archive PATH` で S3 へ (7.2) |
+| 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`                                                                                                                                     |
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
 
@@ -341,15 +341,15 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 ## 7. 容量
 
-ディスクは 245GB の APFS コンテナで、2026-10-25 時点の消費は次の内訳だった (`diskutil apfs list | grep 'Capacity Consumed'`)。
+ディスクは 229G の APFS コンテナ。2026-10-25 の棚卸しで 212G 使用 (空き 17G) だったものを、下記で空き 60G 超まで戻した。再び詰まったら ladder が `report_candidates` で候補を出す。
 
-| ボリューム    | 消費   | 中身                                                                   | 回収手段                                          |
-| ------------- | ------ | ---------------------------------------------------------------------- | ------------------------------------------------- |
-| Data          | 166.7G | `Users` 112G / `Applications` 13G / `opt` (brew) 9.9G / `private` 7.4G | `scripts/disk-maintenance.sh`、`--podman-machine` |
-| `/nix`        | 30.6G  | store。うち約 13G は失敗したソースビルドの未参照 path                  | `nix store gc` (ladder の 2 段目)                 |
-| System        | 20.3G  | OS 本体 + 署名済みスナップショット                                     | 不可 (OS 更新でしか動かない)                      |
-| Preboot       | 19.1G  | 適用待ち更新の退避。通常は数 GB                                        | 下記                                              |
-| Recovery / VM | 3.9G   | —                                                                      | 不可                                              |
+| 回収経路                            | 対象                                                                                       | 2026-10-25 の回収量 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ | ------------------- |
+| ladder (6h 毎、空き 10% 未満で発火) | nix 世代 / GC / 再取得できる cache / Codex 旧 release / ゴミ箱 / 30 日起動の無い podman VM | 数百 MB〜数 GB      |
+| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise, cask 残骸の `share/`                   | 20G                 |
+| 手動 / `--podman-machine NAME`      | 停止済み VM、未宣言 brew formula/cask、project 毎の provider 複製、`.pnpm-store`           | 17G                 |
+| `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (artex import、Codex 作業 dir、旧 workspace)            | 13G (S3 へ)         |
+| OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`               | 25G (未実施、#166)  |
 
 ### 7.1 OS 側 (sudo が要る、ladder の対象外)
 
@@ -363,10 +363,25 @@ sudo softwareupdate -i 'macOS Tahoe 26.7.1-25G241' --restart
 
 スナップショットを先に消すと staged 更新が壊れるので、必ず適用を先に済ませる。
 
-### 7.2 判断が要るもの
+### 7.2 S3 への退避 (`--archive`)
 
-| 対象                                            | 大きさ | 扱い                                                                                                     |
-| ----------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
-| `podman machine mvspike`                        | 12G    | image は再 pull できる。`--podman-machine mvspike` で回収 (保持ポリシーは #146)                          |
-| `~/.local/share/artex/import/opt-artex.tar.zst` | 7.1G   | import 元アーカイブ。S3 / GDrive へ退避後に削除 (現行 AWS 権限は `ReadOnlyAccess` のみで書けない → #163) |
-| `~/ghq` 23G                                     | —      | 84 repo 中 90 日以上未更新は 1 件 (276MB)。remote を持つため再取得可能だが、削減効果は小さい             |
+bucket は `hikae-archive-951872725222` (iac-aws `projects/other/archive.tf`)。CLI の default profile (ReadOnlyAccess) に `PutObject` 系だけ bucket policy で足してあり、削除は `hikae-admin-sso` でしかできない。object は GLACIER_IR (即時取得、$4/TB/月)、key は `<hostname>/<HOME からの相対 path>`、directory は `.tar.zst` に固めて置く。
+
+```sh
+aws sso login                                                      # 90 日毎
+~/dotfiles/scripts/disk-maintenance.sh --archive ~/.local/share/artex/import/opt-artex.tar.zst
+aws s3 ls s3://hikae-archive-951872725222/ --recursive             # 一覧
+aws s3 cp s3://hikae-archive-951872725222/<key> ./                 # 戻す (GLACIER_IR は restore 不要)
+```
+
+upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手元の値と照合してからローカルを消す。転送中の破損は CLI の full-object checksum が弾く。SSO セッションが要るので launchd からは走らせず、ladder は候補を report に出すだけに留める。
+
+### 7.3 判断が要るもの (2026-10-25 時点で残したもの)
+
+| 対象                                          | 大きさ | 扱い                                                       |
+| --------------------------------------------- | ------ | ---------------------------------------------------------- |
+| `jev-kitchen/{.venv-train,train/laya-jp-out}` | 1.9G   | 学習中の venv と出力。`uv sync` で戻るが作業中なので残す   |
+| `~/Documents/Codex/<date>` (2026-10 分)       | 3G     | 直近 2 週間の Codex 作業 dir。保持期限は #168              |
+| `gh-intel/packages/{web-qa,identity}/.local`  | 2.6G   | repo の gitignore 対象。repo 側の clean 手順 (#168)        |
+| `~/.cache/incident-2026-10-25-actions-runner` | 456M   | runner 事故 (#150) の証跡。post-mortem 後に消す            |
+| `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す |

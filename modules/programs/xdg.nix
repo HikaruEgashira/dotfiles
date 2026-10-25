@@ -33,6 +33,11 @@ in
     TF_PLUGIN_CACHE_DIR = "${config.xdg.cacheHome}/terraform/plugin-cache";
   };
 
+  # TF_CLI_CONFIG_FILE の実体。env を持たない呼び出し (launchd / sandbox) でも同じ cache を使わせ、project 毎に provider が複製されるのを防ぐ
+  xdg.configFile."terraform/terraformrc".text = ''
+    plugin_cache_dir = "${config.xdg.cacheHome}/terraform/plugin-cache"
+  '';
+
   home.activation.xdgRelocate = lib.hm.dag.entryBefore [ "writeBoundary" ] ''
     set -eu
     $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "${config.xdg.cacheHome}/terraform/plugin-cache"
