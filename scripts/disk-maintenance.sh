@@ -229,7 +229,7 @@ archive() { # path
     exit 1
     ;;
   esac
-  key=$(hostname -s)/${src#"$HOME"/}
+  key=$(hostname -s | tr "[:upper:]" "[:lower:]")/${src#"$HOME"/}
   [ -d "$src" ] && key=$key.tar.zst
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "  [dry-run] $src ($(du -sh "$src" | cut -f1)) -> s3://$ARCHIVE_BUCKET/$key"
