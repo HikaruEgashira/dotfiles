@@ -14,6 +14,14 @@ awk '
 ' "$source_nix" >"$tmp/body"
 [ -s "$tmp/body" ]
 
+# ユーザー層の build 結果。activate の実行回数で適用を数える
+mkdir -p "$tmp/home"
+cat >"$tmp/home/activate" <<'EOF'
+#!/bin/sh
+printf 'activate\n' >>"$SYNC_ACTIVATE_LOG"
+EOF
+chmod +x "$tmp/home/activate"
+
 run_sync() {
   local name=$1
   local branch=$2
@@ -33,6 +41,8 @@ run_sync() {
     export SYNC_GIT_LOG=$git_log
     export SYNC_NIX_LOG=$nix_log
     export SYNC_FIRST_MARKER=$first_marker
+    export SYNC_HOME=$tmp/home
+    export SYNC_ACTIVATE_LOG=$tmp/$name.activate.log
     head_before=same
     head_after=$head_before
     outcome=error
@@ -55,7 +65,10 @@ run_sync() {
         : >"$SYNC_FIRST_MARKER"
         return 1
       fi
-      printf '%s\n' "/nix/store/built-system"
+      case "$*" in
+      *homeConfigurations*) printf '%s\n' "$SYNC_HOME" ;;
+      *) printf '%s\n' "/nix/store/built-system" ;;
+      esac
     }
 
     readlink() {
@@ -83,7 +96,9 @@ if [ "$second_status" -ne 0 ]; then
   printf '%s\n' 'FAIL: same-HEAD retry did not build' >&2
   exit 1
 fi
-[ "$(grep -c '^' "$tmp/retry.nix.log")" -eq 2 ]
+# 1 回目は OS 層の build で失敗、2 回目は OS 層とユーザー層を build してユーザー層だけ適用する
+[ "$(grep -c '^' "$tmp/retry.nix.log")" -eq 3 ]
+[ "$(grep -c '^' "$tmp/retry.activate.log")" -eq 1 ]
 [ "$(cat "$tmp/retry.pending")" = no ]
 if grep -q '^pull ' "$tmp/retry.git.log"; then
   printf '%s\n' 'FAIL: same-HEAD retry pulled unnecessarily' >&2
