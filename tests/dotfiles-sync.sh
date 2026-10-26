@@ -16,7 +16,10 @@ awk '
 
 # ユーザー層の build 結果。activate の実行回数で適用を数える
 mkdir -p "$tmp/home"
-printf '#!/bin/sh\nprintf "activate\\n" >>"$SYNC_ACTIVATE_LOG"\n' >"$tmp/home/activate"
+cat >"$tmp/home/activate" <<'EOF'
+#!/bin/sh
+printf 'activate\n' >>"$SYNC_ACTIVATE_LOG"
+EOF
 chmod +x "$tmp/home/activate"
 
 run_sync() {
