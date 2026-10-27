@@ -28,7 +28,6 @@ _:
       "higgsfield-ai/tap/higgsfield"
       "icarus-verilog" # nixpkgs 無し
       "plenoai/tap/pleno-dlp"
-      "ripgrep" # codex (cask) が依存
       "sisaku-security/sisakulint/sisakulint"
       "steipete/tap/oracle"
       "withgraphite/tap/graphite"
@@ -38,7 +37,6 @@ _:
       "discord" # GUI: nix は版を pin し LaunchServices を奪う
       "slack" # GUI: 同上
       "raycast" # GUI: 同上
-      "codex" # GUI: nixpkgs の codex は CLI で別物
       "ghostty"
       "obs" # nix の obs-studio は linux-only
       "tailscale-app" # nixpkgs 無し (GUI)
