@@ -19,6 +19,20 @@
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
 
+### 1.1 AI CLI の導入と更新
+
+Codex・Claude Code・OpenCode は Homebrew / Nix package にせず、公式のネイティブインストーラを使う。`nix run .#switch` の home-manager activation が未導入の CLI だけをインストールする。既存の実行ファイルや起動ラッパーは保持し、activation では更新しない。
+
+| CLI         | 導入先                     | 更新               |
+| ----------- | -------------------------- | ------------------ |
+| Codex       | `~/.local/bin/codex`       | `codex update`     |
+| Claude Code | `~/.local/bin/claude`      | `claude update`    |
+| OpenCode 2  | `~/.opencode/bin/opencode` | `opencode upgrade` |
+
+導入処理は `modules/programs/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。Homebrew 版が残っているマシンでは、ネイティブ版の起動確認後に該当パッケージを `brew uninstall` する。`--zap` は設定やセッションを削除し得るため使わない。
+
+Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex などの外部ツールがこのパスにラッパーを置いている場合、そのツール側で更新後の再登録が必要になる。
+
 ## 2. 何かを追加する
 
 ### 2.1 新しい `home.packages` を足す

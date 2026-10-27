@@ -14,7 +14,6 @@ in
     force = true;
   };
 
-  # opencode は自己更新する binary なので dotfiles からは起動前 preflight だけを差し込む
   programs.zsh.initContent = lib.mkAfter preflight;
 
   # script 起動や launchd からも同じ preflight を使えるように executable として置く
