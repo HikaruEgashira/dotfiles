@@ -293,21 +293,27 @@ sudo launchctl kickstart -k system/org.nixos.nix-daemon   # 設定変更を反�
 sudo tail -n50 /var/log/nix-daemon.log                     # logFile 未設定なら unified log: sudo log show --last 5m --predicate 'process == "nix-daemon"'
 ```
 
-`/nix` が mount されていない (再起動後に `nix` が消えた) 場合:
+`/nix` が未マウントの場合は、自動解除サービスを確認する。暗号化ボリュームは `fstab` だけでは解除できない。
 
 ```bash
+sudo launchctl print system/org.nixos.darwin-store
+sudo launchctl kickstart system/org.nixos.darwin-store
 mount | grep ' /nix '
-sudo mount -t apfs "LABEL=Nix Store" /nix   # 手動で戻す
-sudo diskutil info "Nix Store" | grep -E 'Volume Name|Mount Point'
+nix store info
 ```
 
-`/etc/fstab` の `LABEL=Nix\\ Store` 行が消えている場合は、行を戻してから再起動する。mount が戻らない場合に限り、migration の退避物から mount 専用の plist を戻す:
+`modules/darwin/nix-store.plist` は macOS の `security` と `diskutil` で System Keychain の既存鍵を渡す。鍵を画面やファイルへ出力しない。UUID を service 名とする鍵を先に探し、Determinate installer 由来の `Nix Store` 名の鍵を fallback とする。
+
+サービスが欠落して Nix を起動できない場合は、リポジトリから復旧する:
 
 ```bash
-ls /var/backups/nix-darwin-migration/
-sudo cp /var/backups/nix-darwin-migration/<stamp>/systems.determinate.nix-store.plist /Library/LaunchDaemons/
-sudo launchctl load -w /Library/LaunchDaemons/systems.determinate.nix-store.plist
+sudo install -o root -g wheel -m 644 ~/dotfiles/modules/darwin/nix-store.plist /Library/LaunchDaemons/org.nixos.darwin-store.plist
+sudo launchctl bootstrap system /Library/LaunchDaemons/org.nixos.darwin-store.plist
+nix store info
+nix run ~/dotfiles#switch
 ```
+
+plist は `/nix` のマウント前に読める実ファイルとして nix-darwin activation が配置する。Determinate の実行ファイルやサービスは復元しない。再起動後に `mount` と `nix store info` を再確認する。
 
 ## 5. 緊急時 / ロールバック
 
