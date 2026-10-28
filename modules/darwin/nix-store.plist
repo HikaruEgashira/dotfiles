@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>org.nixos.darwin-store</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-c</string>
+		<string>set -eu
+[ ! -d /nix/store ] || exit 0
+uuid=$(/usr/sbin/diskutil info -plist 'Nix Store' | /usr/bin/plutil -extract VolumeUUID raw -o - -)
+password=$(/usr/bin/security find-generic-password -s "$uuid" -w /Library/Keychains/System.keychain || /usr/bin/security find-generic-password -a 'Nix Store' -s 'Nix Store' -w /Library/Keychains/System.keychain)
+printf '%s' "$password" | /usr/sbin/diskutil apfs unlockVolume "$uuid" -mountpoint /nix -stdinpassphrase
+</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>

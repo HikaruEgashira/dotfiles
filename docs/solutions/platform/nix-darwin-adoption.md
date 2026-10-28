@@ -19,7 +19,7 @@
 
 ## 運用上の依存
 
-- `/nix` は `/etc/fstab` の `LABEL=Nix\ Store` 行で起動時にマウントする。この行が消えると再起動後に Nix が動かない (`docs/operations.md` §4.7)。
+- 暗号化された `/nix` は `org.nixos.darwin-store` が System Keychain の既存鍵で解除・マウントする。`fstab` だけでは解除できない。plist は起動前に読める実ファイルとして nix-darwin activation が配置する (`docs/operations.md` §4.7)。
 - `nix.enable = true` のため `nix-darwin` は `/usr/local/bin/determinate-nixd` が存在すると activation を拒否する。Determinate 由来の痕跡は残さない。
 - 世代のロールバックは `sudo darwin-rebuild --rollback`。home-manager 単体の generation は nix-darwin 経由で間接的にしか使わない。
 
