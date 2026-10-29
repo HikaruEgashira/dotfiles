@@ -398,12 +398,12 @@ upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手�
 
 ### 7.3 判断が要るもの (2026-10-25 時点で残したもの)
 
-| 対象                                          | 大きさ | 扱い                                                       |
-| --------------------------------------------- | ------ | ---------------------------------------------------------- |
-| `jev-kitchen/{.venv-train,train/laya-jp-out}` | 1.9G   | 学習中の venv と出力。`uv sync` で戻るが作業中なので残す   |
-| `~/Documents/Codex/<date>`                   | 3G     | 30 日を過ぎた date folder は dry-run に表示。個別確認後 `--archive PATH` で退避 |
-| `gh-intel/packages/{web-qa,identity}/.local`  | 2.6G   | repo の gitignore 対象。repo 側の clean 手順 (#168)        |
-| `~/.cache/incident-2026-10-25-actions-runner` | 456M   | runner 事故 (#150) の証跡。post-mortem 後に消す            |
-| `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す |
+| 対象                                          | 大きさ | 扱い                                                                            |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------------- |
+| `jev-kitchen/{.venv-train,train/laya-jp-out}` | 1.9G   | 学習中の venv と出力。`uv sync` で戻るが作業中なので残す                        |
+| `~/Documents/Codex/<date>`                    | 3G     | 30 日を過ぎた date folder は dry-run に表示。個別確認後 `--archive PATH` で退避 |
+| `gh-intel/packages/{web-qa,identity}/.local`  | 2.6G   | repo の gitignore 対象。repo 側の clean 手順 (#168)                             |
+| `~/.cache/incident-2026-10-25-actions-runner` | 456M   | runner 事故 (#150) の証跡。post-mortem 後に消す                                 |
+| `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す                      |
 
 `disk-maintenance.sh --dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち30日より古いものを archive 候補として表示する。自動退避・削除はしない。pnpm の project-local `.pnpm-store` は tombstone に加えない。`modules/programs/ai-sandbox.nix` は現在 `$HOME` を writable に含めるため `~/.local/share/pnpm` はその範囲内だが、fallback の実行時原因は未確認 (#175)。

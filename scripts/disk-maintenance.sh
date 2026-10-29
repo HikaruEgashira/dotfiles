@@ -201,7 +201,7 @@ report_codex_workspaces() {
   for dir in "$HOME/Documents/Codex/"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]; do
     [ -d "$dir" ] || continue
     name=${dir##*/}
-    [[ "$name" < "$cutoff" ]] || continue
+    [[ $name < $cutoff ]] || continue
     size=$(du -sh "$dir" 2>/dev/null | cut -f1)
     printf '  [archive candidate: older than 30d] %s  %s\n' "$size" "$dir"
   done
