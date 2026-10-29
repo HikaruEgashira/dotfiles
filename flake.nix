@@ -203,6 +203,9 @@
             com.openssh.ssh-agent
             io.tailscale.ipn.macsys.login-item-helper
             jp.kiok.nani.ShipIt
+            com.anthropic.claudefordesktop.ShipIt
+            us.zoom.updater
+            us.zoom.updater.login.check
             '
 
             echo "## launchd third-party agents ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
@@ -213,23 +216,8 @@
               | ${pkgs.gnugrep}/bin/grep -vE '^(com\.apple\.|application\.)' \
               | ${pkgs.coreutils}/bin/sort -u || true)
 
-            unknown=""
-            while IFS= read -r label; do
-              [ -n "$label" ] || continue
-              if ! printf '%s\n' "$known" | ${pkgs.gnugrep}/bin/grep -qxF "$label"; then
-                unknown="''${unknown}  UNKNOWN  ''${label}\n"
-              fi
-            done <<EOF
-            $labels
-            EOF
-
-            if [ -n "$unknown" ]; then
-              printf '%b' "$unknown"
-              echo ""
-              echo "declare it in docs/launchd.md or remove it"
-              exit 1
-            fi
-            echo "OK: no unexpected third-party launchd agents"
+            printf '%s\n' "$labels" | PATH=${pkgs.gnugrep}/bin \
+              ${pkgs.bash}/bin/bash ${./scripts/check-launchd-labels.sh} "$known"
           '';
         in
         {
