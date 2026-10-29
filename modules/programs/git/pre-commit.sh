@@ -7,8 +7,8 @@ if command -v pleno-dlp >/dev/null 2>&1; then
   else
     rc=$?
     printf '%s\n' "$scan_output" >&2
-    [ "$rc" -eq 1 ] && exit 1
-    echo "pre-commit: pleno-dlp exited $rc; skipping secret scan" >&2
+    echo "pre-commit: pleno-dlp exited $rc; refusing to continue without a successful secret scan" >&2
+    exit "$rc"
   fi
 else
   echo "pre-commit: pleno-dlp not found on PATH; skipping secret scan" >&2

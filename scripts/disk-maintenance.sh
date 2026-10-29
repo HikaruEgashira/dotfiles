@@ -179,9 +179,31 @@ step_codex_releases() {
   [ -L "$dir/current" ] || return 0
   echo "==> codex: current 以外の standalone release"
   current=$(readlink "$dir/current")
+  case "$current" in
+  /*) ;;
+  *) current="$dir/$current" ;;
+  esac
+  current=$(cd "$current" && pwd -P)
   for rel in "$dir"/releases/*; do
-    [ -e "$rel" ] && [ "$rel" != "$current" ] || continue
+    [ -d "$rel" ] || continue
+    [ "$(cd "$rel" && pwd -P)" != "$current" ] || continue
     run rm -rf "$rel"
+  done
+}
+
+report_codex_workspaces() {
+  local cutoff dir name size
+  if date --version >/dev/null 2>&1; then
+    cutoff=$(date -d '30 days ago' +%F)
+  else
+    cutoff=$(date -v-30d +%F)
+  fi
+  for dir in "$HOME/Documents/Codex/"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]; do
+    [ -d "$dir" ] || continue
+    name=${dir##*/}
+    [[ "$name" < "$cutoff" ]] || continue
+    size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+    printf '  [archive candidate: older than 30d] %s  %s\n' "$size" "$dir"
   done
 }
 
@@ -279,6 +301,7 @@ report_candidates() {
   for odd in "$HOME/.local/share/artex/import" "$HOME/Documents/Codex"; do
     [ -e "$odd" ] && echo "  $(du -sh "$odd" 2>/dev/null | cut -f1)  $odd — $0 --archive <path> で S3 へ退避: docs/operations.md 7.2" >&2
   done
+  report_codex_workspaces >&2
 }
 
 if [ -n "$ARCHIVE_PATH" ]; then
@@ -292,6 +315,7 @@ step_tombstones
 
 if ! below_target; then
   echo "空き率が目標以上なので何もしない"
+  [ "$DRY_RUN" -eq 1 ] && report_codex_workspaces
   exit 0
 fi
 
