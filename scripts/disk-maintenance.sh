@@ -220,14 +220,19 @@ step_trash() {
 
 step_podman() {
   command -v podman >/dev/null || return 0
+  local cutoff name info
   if [ -n "$PODMAN_MACHINE" ]; then
-    echo "==> podman: machine $PODMAN_MACHINE を削除 (image は再 pull)"
+    info=$(podman machine inspect --format '{{.State}}' "$PODMAN_MACHINE") || return 1
+    if [ "$info" != stopped ]; then
+      echo "podman: machine $PODMAN_MACHINE は停止済みと確認できないため削除しない" >&2
+      return 1
+    fi
+    echo "==> podman: stopped machine $PODMAN_MACHINE を削除 (VM 内のデータも失われる)"
     run podman machine rm --force "$PODMAN_MACHINE"
   fi
   # BSD date は -d を持たない
   date --version >/dev/null 2>&1 || return 0
   echo "==> podman: ${CACHE_AGE_DAYS}d 起動していない停止済み machine"
-  local cutoff name info
   cutoff=$(date -d "${CACHE_AGE_DAYS} days ago" +%s)
   for name in $(podman machine list --format '{{.Name}}' 2>/dev/null); do
     name=${name%\*} # 既定 machine は Name 末尾に * が付く

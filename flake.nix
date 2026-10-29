@@ -177,6 +177,19 @@
           type = "app";
           program = "${script}/bin/audit";
         };
+      skillsAuditAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          script = pkgs.writeShellScriptBin "skills-audit" ''
+            exec ${pkgs.nodejs}/bin/node ${./scripts/skills-audit.mjs} \
+              ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo/dist/core/skills.js "$@"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/skills-audit";
+        };
       launchdAuditAppFor =
         system:
         let
@@ -203,6 +216,9 @@
             com.openssh.ssh-agent
             io.tailscale.ipn.macsys.login-item-helper
             jp.kiok.nani.ShipIt
+            com.anthropic.claudefordesktop.ShipIt
+            us.zoom.updater
+            us.zoom.updater.login.check
             '
 
             echo "## launchd third-party agents ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
@@ -213,23 +229,8 @@
               | ${pkgs.gnugrep}/bin/grep -vE '^(com\.apple\.|application\.)' \
               | ${pkgs.coreutils}/bin/sort -u || true)
 
-            unknown=""
-            while IFS= read -r label; do
-              [ -n "$label" ] || continue
-              if ! printf '%s\n' "$known" | ${pkgs.gnugrep}/bin/grep -qxF "$label"; then
-                unknown="''${unknown}  UNKNOWN  ''${label}\n"
-              fi
-            done <<EOF
-            $labels
-            EOF
-
-            if [ -n "$unknown" ]; then
-              printf '%b' "$unknown"
-              echo ""
-              echo "declare it in docs/launchd.md or remove it"
-              exit 1
-            fi
-            echo "OK: no unexpected third-party launchd agents"
+            printf '%s\n' "$labels" | PATH=${pkgs.gnugrep}/bin \
+              ${pkgs.bash}/bin/bash ${./scripts/check-launchd-labels.sh} "$known"
           '';
         in
         {
@@ -454,6 +455,18 @@
           type = "app";
           program = "${script}/bin/switch";
         };
+      skillsAuditCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        pkgs.runCommand "skills-audit-test" { } ''
+          mkdir scripts
+          cp ${./scripts/skills-audit.mjs} scripts/skills-audit.mjs
+          ${pkgs.nodejs}/bin/node ${./tests/skills-audit.mjs} \
+            ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo/dist/core/skills.js
+          touch "$out"
+        '';
       darwinEvalCheckFor =
         system:
         let
@@ -482,6 +495,7 @@
         {
           audit = auditAppFor system;
           launchd-audit = launchdAuditAppFor system;
+          skills-audit = skillsAuditAppFor system;
           lint = lintAppFor system;
           update = updateAppFor system;
           xdg-audit = xdgAuditAppFor system;
@@ -493,12 +507,14 @@
 
       checks = {
         aarch64-linux = {
+          skills-audit = skillsAuditCheckFor "aarch64-linux";
           build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
           mel = melFor "aarch64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
+          skills-audit = skillsAuditCheckFor "x86_64-linux";
           build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
           mel = melFor "x86_64-linux";
@@ -506,6 +522,7 @@
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
         aarch64-darwin = {
+          skills-audit = skillsAuditCheckFor "aarch64-darwin";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
           "home-eval" = homeEvalCheckFor "aarch64-darwin";

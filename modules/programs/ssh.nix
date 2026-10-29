@@ -30,10 +30,10 @@ in
       config = {
         Label = "dev.egahika.ssh-agent";
         ProgramArguments = [
-          "${pkgs.openssh}/bin/ssh-agent"
-          "-D"
-          "-a"
+          "${pkgs.python3}/bin/python3"
+          "${../../scripts/ssh-agent-start.py}"
           agentSocket
+          "${pkgs.openssh}/bin/ssh-agent"
         ];
         RunAtLoad = true;
         KeepAlive = true;
