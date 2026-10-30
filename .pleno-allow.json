@@ -1,0 +1,9 @@
+{
+  "entries": [
+    {
+      "detector": "Zoom",
+      "raw": "codex-sparkle-progress",
+      "reason": "Public Codex Sparkle macOS launchd label; known non-secret identifier."
+    }
+  ]
+}

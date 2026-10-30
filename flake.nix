@@ -190,48 +190,54 @@
           type = "app";
           program = "${script}/bin/skills-audit";
         };
-      launchdAuditAppFor =
+      launchdKnownLabelsFor =
         system:
         let
-          pkgs = pkgsFor system;
-          lib = pkgs.lib;
+          lib = (pkgsFor system).lib;
           hmLabels = lib.mapAttrsToList (_: a: a.config.Label) (
             lib.filterAttrs (_: a: a.enable) (xdgConfigFor system).launchdAgents
           );
-          script = pkgs.writeShellScriptBin "launchd-audit" ''
-            set -eu
-            if [ "$(${pkgs.coreutils}/bin/uname -s)" != "Darwin" ]; then
-              echo "launchd-audit: macOS only; skipping"
-              exit 0
-            fi
+        in
+        hmLabels
+        ++ [
+          "com.atlassian.twg.upkeep"
+          "com.opencodex.proxy"
+          "com.google.GoogleUpdater.wake"
+          "com.openai.codex-sparkle-progress"
+          "com.openai.codex-sparkle-updater"
+          "com.openssh.ssh-agent"
+          "io.tailscale.ipn.macsys.login-item-helper"
+          "jp.kiok.nani.ShipIt"
+          "com.anthropic.claudefordesktop.ShipIt"
+          "us.zoom.updater"
+          "us.zoom.updater.login.check"
+        ];
+      launchdAuditScriptFor =
+        system: labelsSystem:
+        let
+          pkgs = pkgsFor system;
+          lib = pkgs.lib;
+          known = lib.escapeShellArg (lib.concatStringsSep "\n" (launchdKnownLabelsFor labelsSystem));
+        in
+        pkgs.writeShellScriptBin "launchd-audit" ''
+          set -eu
+          if [ "$(${pkgs.coreutils}/bin/uname -s)" != "Darwin" ]; then
+            echo "launchd-audit: macOS only; skipping"
+            exit 0
+          fi
 
-            # home-manager が宣言する label は config から導出し、vendor の自己管理 agent だけを手書きする
-            known='
-            ${lib.concatStringsSep "\n            " hmLabels}
-            com.atlassian.twg.upkeep
-            com.opencodex.proxy
-            com.google.GoogleUpdater.wake
-            com.openai.codex-sparkle-progress
-            com.openai.codex-sparkle-updater
-            com.openssh.ssh-agent
-            io.tailscale.ipn.macsys.login-item-helper
-            jp.kiok.nani.ShipIt
-            com.anthropic.claudefordesktop.ShipIt
-            us.zoom.updater
-            us.zoom.updater.login.check
-            '
+          echo "## launchd third-party agents ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
+          echo ""
 
-            echo "## launchd third-party agents ($(${pkgs.coreutils}/bin/date -u +%FT%TZ))"
-            echo ""
-
-            labels=$(/bin/launchctl list \
-              | ${pkgs.gawk}/bin/awk 'NR>1 {print $NF}' \
-              | ${pkgs.gnugrep}/bin/grep -vE '^(com\.apple\.|application\.)' \
-              | ${pkgs.coreutils}/bin/sort -u || true)
-
-            printf '%s\n' "$labels" | PATH=${pkgs.gnugrep}/bin \
-              ${pkgs.bash}/bin/bash ${./scripts/check-launchd-labels.sh} "$known"
-          '';
+          known=${known}
+          export PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.gnugrep}/bin
+          exec ${pkgs.bash}/bin/bash ${./scripts/launchd-audit.sh} \
+            "$known" /bin/launchctl ${./scripts/check-launchd-labels.sh}
+        '';
+      launchdAuditAppFor =
+        system:
+        let
+          script = launchdAuditScriptFor system system;
         in
         {
           type = "app";
@@ -467,6 +473,39 @@
             ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo/dist/core/skills.js
           touch "$out"
         '';
+      launchdAuditCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          lib = pkgs.lib;
+          labels = launchdKnownLabelsFor "aarch64-darwin";
+          knownText = lib.concatStringsSep "\n" labels;
+          known = lib.escapeShellArg knownText;
+          script = launchdAuditScriptFor system "aarch64-darwin";
+          wrapper = script.text;
+        in
+        assert lib.elem "dev.egahika.ssh-agent" labels;
+        assert lib.elem "dev.egahika.ssh-add" labels;
+        pkgs.runCommand "launchd-audit-test"
+          {
+            nativeBuildInputs = [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.gawk
+              pkgs.gnugrep
+            ];
+            passthru = {
+              generatedWrapper = wrapper;
+              generatedKnownLabels = knownText;
+            };
+          }
+          ''
+            cat > "$TMPDIR/launchd-audit-wrapper" <<'WRAPPER'
+            ${wrapper}
+            WRAPPER
+            ${pkgs.bash}/bin/bash ${./tests/launchd-audit.sh} ${known} "$TMPDIR/launchd-audit-wrapper"
+            touch "$out"
+          '';
       darwinEvalCheckFor =
         system:
         let
@@ -507,6 +546,7 @@
 
       checks = {
         aarch64-linux = {
+          launchd-audit = launchdAuditCheckFor "aarch64-linux";
           skills-audit = skillsAuditCheckFor "aarch64-linux";
           build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
@@ -514,6 +554,7 @@
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
+          launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
@@ -522,6 +563,7 @@
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
         aarch64-darwin = {
+          launchd-audit = launchdAuditCheckFor "aarch64-darwin";
           skills-audit = skillsAuditCheckFor "aarch64-darwin";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
