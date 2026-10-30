@@ -22,7 +22,6 @@ let
 
   secrets = [
     "${home}/.ssh"
-    "${home}/.aws"
     "${home}/.gnupg"
     "${home}/.netrc"
     "${home}/.git-credentials"
@@ -98,8 +97,10 @@ let
   };
 
   # codex permission profile: "/" 読取、writable 書込、secrets deny (deny は同特異度に勝つ)
+  # codex は credential dir を path 非依存で組み込み deny するため、aws だけ明示許可で上書きする
   codexFilesystem = {
     "/" = "read";
+    "${home}/.aws" = "write";
   }
   // lib.genAttrs writable (_: "write")
   // lib.genAttrs secrets (_: "deny")
@@ -132,41 +133,9 @@ let
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
     exec "$real" ${lib.concatMapStringsSep " " (a: "-c ${lib.escapeShellArg a}") codexArgs} "$@"
   '';
-
-  awsWrapper = pkgs.writeShellScript "aws-sandbox" ''
-    set -eu
-    real=${lib.escapeShellArg "${pkgs.awscli2}/bin/aws"}
-    sandboxed=0
-    for name in \
-      CLAUDE_CODE_SANDBOXED \
-      CLAUDE_CODE_SANDBOX \
-      CLAUDE_SANDBOX \
-      CLAUDE_SANDBOXED \
-      CODEX_SANDBOX \
-      CODEX_SANDBOXED \
-      SANDBOX_RUNTIME; do
-      marker=$(printenv "$name" 2>/dev/null || true)
-      case "$marker" in "" | 0 | false | no) ;; *) sandboxed=1 ;; esac
-    done
-    if [ "$sandboxed" -eq 0 ] && [ -e "$HOME/.aws" ] && [ ! -r "$HOME/.aws" ]; then
-      sandboxed=1
-    fi
-    if [ "$sandboxed" -eq 0 ]; then
-      if ! error=$(ls -A "$HOME/.aws" 2>&1 >/dev/null); then
-        case "$error" in
-          *"Operation not permitted"* | *"Permission denied"*) sandboxed=1 ;;
-        esac
-      fi
-    fi
-    if [ "$sandboxed" -eq 1 ]; then
-      echo "ai-sandbox: ~/.aws is blocked inside the sandbox; AWS CLI cannot read profiles or SSO tokens. If config is present and SSO is valid, rerun outside the sandbox." >&2
-    fi
-    exec "$real" "$@"
-  '';
 in
 {
   # claude/codex は自己更新する binary なので PATH を乗っ取らず、専用 dir を先頭に足す。
-  # aws は sandbox の ~/.aws 制限を起動時に通知するため同じ dir で包む。
   # zsh の path は順序が意味を持つため、重複除去で先頭固定する。
   programs.zsh.initContent = lib.mkAfter ''
     typeset -U path PATH
@@ -177,6 +146,5 @@ in
     ".config/claude/sandbox.json".text = builtins.toJSON claudeSettings;
     ".config/ai-sandbox/bin/claude".source = claudeWrapper;
     ".config/ai-sandbox/bin/codex".source = codexWrapper;
-    ".config/ai-sandbox/bin/aws".source = awsWrapper;
   };
 }

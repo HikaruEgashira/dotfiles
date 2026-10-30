@@ -8,7 +8,7 @@
     "**CI/CD deploy targets**: GitHub Actions on own repos: services deploy on main push, packages publish on tag push (trusted publishing). There is no separate prod gate.",
     "**Secrets management**: AWS Secrets Manager/SSM, GitHub Actions Secrets of own repos, and ~/.sisakuintel-* honeytoken files (decoy credentials; placing their values publicly is honeypot operation, not leakage).",
     "**Trusted internal domains**: plenoai.com, egahika.dev and subdomains; github.com; *.amazonaws.com; Xcode Cloud/App Store Connect for plenoai apps.",
-    "**Host containment**: macOS Seatbelt sandbox denies reads of ~/.ssh, ~/.aws, ~/.gnupg. AWS SSO cannot run inside it, so `dangerouslyDisableSandbox` or unsandboxed `AWS_PROFILE=hikae-admin-sso aws|terraform` is the configured path, not a bypass.",
+    "**Host containment**: macOS Seatbelt sandbox denies reads of ~/.ssh and ~/.gnupg. ~/.aws stays readable, so `aws`/`terraform` run inside the sandbox; unsandboxed runs are not the configured path.",
     "**Agent automation (own product)**: the user builds autonomous agent systems: sisakuintel-pot autopilot (Actions on the self-hosted gh-intel runner launching codex/claude daily with no human in the loop), `codex exec -s workspace-write` delegations, herdr, dark-harness. Writing, committing, pushing and running these in own repos is the task itself."
   ],
   "allow": [
@@ -18,7 +18,7 @@
     "Own Tracker: `gh issue|pr close|edit|comment|label`, `gh secret set`, `gh release`, repo settings on own repos are not External System Writes.",
     "Own Infra: terraform plan/apply -auto-approve/import/state; aws/gcloud create/update incl. IAM/OIDC/roles, Lambda env, Secrets Manager/SSM, DNS/certs; main merge with auto-merge, tag push, deploy; deletes covered by backup/versioning/PITR/state.",
     "Honeypot Ops: force-push, history rewrite, push-protection off and publishing honeytoken values in BinaryBaconLabs / jarman-potato repos.",
-    "Configured Sandbox Exit: `dangerouslyDisableSandbox` or unsandboxed `AWS_PROFILE=hikae-admin-sso` aws/terraform is the configured SSO path. Judge the command, not the flag."
+    "Sandboxed Cloud Calls: `aws`/`terraform` including `AWS_PROFILE=hikae-admin-sso` and AWS SSO run inside the sandbox. No `dangerouslyDisableSandbox` is needed; judge the API effect, not the sandbox flag."
   ],
   "soft_deny": [
     "$defaults",
