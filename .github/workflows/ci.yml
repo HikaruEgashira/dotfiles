@@ -49,6 +49,9 @@ jobs:
       - name: Test Pi skill discovery audit
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.aarch64-linux.skills-audit'
+      - name: Test launchd audit inventory classification
+        timeout-minutes: 5
+        run: nix build --no-link --print-build-logs '.#checks.aarch64-linux.launchd-audit'
       - name: Guard the XDG entry schema
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.aarch64-linux.xdg-entries-guards'
