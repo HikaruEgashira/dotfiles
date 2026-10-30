@@ -23,9 +23,11 @@ let
   secrets = [
     "${home}/.ssh"
     "${home}/.gnupg"
+    "${home}/.hermes/.env"
     "${home}/.netrc"
     "${home}/.git-credentials"
     "${home}/.kube"
+    "${home}/.config/gh/hosts.yml"
     "${home}/.password-store"
     "${home}/.docker/config.json"
     "${home}/.codex/auth.json"
@@ -39,6 +41,10 @@ let
     "${home}/.claude.json"
     "${home}/.zsh_history"
     "${home}/.config/nix/nix.conf"
+    "${home}/.local/share/artex/local.env"
+    "${home}/.local/share/artex/artex-secrets"
+    # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。
+    "${home}/.config/herdr/plugins/config"
   ];
 
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
