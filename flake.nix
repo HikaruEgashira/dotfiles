@@ -501,10 +501,8 @@
           }
           ''
             cat > "$TMPDIR/launchd-audit-wrapper" <<'WRAPPER'
-            #!/bin/bash
             ${wrapper}
             WRAPPER
-            chmod +x "$TMPDIR/launchd-audit-wrapper"
             ${pkgs.bash}/bin/bash ${./tests/launchd-audit.sh} ${known} "$TMPDIR/launchd-audit-wrapper"
             touch "$out"
           '';

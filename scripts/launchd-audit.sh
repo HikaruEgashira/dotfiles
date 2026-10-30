@@ -15,7 +15,22 @@ if ! printf '%s\n' "$listing" | awk 'NR == 1 { valid = (NF == 3 && $1 == "PID" &
   exit 2
 fi
 
-labels=$(printf '%s\n' "$listing" |
-  awk 'NR > 1 && $NF !~ /^(com\.apple\.|application\.)/ { print $NF }' |
-  sort -u)
+if ! labels=$(printf '%s\n' "$listing" |
+  awk '
+    NR == 1 { next }
+    {
+      if (NF != 3 || ($1 !~ /^[0-9]+$/ && $1 != "-") || $2 !~ /^-?[0-9]+$/ || $3 == "") {
+        invalid = 1
+        next
+      }
+      if ($3 !~ /^(com\.apple\.|application\.)/) labels[$3] = 1
+    }
+    END {
+      if (invalid) exit 1
+      for (label in labels) print label
+    }
+  ' | sort -u); then
+  echo "launchd-audit: invalid launchd list row" >&2
+  exit 2
+fi
 printf '%s\n' "$labels" | bash "$checker" "$known"

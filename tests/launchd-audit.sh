@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
+trap 'printf "launchd-audit test failed at line %s (exit %s)\n" "$LINENO" "$?" >&2' ERR
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/launchd-audit.XXXXXX")
@@ -8,18 +9,23 @@ known=${1:-dev.egahika.ssh-agent}
 wrapper=${2:-}
 printf '%s\n' "$known" >"$tmp/known-labels"
 
-cat >"$tmp/fake-uname" <<'MOCK'
-#!/bin/sh
+{
+  printf '#!%s\n' "$BASH"
+  cat <<'MOCK'
 [ "$#" -eq 1 ] && [ "$1" = -s ] || exit 64
 printf '%s\n' "${LAUNCHD_AUDIT_TEST_OS:-Darwin}"
 MOCK
-cat >"$tmp/fake-date" <<'MOCK'
-#!/bin/sh
+} >"$tmp/fake-uname"
+{
+  printf '#!%s\n' "$BASH"
+  cat <<'MOCK'
 [ "$#" -eq 2 ] && [ "$1" = -u ] && [ "$2" = +%FT%TZ ] || exit 64
 printf '%s\n' '2026-10-30T00:00:00Z'
 MOCK
-cat >"$tmp/fake-launchctl" <<'MOCK'
-#!/bin/sh
+} >"$tmp/fake-date"
+{
+  printf '#!%s\n' "$BASH"
+  cat <<'MOCK'
 printf '%s\n' "$@" >"$launchdAuditTestTmp/launchctl-args"
 [ "$#" -eq 1 ] && [ "$1" = list ] || exit 64
 case "$LAUNCHD_AUDIT_MODE" in
@@ -38,6 +44,18 @@ case "$LAUNCHD_AUDIT_MODE" in
     ;;
   headerless)
     printf '123 0 com.example.unexpected\n'
+    ;;
+  malformed-known)
+    printf 'PID Status Label\n0 dev.egahika.ssh-agent\n'
+    ;;
+  bad-pid)
+    printf 'PID Status Label\nnot-a-pid 0 dev.egahika.ssh-agent\n'
+    ;;
+  bad-status)
+    printf 'PID Status Label\n1 not-an-integer dev.egahika.ssh-agent\n'
+    ;;
+  stopped)
+    printf 'PID Status Label\n- -1 dev.egahika.ssh-agent\n'
     ;;
   large)
     printf 'PID Status Label\n'
@@ -61,6 +79,7 @@ case "$LAUNCHD_AUDIT_MODE" in
     ;;
 esac
 MOCK
+} >"$tmp/fake-launchctl"
 chmod +x "$tmp/fake-uname" "$tmp/fake-date" "$tmp/fake-launchctl"
 
 export launchdAuditTestTmp="$tmp"
@@ -70,17 +89,20 @@ if [[ -n $wrapper ]]; then
   sed \
     -e 's|/nix/store/[^ ]*/bin/uname|"$launchdAuditTestTmp/fake-uname"|g' \
     -e 's|/nix/store/[^ ]*/bin/date|"$launchdAuditTestTmp/fake-date"|g' \
-    -e 's|/nix/store/[^ ]*/bin/bash|/bin/bash|g' \
+    -e 's|/nix/store/[^ ]*/bin/bash|"$BASH"|g' \
     -e 's|/bin/launchctl|"$launchdAuditTestTmp/fake-launchctl"|g' \
     "$wrapper" >"$tmp/wrapper"
-  chmod +x "$tmp/wrapper"
   wrapper="$tmp/wrapper"
-  bash -n "$wrapper"
-  run_audit() { LAUNCHD_AUDIT_MODE=$1 bash "$wrapper"; }
+  if [[ $(<"$wrapper") == *'/bin/bash'* ]]; then
+    printf '%s\n' 'FAIL: generated test wrapper still hardcodes /bin/bash' >&2
+    exit 1
+  fi
+  "$BASH" -n "$wrapper"
+  run_audit() { LAUNCHD_AUDIT_MODE=$1 "$BASH" "$wrapper"; }
   assert_list_argv() { [[ $(cat "$tmp/launchctl-args") == list ]]; }
 else
   run_audit() {
-    LAUNCHD_AUDIT_MODE=$1 bash "$root/scripts/launchd-audit.sh" \
+    LAUNCHD_AUDIT_MODE=$1 "$BASH" "$root/scripts/launchd-audit.sh" \
       "$known" "$tmp/fake-launchctl" "$root/scripts/check-launchd-labels.sh"
   }
   assert_list_argv() { [[ $(cat "$tmp/launchctl-args") == list ]]; }
@@ -97,6 +119,9 @@ expect_failure() {
   [[ $status -eq $expected_status ]]
   [[ $output == *"$expected_message"* ]]
   [[ $output != *'partial inventory'* ]]
+  [[ $output != *'dev.egahika.ssh-agent'* ]]
+  [[ $output != *'not-a-pid'* ]]
+  [[ $output != *'not-an-integer'* ]]
   assert_list_argv
 }
 
@@ -104,6 +129,13 @@ expect_failure fail 2 'launchd-audit: unable to enumerate the launchd user domai
 expect_failure blank 2 'launchd-audit: invalid launchd list header'
 expect_failure malformed 2 'launchd-audit: invalid launchd list header'
 expect_failure headerless 2 'launchd-audit: invalid launchd list header'
+expect_failure malformed-known 2 'launchd-audit: invalid launchd list row'
+expect_failure bad-pid 2 'launchd-audit: invalid launchd list row'
+expect_failure bad-status 2 'launchd-audit: invalid launchd list row'
+
+output=$(run_audit stopped)
+[[ $output == *'OK: no unexpected third-party launchd agents' ]]
+assert_list_argv
 
 output=$(run_audit empty)
 [[ $output == *'OK: no unexpected third-party launchd agents' ]]
@@ -128,8 +160,8 @@ fi
 assert_list_argv
 
 if [[ -n $wrapper ]]; then
-  output=$(LAUNCHD_AUDIT_TEST_OS=Linux LAUNCHD_AUDIT_MODE=empty "$wrapper")
+  output=$(LAUNCHD_AUDIT_TEST_OS=Linux LAUNCHD_AUDIT_MODE=empty "$BASH" "$wrapper")
   [[ $output == 'launchd-audit: macOS only; skipping' ]]
 fi
 
-printf '%s\n' 'ok: generated wrapper syntax/argv and fail-closed, empty, known, unknown inventories pass'
+printf '%s\n' 'ok: generated wrapper argv, launchctl row validation and inventory classification pass'
