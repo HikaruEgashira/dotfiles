@@ -44,7 +44,7 @@ let
     "${home}/.config/nix/nix.conf"
     "${home}/.local/share/artex/local.env"
     "${home}/.local/share/artex/artex-secrets"
-    # Plugin names vary, so denying this tree also hides non-secret plugin settings.
+    # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。
     "${home}/.config/herdr/plugins/config"
   ];
 
