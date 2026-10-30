@@ -64,7 +64,7 @@ MOCK
 chmod +x "$tmp/fake-uname" "$tmp/fake-date" "$tmp/fake-launchctl"
 
 export launchdAuditTestTmp="$tmp"
-if [[ -n "$wrapper" ]]; then
+if [[ -n $wrapper ]]; then
   # Keep these variable references literal until the generated wrapper runs.
   # shellcheck disable=SC2016
   sed \
@@ -127,7 +127,7 @@ fi
 [[ $output == *'UNKNOWN  com.example.unexpected'* ]]
 assert_list_argv
 
-if [[ -n "$wrapper" ]]; then
+if [[ -n $wrapper ]]; then
   output=$(LAUNCHD_AUDIT_TEST_OS=Linux LAUNCHD_AUDIT_MODE=empty "$wrapper")
   [[ $output == 'launchd-audit: macOS only; skipping' ]]
 fi
