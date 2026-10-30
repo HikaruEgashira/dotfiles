@@ -15,6 +15,7 @@
 | flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                                                                                                                                                                |
 | inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                                                                                                                                                               |
 | 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | tombstone (退役 tool の state) は毎回消し、空き率が 10% 未満のときだけ nix 世代削除 → GC → optimise → キャッシュ → Codex 旧 release → ゴミ箱 → 30 日起動の無い podman VM の順に回収して目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す。手元に要らない大物は `--archive PATH` で S3 へ (7.2) |
+| ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示。定期実行も dry-run のみ。詳細と明示削除手順は 7.4                                                                                                                                                                                                                |
 | 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`                                                                                                                                     |
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
@@ -421,3 +422,18 @@ upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手�
 | `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す                      |
 
 `disk-maintenance.sh --dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち30日より古いものを archive 候補として表示する。自動退避・削除はしない。pnpm の project-local `.pnpm-store` は tombstone に加えない。`modules/programs/ai-sandbox.nix` は現在 `$HOME` を writable に含めるため `~/.local/share/pnpm` はその範囲内だが、fallback の実行時原因は未確認 (#175)。
+
+### 7.4 ghq clone / branch の棚卸し
+
+`ghq-clean.py` は `~/ghq/github.com/<owner>/<repo>` 直下の `.git` directory を clone root として扱い、linked worktree (`.git` file) は既存 `clean-worktree.sh` の管理対象として数を分けて表示する。候補は remote が archived、または最新 local ref commit と GitHub `pushedAt` の新しい方が既定14日以上前の clone。dirty な clone と linked worktree を持つ clone は保護する。upstream の無い branch 名と remote ref から到達できない commit 数も表示する。
+
+remote metadata は最大25 repository slugを1 GraphQL requestにまとめ、owner-onlyの `~/.cache/ghq-clean/metadata.json` に24時間 cache する。失敗時は同じ期間 API を再試行せず、cache が無い/古い/取得失敗なら `unknown` として削除候補にしない。GraphQL の null は deleted と権限不足の private repository を区別できないため、どちらも `unknown` にする。
+
+定期実行は `disk-maintenance.sh` から `--dry-run` を呼ぶだけで、clone を削除しない。手動削除は候補一覧を確認してから対話端末で実行する。
+
+```sh
+~/dotfiles/scripts/ghq-clean.py --dry-run
+~/dotfiles/scripts/ghq-clean.py --apply
+```
+
+`--apply` は実行直前に対象 remote metadata、local HEAD/ref OID、dirty/worktree 状態、Orca setup を再検証し、候補数の確認入力を要求する。Orca は exact local path と `hostId=local` を照合し、対象 setup があれば `--force` なしで先に削除して readback する。Orca が live terminal / saved workspace を理由に拒否した場合は clone を残す。setup 削除後に clone 削除が失敗した場合は、同じ project/path を再登録する recovery command を表示する。bundle / backup は作らず、削除した local-only commit 数を結果に記録する。

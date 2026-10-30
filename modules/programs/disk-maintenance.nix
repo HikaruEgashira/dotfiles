@@ -20,9 +20,12 @@
             pkgs.coreutils
             pkgs.findutils
             pkgs.gawk
+            pkgs.gh
+            pkgs.git
             pkgs.podman
+            pkgs.python3
           ]
-          + ":/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          + ":/opt/homebrew/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "${config.home.homeDirectory}/.cache/disk-maintenance.log";
       StandardErrorPath = "${config.home.homeDirectory}/.cache/disk-maintenance.err";

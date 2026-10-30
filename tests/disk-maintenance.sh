@@ -39,6 +39,14 @@ EOF
 chmod +x "$tmp/bin/nix-env" "$tmp/bin/nix"
 export DISK_MAINT_TEST_ENV_LOG="$tmp/env.log"
 export DISK_MAINT_TEST_NIX_LOG="$tmp/nix.log"
+export GHQ_CLEAN_TEST_LOG="$tmp/ghq-clean.log"
+export GHQ_CLEAN_SCRIPT="$tmp/ghq-clean-stub"
+cat >"$GHQ_CLEAN_SCRIPT" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >>"$GHQ_CLEAN_TEST_LOG"
+exit "${GHQ_CLEAN_TEST_STATUS:-0}"
+EOF
+chmod +x "$GHQ_CLEAN_SCRIPT"
 export PATH="$tmp/bin:/usr/bin:/bin"
 
 # 空き率が目標以上なら何も回収しない
@@ -46,6 +54,7 @@ out=$(TARGET_PCT=0 bash "$script")
 grep -q '空き率が目標以上なので何もしない' <<<"$out" || fail "目標以上で ladder を止めていない"
 [ -e "$HOME/.cache/npm/old.tgz" ] || fail "目標以上で古いファイルを削除した"
 [ ! -e "$DISK_MAINT_TEST_ENV_LOG" ] || fail "目標以上で nix の世代削除が走った"
+[ "$(cat "$GHQ_CLEAN_TEST_LOG")" = "--dry-run" ] || fail "clone inventory をdry-runで呼んでいない"
 
 # 乾燥実行は 30 日を超えた日付 folder だけを提示し、current release を削除候補にしない
 out=$(TARGET_PCT=0 bash "$script" --dry-run)
@@ -95,5 +104,9 @@ fi
 out=$(TARGET_PCT=100 bash "$script" --dry-run --archive "$codex_workspaces/2000-01-01")
 grep -Fq "[dry-run] $codex_workspaces/2000-01-01" <<<"$out" || fail "archive dry-run が候補を表示しない"
 [ -d "$codex_workspaces/2000-01-01" ] || fail "archive dry-run が source を削除した"
+
+awk '$0 != "--dry-run" { exit 1 }' "$GHQ_CLEAN_TEST_LOG" || fail "disk maintenance がclone inventoryにapplyを渡した"
+out=$(GHQ_CLEAN_TEST_STATUS=1 TARGET_PCT=0 bash "$script" 2>&1)
+grep -q 'ghq clone report failed' <<<"$out" || fail "clone report failure がmaintenanceを止めたことを報告しない"
 
 echo "OK: disk-maintenance"
