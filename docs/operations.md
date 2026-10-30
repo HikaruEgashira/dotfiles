@@ -310,7 +310,7 @@ mount | grep ' /nix '
 nix store info
 ```
 
-`modules/darwin/nix-store.plist` は macOS の `security` と `diskutil` で System Keychain の既存鍵を渡す。鍵を画面やファイルへ出力しない。UUID を service 名とする鍵を先に探し、Determinate installer 由来の `Nix Store` 名の鍵を fallback とする。
+`modules/darwin/nix-store.plist` は macOS の `security` と `diskutil` で System Keychain の既存鍵を渡す。鍵を画面やファイルへ出力しない。UUID を service 名とする鍵を先に探し、Determinate installer 由来の `Nix Store` 名の鍵を fallback とする。`/Volumes/Nix Store` など別の場所に自動マウントされた場合も、`StartOnMount` で検知して unmount し `/nix` に付け直す。
 
 サービスが欠落して Nix を起動できない場合は、リポジトリから復旧する:
 
