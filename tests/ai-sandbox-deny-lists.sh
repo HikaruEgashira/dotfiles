@@ -24,6 +24,11 @@ assert_list_has() {
 
 secrets=(
   .aws
+  .config/gh/hosts.yml
+  .config/herdr/plugins/config
+  .hermes/.env
+  .local/share/artex/artex-secrets
+  .local/share/artex/local.env
   .terraform.d/credentials.tfrc.json
   .npmrc
   .local/share/opencode
