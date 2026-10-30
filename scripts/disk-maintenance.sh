@@ -309,6 +309,19 @@ report_candidates() {
   report_codex_workspaces >&2
 }
 
+report_ghq_candidates() {
+  local script
+  script=${GHQ_CLEAN_SCRIPT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/ghq-clean.py}
+  [ -x "$script" ] || {
+    echo "ghq clone report unavailable: $script is not executable" >&2
+    return 0
+  }
+  echo "==> ghq: clone retention inventory (dry-run)"
+  if ! "$script" --dry-run; then
+    echo "ghq clone report failed; no clone removal was attempted" >&2
+  fi
+}
+
 if [ -n "$ARCHIVE_PATH" ]; then
   archive "$ARCHIVE_PATH"
   exit 0
@@ -316,6 +329,7 @@ fi
 
 BEFORE=$(avail_mib)
 echo "start: 空き $(free_pct)% (${BEFORE}MiB)"
+report_ghq_candidates
 step_tombstones
 
 if ! below_target; then

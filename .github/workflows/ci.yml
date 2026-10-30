@@ -43,6 +43,9 @@ jobs:
       - name: Test encrypted Store unlock
         timeout-minutes: 5
         run: nix shell --inputs-from . nixpkgs#python3 --command python3 tests/nix-store.py
+      - name: Test ghq clone retention safety
+        timeout-minutes: 5
+        run: nix shell --inputs-from . nixpkgs#python3 --command python3 tests/ghq-clean.py
       - name: Test ssh-agent socket recovery
         timeout-minutes: 5
         run: nix shell --inputs-from . nixpkgs#python3 nixpkgs#openssh --command python3 tests/ssh-agent-start.py
