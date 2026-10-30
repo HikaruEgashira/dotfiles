@@ -7,7 +7,7 @@
 # 削除条件 (いずれか):
 #   merged - branch の PR が merged (gh)、または default branch に取り込み済み
 #   stale  - 最終 git 操作から DAYS 日以上経過し、かつ working tree が clean
-# dirty な worktree は --force なしでは削除しない。
+# dirty な worktree は --force なしでは削除しない。locked な worktree は常に残す。
 # merged で削除した場合のみ local branch も削除する (stale は branch を残す)。
 set -euo pipefail
 
@@ -117,6 +117,13 @@ for repo in "$GHQ_ROOT"/*/*/; do
         continue
       }
 
+      if [ "$locked" -eq 1 ]; then
+        echo "skip   $wt  (locked)"
+        skipped=$((skipped + 1))
+        wt=""
+        continue
+      fi
+
       reason=""
       if [ -n "$branch" ] && { pr_merged "$repo" "$branch" || locally_merged "$repo" "$sha"; }; then
         reason="merged"
@@ -138,7 +145,6 @@ for repo in "$GHQ_ROOT"/*/*/; do
       fi
 
       echo "remove $wt  ($reason, branch=${branch:-detached})"
-      [ "$locked" -eq 1 ] && run git -C "$repo" worktree unlock "$wt"
       if run git -C "$repo" worktree remove --force "$wt"; then
         [ "$reason" = "merged" ] && [ -n "$branch" ] &&
           run git -C "$repo" branch -D "$branch" 2>/dev/null
