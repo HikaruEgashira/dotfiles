@@ -23,7 +23,6 @@ assert_list_has() {
 }
 
 secrets=(
-  .aws
   .config/gh/hosts.yml
   .config/herdr/plugins/config
   .hermes/.env
@@ -41,8 +40,8 @@ for path in "${secrets[@]}"; do
 done
 
 # shellcheck disable=SC2016 # Match the literal Nix home interpolation.
-if grep -Fq '"${home}/.aws"' <<<"$(list_body writable)"; then
-  printf '%s\n' 'FAIL: writable unexpectedly allows ~/.aws' >&2
+if grep -Fq '"${home}/.aws"' <<<"$(list_body secrets)"; then
+  printf '%s\n' 'FAIL: secrets still denies ~/.aws; aws must run inside the sandbox' >&2
   exit 1
 fi
 
@@ -73,6 +72,9 @@ for path in .codex/AGENTS.md .codex/config.toml .config/ai-sandbox; do
   assert_list_has codexReadable "$path"
 done
 
+# codex は ~/.aws を組み込み deny するため、profile 側で明示許可しないと aws が動かない
+# shellcheck disable=SC2016 # Match the literal Nix home interpolation.
+grep -Fq '"${home}/.aws" = "write";' "$source_nix"
 grep -Fq 'codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;' "$source_nix"
 grep -Fq '// lib.genAttrs secrets (_: "deny")' "$source_nix"
 grep -Fq '// lib.genAttrs codexPersistence (_: "deny")' "$source_nix"
