@@ -379,6 +379,12 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 | `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (artex import、Codex 作業 dir、旧 workspace)            | 13G (S3 へ)         |
 | OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`               | 25G (未実施、#166)  |
 
+`disk-maintenance.sh` は Nix generation を `.nix-profile` と `~/.local/state/nix/profiles/*` から明示的に削除し、その後 `nix store gc` を実行する。これは、単一の `nix-collect-garbage --delete-older-than 30d` が失敗する場合の運用上の回避である。
+
+記録済みの再現では、同コマンドは `--dry-run` でも CloudStorage 配下の `proc` で `Resource deadlock avoided` (EDEADLK) となり、別の実行では `~/Library/Application Support/AddressBook` の `Operation not permitted` (EPERM) で終了した。失敗するパスは実行ごとに異なる。FUSE、TCC、または Nix の home/profile 走査のどれが原因かは未確認であり、これらの観測だけでは断定しない。
+
+この回避は失敗した `nix-collect-garbage` 呼び出しを使わず、対象 profile の世代整理と store GC を別々に行う。generation step が指定 profile だけを処理することはスクリプトで確認できるが、`nix-collect-garbage` が home を再帰走査したことや、それが失敗原因だったことまでは確認できていない。`nix-collect-garbage` 1 本へ戻すのは、上流修正または設定変更を確認したうえで、この Mac の同じ profile 構成で `--dry-run` が成功することを確認してからにする。
+
 ### 7.1 OS 側 (sudo が要る、ladder の対象外)
 
 Preboot と `/System/Volumes/Update` が膨らむのは適用していない更新が積まれているため。放置すると 20G 前後が常時占有される。
