@@ -7,7 +7,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 plist = plistlib.loads((root / 'modules/darwin/nix-store.plist').read_bytes())
-assert plist['RunAtLoad'] and plist['Label'] == 'org.nixos.darwin-store'
+assert plist['RunAtLoad'] and plist['StartOnMount'] and plist['Label'] == 'org.nixos.darwin-store'
 command = plist['ProgramArguments'][2]
 assert '/nix/store/' not in command and 'determinate-nixd' not in command
 with tempfile.TemporaryDirectory() as directory:
@@ -16,7 +16,15 @@ with tempfile.TemporaryDirectory() as directory:
     stub.write_text('''#!/bin/sh
 case "$1" in
 info) printf '%s' info ;;
--extract) cat >/dev/null; printf '%s' test-uuid ;;
+-extract)
+  cat >/dev/null
+  case "$2" in
+  VolumeUUID) printf '%s' test-uuid ;;
+  MountPoint) [ "$MODE" = elsewhere ] && printf '%s' '/Volumes/Nix Store' ;;
+  esac ;;
+unmount)
+  [ "$MODE" = elsewhere ] && [ "$2" = test-uuid ] || exit 1
+  : > "$UNMOUNTED" ;;
 find-generic-password)
   [ "$MODE" != missing ] || exit 1
   if [ "$MODE" = fallback ] && [ "$3" = test-uuid ]; then exit 1; fi
@@ -31,10 +39,13 @@ esac
     script = command.replace('/nix/store', str(tmp / 'store'))
     for binary in ('/usr/sbin/diskutil', '/usr/bin/plutil', '/usr/bin/security'):
         script = script.replace(binary, str(stub))
-    for mode, success in [('uuid', True), ('fallback', True), ('missing', False), ('unlock-fail', False)]:
-        result = subprocess.run(['/bin/sh', '-c', script], env={**os.environ, 'MODE': mode}, capture_output=True)
+    for mode, success in [('uuid', True), ('fallback', True), ('missing', False), ('unlock-fail', False), ('elsewhere', True)]:
+        unmounted = tmp / 'unmounted'
+        unmounted.unlink(missing_ok=True)
+        result = subprocess.run(['/bin/sh', '-c', script], env={**os.environ, 'MODE': mode, 'UNMOUNTED': str(unmounted)}, capture_output=True)
         assert (result.returncode == 0) == success, (mode, result)
+        assert unmounted.exists() == (mode == 'elsewhere'), mode
         assert b'test-secret' not in result.stdout + result.stderr
     (tmp / 'store').mkdir()
     assert subprocess.run(['/bin/sh', '-c', script], env={**os.environ, 'MODE': 'missing'}).returncode == 0
-print('ok: mounted store, UUID key, legacy key, missing key, unlock failure')
+print('ok: mounted store, UUID key, legacy key, missing key, unlock failure, remount from elsewhere')

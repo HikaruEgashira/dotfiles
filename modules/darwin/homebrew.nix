@@ -16,7 +16,6 @@ _:
 
     taps = [
       "higgsfield-ai/tap" # higgsfield (nixpkgs 無し)
-      "plenoai/tap" # pleno-dlp (nixpkgs 無し)
       "sisaku-security/sisakulint" # sisakulint (nixpkgs 無し)
       "steipete/tap" # oracle (nixpkgs 無し)
       "withgraphite/tap" # graphite (nixpkgs 無し)
@@ -27,7 +26,6 @@ _:
       "googleworkspace-cli" # nixpkgs 無し
       "higgsfield-ai/tap/higgsfield"
       "icarus-verilog" # nixpkgs 無し
-      "plenoai/tap/pleno-dlp"
       "sisaku-security/sisakulint/sisakulint"
       "steipete/tap/oracle"
       "withgraphite/tap/graphite"
