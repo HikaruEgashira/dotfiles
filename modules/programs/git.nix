@@ -61,6 +61,8 @@ in
       # leading "" resets the accumulated helper list per host so only ghtkn
       # is consulted.
       credential = {
+        # ghtkn git-credential はリポジトリ owner で app を選ぶため path を渡す (無いと毎回 WRN が出る)
+        useHttpPath = true;
         "https://github.com".helper = [
           ""
           ghCredentialHelper
