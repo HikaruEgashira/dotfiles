@@ -12,7 +12,8 @@ let
 
   preCommit = pkgs.writeShellScript "global-pre-commit" (builtins.readFile ./git/pre-commit.sh);
 
-  ghCredentialHelper = "!${pkgs.gh}/bin/gh auth git-credential";
+  # ghtkn (modules/programs/ghtkn.nix) が keychain に持つ 8h の user access token を返す
+  ghCredentialHelper = "!${pkgs.ghtkn}/bin/ghtkn git-credential";
 
   # git-lfs invoked by absolute store path: hooks must survive PATH-sanitized
   # environments (e.g. Homebrew's superenv during `brew tap`)
@@ -57,8 +58,8 @@ in
 
       # Xcode's system gitconfig registers osxkeychain as a generic helper that
       # is read first and can return a stale token for the wrong account. The
-      # leading "" resets the accumulated helper list per host so only gh
-      # (which always serves the active gh account's token) is consulted.
+      # leading "" resets the accumulated helper list per host so only ghtkn
+      # is consulted.
       credential = {
         "https://github.com".helper = [
           ""

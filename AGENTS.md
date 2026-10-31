@@ -31,7 +31,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - declarative 優先。シェルから `git config --global` 等で永続変更しない。
 - `home.packages` を直接書かず ledger 経由にする。purpose は `build/edit/ops/comm/observe/play/util`。
 - ローカル source build 禁止。`cache.nixos.org` から output が取れる pkg だけを registry に入れ、無いものは Homebrew か上流の署名済みインストーラへ逃がす。`overrideAttrs` でハッシュを変質させるパッチも禁止。
-- git transport は HTTPS only。認証は `gh auth git-credential`。
+- git transport は HTTPS only。認証は `ghtkn git-credential` (GitHub App `ghtkn-hikae` の 8h user access token)。`gh` も ghtkn 経由の wrapper。token 切れは `ghtkn auth` を自分の端末で実行する。
 - 新規 secret は `direnv` でセッション局所に閉じ、commit も `home.file` へのハードコードもしない。
 - `flake.lock` は週次 workflow が更新する。手動で書き換えない。
 - CI を緑にしてから merge。
