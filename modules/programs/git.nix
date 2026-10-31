@@ -13,7 +13,12 @@ let
   preCommit = pkgs.writeShellScript "global-pre-commit" (builtins.readFile ./git/pre-commit.sh);
 
   # ghtkn (modules/programs/ghtkn.nix) が keychain に持つ 8h の user access token を返す
-  ghCredentialHelper = "!${pkgs.ghtkn}/bin/ghtkn git-credential";
+  # pin 中の nixpkgs に ghtkn が無い間は gh の credential helper で eval を通す
+  ghCredentialHelper =
+    if pkgs ? ghtkn then
+      "!${pkgs.ghtkn}/bin/ghtkn git-credential"
+    else
+      "!${pkgs.gh}/bin/gh auth git-credential";
 
   # git-lfs invoked by absolute store path: hooks must survive PATH-sanitized
   # environments (e.g. Homebrew's superenv during `brew tap`)
