@@ -29,19 +29,25 @@ let
   # gh を ghtkn 経由で起動する。GitHub CLI の OAuth token (長期、rate limit を共有) を端末に置かず、
   # ghtkn が keychain に保持する 8h の user access token を GH_TOKEN として渡す。
   # GH_TOKEN / GITHUB_TOKEN が既にある場合 (CI、ghtkn exec の内側、明示指定) はそのまま通す。
-  ghWithGhtkn = pkgs.symlinkJoin {
-    name = "gh-ghtkn-${pkgs.gh.version}";
-    paths = [ pkgs.gh ];
-    postBuild = ''
-      rm "$out/bin/gh"
-      {
-        echo '#!${pkgs.runtimeShell}'
-        echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then exec ${pkgs.gh}/bin/gh "$@"; fi'
-        echo 'exec ${pkgs.ghtkn}/bin/ghtkn exec -e GH_TOKEN -- ${pkgs.gh}/bin/gh "$@"'
-      } > "$out/bin/gh"
-      chmod +x "$out/bin/gh"
-    '';
-  };
+  # pin 中の nixpkgs に ghtkn が無い間は素の gh に戻して eval を壊さない (flake.lock は週次更新)。
+  hasGhtkn = pkgs ? ghtkn;
+  ghWithGhtkn =
+    if hasGhtkn then
+      pkgs.symlinkJoin {
+        name = "gh-ghtkn-${pkgs.gh.version}";
+        paths = [ pkgs.gh ];
+        postBuild = ''
+          rm "$out/bin/gh"
+          {
+            echo '#!${pkgs.runtimeShell}'
+            echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then exec ${pkgs.gh}/bin/gh "$@"; fi'
+            echo 'exec ${pkgs.ghtkn}/bin/ghtkn exec -e GH_TOKEN -- ${pkgs.gh}/bin/gh "$@"'
+          } > "$out/bin/gh"
+          chmod +x "$out/bin/gh"
+        '';
+      }
+    else
+      pkgs.gh;
 
   # dsh's node-addon-require-builtin rejects nixpkgs' toolchain-built Node (Unsupported/no-getter),
   # so the wrapper carries the nodejs.org build; npx there installs the prebuilt npm tree (~/.npm/_npx).
@@ -269,11 +275,6 @@ let
       pkg = ghWithGhtkn;
       purpose = "edit";
       reason = "GitHub CLI / PR ops (ghtkn の user access token で認証)";
-    })
-    (mkEntry {
-      pkg = pkgs.ghtkn;
-      purpose = "ops";
-      reason = "GitHub App device flow で 8h の user access token を発行。長期 OAuth token を端末に置かない";
     })
     (mkEntry {
       pkg = pkgs.neovim;
@@ -630,6 +631,14 @@ let
     })
   ];
 
+  ghtknOnly = lib.optionals hasGhtkn [
+    (mkEntry {
+      pkg = pkgs.ghtkn;
+      purpose = "ops";
+      reason = "GitHub App device flow で 8h の user access token を発行。長期 OAuth token を端末に置かない";
+    })
+  ];
+
   # CI evaluates on aarch64-linux; entries here must not leak into `cross`
   darwinOnly = lib.optionals isDarwin [
     (mkEntry {
@@ -699,5 +708,5 @@ in
     darwinArmOnly
     sayHook
     ;
-  all = cross ++ darwinOnly ++ darwinArmOnly;
+  all = cross ++ ghtknOnly ++ darwinOnly ++ darwinArmOnly;
 }
