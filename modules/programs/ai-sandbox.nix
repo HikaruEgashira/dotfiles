@@ -125,6 +125,30 @@ let
     "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
   ];
 
+  # エージェントの gh は hikaevi[bot] の installation token で叩き、個人の 5,000/h を消費しない。
+  # 対象 owner は hikaevi の allowed_owners、-R/--repo を優先し、無ければ cwd の origin から引く。
+  # token 発行に失敗したとき・明示 GH_TOKEN があるときは個人認証のまま通す。
+  ghWrapper = pkgs.writeShellScript "gh-hikaevi" ''
+    set -eu
+    real=${lib.escapeShellArg "${home}/.nix-profile/bin/gh"}
+    minter=${lib.escapeShellArg "${home}/ghq/github.com/HikaruEgashira/hikaevi/scripts/local-token.mjs"}
+    if [ -z "''${GH_TOKEN:-}" ] && [ -f "$minter" ]; then
+      owner=""
+      prev=""
+      for a in "$@"; do
+        case "$prev" in -R|--repo) owner=''${a%%/*} ;; esac
+        case "$a" in --repo=*) r=''${a#--repo=}; owner=''${r%%/*} ;; esac
+        prev=$a
+      done
+      [ -n "$owner" ] || owner=$(git remote get-url origin 2>/dev/null | sed -nE 's#^.*github\.com[:/]([^/]+)/.*$#\1#p')
+      case "$owner" in
+        HikaruEgashira|plenoai)
+          if token=$(node "$minter" "$owner" 2>/dev/null); then export GH_TOKEN="$token"; fi ;;
+      esac
+    fi
+    exec "$real" "$@"
+  '';
+
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
@@ -152,5 +176,6 @@ in
     ".config/claude/sandbox.json".text = builtins.toJSON claudeSettings;
     ".config/ai-sandbox/bin/claude".source = claudeWrapper;
     ".config/ai-sandbox/bin/codex".source = codexWrapper;
+    ".config/ai-sandbox/bin/gh".source = ghWrapper;
   };
 }
