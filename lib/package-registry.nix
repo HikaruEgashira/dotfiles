@@ -114,6 +114,25 @@ let
     else
       null;
 
+  # nixpkgs に無い上流 release の CLI。engine は podman/docker に委譲する。
+  dagger =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation {
+        pname = "dagger";
+        version = "0.21.11";
+        src = pkgs.fetchurl {
+          url = "https://github.com/dagger/dagger/releases/download/v0.21.11/dagger_v0.21.11_darwin_arm64.tar.gz";
+          hash = "sha256-WEkNsi4dl19uRUlV5gXQ+QVkUXczUosY1l9K15KbY1A=";
+        };
+        sourceRoot = ".";
+        dontFixup = true;
+        installPhase = ''
+          install -Dm755 dagger "$out/bin/dagger"
+        '';
+      }
+    else
+      null;
+
   # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
   evenTerminal = pkgs.writeShellApplication {
     name = "even-terminal";
@@ -658,6 +677,12 @@ let
       purpose = "util";
       source = "github:HikaruEgashira/say-hook";
       reason = "herdr の読み上げ通知フック";
+    })
+    (mkEntry {
+      pkg = dagger;
+      purpose = "build";
+      source = "github:dagger/dagger";
+      reason = "container pipeline CLI (engine は podman/docker 経由)";
     })
     (mkEntry {
       pkg = plenoDlp;
