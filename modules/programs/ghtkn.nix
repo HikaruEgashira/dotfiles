@@ -5,8 +5,7 @@
 # git credential helper (git.nix) が `ghtkn exec` / `ghtkn git-credential` で取り出す。
 # 初回と 8h 毎の再発行は device flow なので `ghtkn auth` を自分の端末で実行する。
 # claude sandbox は keychain の読み書き (Mach lookup, $HOME 書込) を許可済み。
-_:
-{
+_: {
   xdg.configFile."ghtkn/ghtkn.yaml".text = ''
     # yaml-language-server: $schema=https://raw.githubusercontent.com/suzuki-shunsuke/ghtkn/main/json-schema/ghtkn.json
     # Client ID は秘密ではない (device flow は client secret を使わない)。
