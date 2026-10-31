@@ -24,7 +24,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | `nix run .#update` | 全 inputs を bump + eval gate |
 | `nix run .#audit` / `.#xdg-audit` / `.#launchd-audit` | ledger 集計 / XDG drift / launchd drift |
 
-タスク完了 = commit + push + `nix run .#switch` + 反映先の確認。OS 層を変えた時の switch は sandbox 外で実行する。
+タスク完了 = commit + push + 反映先の確認。ビルドされる層 (`home.nix` / `modules` / `lib` / `hosts` / `flake.nix`) を変えた時だけ `nix run .#switch` を回す。docs / CI / tests だけの変更では switch しない。OS 層を変えた時の switch は sandbox 外で実行する。
 
 ## 規約
 
