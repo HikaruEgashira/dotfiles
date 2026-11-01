@@ -41,6 +41,7 @@ let
     "${home}/.claude.json"
     "${home}/.zsh_history"
     "${home}/.config/nix/nix.conf"
+    "${home}/.local/share/ghtkn"
     "${home}/.local/share/artex/local.env"
     "${home}/.local/share/artex/artex-secrets"
     # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。

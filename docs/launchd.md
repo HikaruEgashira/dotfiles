@@ -18,6 +18,7 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | ------------------------------------- | ------------------------------------------------------ | --------------- | ------------------------------------------------- |
 | `dev.egahika.ssh-agent`               | home-manager (`modules/programs/ssh.nix`)              | 常駐            | SSH agent と socket を管理                        |
 | `dev.egahika.ssh-add`                 | home-manager (`modules/programs/ssh.nix`)              | login           | agent 起動後に鍵を登録                            |
+| `dev.egahika.ghtkn-agent`             | home-manager (`modules/programs/ghtkn.nix`)            | 常駐            | `ghauth` が unlock と auth を吸収                 |
 | `com.stablyai.orca.terminal.*`        | Orca 自己管理                                          | terminal 起動時 | インスタンス固有の suffix を許容                  |
 | `dev.herdr.server.*`                  | herdr 自己管理                                         | server 起動時   | PID 等の suffix を許容                            |
 | `dev.egahika.dotfiles-sync`           | home-manager (`modules/programs/dotfiles-sync.nix`)    | 毎日 09:00      | main 追従 + 再 activation                         |
