@@ -216,9 +216,9 @@ tailscale serve status                                      # No serve config
 
 `nix run .#skills-audit` は `~/.agents/skills` を Pi の loader で読み、採用された skill と diagnostics を JSON で返す。diagnostics がある場合は終了コード 1。別のディレクトリは `nix run .#skills-audit -- /path/to/skills` で指定する。Pi の個人設定やプロジェクト設定は読み込まないため、対象外の探索先を含む起動時 diagnostics は別途確認する。
 
-`synced/<bucket>/` にある skill の正本は bucket 側とし、同名 skill を top-level に複製しない。`collision.winnerPath` と `collision.loserPath` の内容を確認し、古い top-level のディレクトリを `~/.agents/skills/.trash/<timestamp>/` へ退避する。削除はしない。Pi は dot directory を探索しない。同じ実体への symlink は重複として数えない。
+`~/.agents/skills` は 1 階層だけにする。Pi と Codex は配下を再帰探索するため、`synced/<bucket>/` のような第二の skill root を置くと、同名 skill が毎回 collision になる。Claude の同期 skill の正本は `~/.claude/skills/synced/<bucket>/` に任せ、Pi からも使いたいものだけ top-level に symlink する。既に同名の top-level がある場合は symlink を作らず top-level を優先する。
 
-退避後に監査を再実行し、diagnostics が空で、期待する `skills[].filePath` が選ばれたことを確認する。復旧時は退避先から元のパスへ戻す。
+衝突したら `collision.winnerPath` と `collision.loserPath` を確認し、負けた側の nested な複製を `~/.agents/skills/.trash/<timestamp>/` へ退避する。削除はしない。Pi は dot directory を探索しない。同じ実体への symlink は重複として数えない。退避後に監査を再実行し、diagnostics が空で、期待する `skills[].filePath` が選ばれたことを確認する。復旧時は退避先から元のパスへ戻す。
 
 ### 4.1 switch が失敗した
 
