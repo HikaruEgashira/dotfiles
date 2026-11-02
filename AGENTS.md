@@ -18,13 +18,19 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 
 | コマンド | 効果 |
 | --- | --- |
-| `nix run .#switch` | ユーザー層を root なしで適用。OS 層 (`modules/darwin`, `hosts`) に差分がある時だけ sudo で darwin-rebuild が走る |
+| `nix run .#switch` | システムのビルド結果が現行世代と異なると sudo で darwin-rebuild を実行し、その後ユーザー層を適用する。実行前に適用範囲を確認する |
 | `nix fmt` / `nix run .#lint` | 整形 / deadnix + shellcheck |
 | `nix flake check` | formatter + eval + guards |
 | `nix run .#update` | 全 inputs を bump + eval gate |
 | `nix run .#audit` / `.#xdg-audit` / `.#launchd-audit` | ledger 集計 / XDG drift / launchd drift |
 
-タスク完了 = commit + push + 反映先の確認。ビルドされる層 (`home.nix` / `modules` / `lib` / `hosts` / `flake.nix`) を変えた時だけ `nix run .#switch` を回す。docs / CI / tests だけの変更では switch しない。OS 層を変えた時の switch は sandbox 外で実行する。
+タスク完了 = commit + push + 必要な適用 + 反映先の確認。
+
+- 適用の要否は変更内容と実機の状態で判断する。変更ファイルの場所だけで OS 適用を決めない。
+- OS 設定・サービスなどに未反映の変更がある場合だけ darwin-rebuild を実行する。OS 適用を伴う switch は sandbox 外で実行する。
+- ユーザー層だけの反映には Home Manager の activationPackage を使い、OS 全体を適用しない。
+- Homebrew 本体の削除が完了し、宣言から再導入指定を除いただけなら OS 適用は不要。宣言と実機の両方を確認する。
+- docs / AGENTS.md / CI / tests だけの変更では switch しない。
 
 ## 規約
 
