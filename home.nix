@@ -10,7 +10,6 @@
     ./modules/programs/aws.nix
     ./modules/programs/cli-tools.nix
     ./modules/programs/aqua.nix
-    ./modules/programs/native-apps.nix
     ./modules/programs/nvim/default.nix
     ./modules/programs/zsh.nix
     ./modules/programs/tmux.nix

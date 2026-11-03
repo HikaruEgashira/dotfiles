@@ -46,7 +46,7 @@ GUI アプリが登録する background item は次のとおり（app 側が管�
 | `com.google.GoogleUpdater.wake`                   | Google Chrome          |
 | `com.openssh.ssh-agent`                           | macOS 標準             |
 | `io.tailscale.ipn.macsys.login-item-helper`       | Tailscale vendor pkg   |
-| `com.openai.codex-sparkle-{progress,updater}`     | Codex (cask)           |
+| `com.openai.codex-sparkle-{progress,updater}`     | Codex native updater   |
 | `jp.kiok.nani.ShipIt`                             | Nani                   |
 
 ## system domain (`/Library/LaunchDaemons`)
@@ -67,7 +67,7 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 | `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | スクリプト実行待ち (root) |
 | `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | スクリプト実行待ち (root) |
 | `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | スクリプト実行待ち (root) |
-| `net.tunnelblick.tunnelblick{,.launcher}` + cask                                  | VPN プロファイルが空。`openvpn` は nix 管理                               | スクリプト実行待ち (root) |
+| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | スクリプト実行待ち (root) |
 | watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                  |
 
 ## 検知

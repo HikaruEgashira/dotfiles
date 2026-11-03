@@ -106,6 +106,7 @@ grep -Fq 'GH_CONFIG_DIR="$HOME/.cache/ai-sandbox/gh"' "$root/lib/package-registr
 printf '%s\n' 'ok: codex proxy allows github domains and gh falls back to a tokenless config dir'
 
 # ghtkn の socket 親 dir は許可しつつ、暗号化 token store は sandbox に見せない
+# shellcheck disable=SC2016
 grep -Fq '"${config.xdg.cacheHome}/ghtkn/agent"' "$source_nix"
 
 printf '%s\n' 'ok: ghtkn encrypted token store stays out of the sandbox'

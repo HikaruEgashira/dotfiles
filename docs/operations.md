@@ -40,10 +40,9 @@ Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex 
 | ----------------- | ---------------------------------------- | ----------------------------------------------- |
 | Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty | `cache.nixos.org` の output                     |
 | Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`  | pin した release asset と `aqua-checksums.json` |
-| user activation   | Discord, Slack, Raycast, OBS             | download hash、bundle ID、Apple Team ID         |
-| system activation | Tailscale, Windows App, Xcode            | pkg/MAS と app の署名                           |
+| system activation | Tailscale, Xcode                         | pkg/MAS と app の署名                           |
 
-Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。native app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
+Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。system app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
 
 ## 2. 何かを追加する
 
@@ -81,7 +80,7 @@ Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回�
 
 1. upstream が CLI の release binary を出しているなら `modules/programs/aqua/registry.yaml` と `aqua.yaml` に追加する。
 2. `AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum --config modules/programs/aqua/aqua.yaml --prune` で checksum を更新する。
-3. GUI の DMG は `modules/programs/native-apps/`、root が要る pkg/MAS は `modules/darwin/native-apps/` に置き、hash・bundle ID・Team ID を検証する。
+3. GUI は上流署名済み installer を使い、root が要る pkg/MAS は `modules/darwin/native-apps/` に置いて hash・bundle ID・Team ID を検証する。
 4. upstream binary がなく Nix cache にも output がない package は追加しない。
 
 npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@version` / `uvx --from pkg==version` を包む (初回実行時のみネットワーク)。常駐 daemon は npx のキャッシュ path が入れ替わるため、`npm install -g --prefix ~/.local/share/npm-global pkg@version` で固定 prefix に入れ、`~/.local/share/npm-global/bin` を PATH に置く。

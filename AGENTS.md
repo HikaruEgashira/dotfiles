@@ -10,7 +10,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | 設定が要る program | `modules/programs/<name>.nix` を作り `home.nix` に import |
 | システム層 (nix.conf, firewall, sudo, signed pkg) | `modules/darwin/*.nix` |
 | upstream binary の CLI | `modules/programs/aqua/` の local registry + checksum |
-| nixpkgs cache に無い GUI | `modules/programs/native-apps/`、root installer は `modules/darwin/native-apps/` |
+| nixpkgs cache に無い GUI | 上流署名済み installer。root installer は `modules/darwin/native-apps/` |
 | AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
@@ -31,7 +31,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - 適用の要否は変更内容と実機の状態で判断する。変更ファイルの場所だけで OS 適用を決めない。
 - OS 設定・サービスなどに未反映の変更がある場合だけ darwin-rebuild を実行する。OS 適用を伴う switch は sandbox 外で実行する。
 - ユーザー層だけの反映には Home Manager の activationPackage を使い、OS 全体を適用しない。
-- root installer の追加・変更は darwin-rebuild、Aqua とユーザー app だけなら Home Manager を適用する。
+- root installer の追加・変更は darwin-rebuild、Aqua だけなら Home Manager を適用する。
 - docs / AGENTS.md / CI / tests だけの変更では switch しない。
 
 ## 規約
