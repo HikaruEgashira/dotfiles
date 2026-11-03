@@ -21,7 +21,7 @@
     ./modules/programs/harness/pi.nix
     ./modules/programs/cmux.nix
     ./modules/programs/herdr.nix
-    ./modules/programs/hermes.nix
+    ./modules/programs/harness/hermes.nix
 
     ./modules/programs/dotfiles-sync.nix
     ./modules/programs/artex.nix
