@@ -54,7 +54,6 @@ modules/
     git.nix              identity, signing, hooks (pleno-dlp pre-commit)
     tmux.nix             prefix C-a, vim panes, Tokyo Night status
     zsh.nix              shell init, aliases, secrets via age
-  settings/              read-by-zsh helper scripts and cheatsheets
 .github/workflows/       CI (fmt + eval + lint) + weekly flake update
 ```
 

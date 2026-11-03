@@ -11,10 +11,8 @@
 
     shellAliases = {
       z = "zod .";
-      q = "gh q bash ~/dotfiles/modules/settings/tmux-dev.sh";
       rel = "source ~/.zshrc";
       ghq = "gh q";
-      tdev = "bash ~/dotfiles/modules/settings/tmux-dev.sh";
       up = "claude-compose up";
       down = "claude-compose down";
       log = "claude-compose log -f";
@@ -77,8 +75,6 @@
           export _SECRETS_GEN=1
         fi
       ''
-
-      (builtins.readFile ../settings/send-claude.zsh)
     ];
   };
 }
