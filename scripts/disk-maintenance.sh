@@ -245,12 +245,14 @@ step_artex_generations() {
   for dir in "${ARTEX_GENERATION_DIRS[@]}"; do
     [ -d "$dir" ] || continue
     n=0
-    # mtime 降順。世代 dir 名は hash で順序を持たないので時刻で切る
-    while IFS= read -r gen; do
+    # mtime 降順 (ls -t は BSD / GNU 共通)。世代 dir 名は commit hash / 日時で空白を含まず、ls の word split で足りる
+    # shellcheck disable=SC2045
+    for gen in $(ls -1dt "$dir"/*/ 2>/dev/null); do
+      gen=${gen%/}
       n=$((n + 1))
       [ "$n" -gt "$ARTEX_KEEP" ] || continue
       run rm -rf "$gen"
-    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -exec stat -f '%m %N' {} + 2>/dev/null | sort -rn | cut -d' ' -f2-)
+    done
   done
 }
 
