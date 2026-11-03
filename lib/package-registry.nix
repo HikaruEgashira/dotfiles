@@ -659,6 +659,11 @@ let
   # CI evaluates on aarch64-linux; entries here must not leak into `cross`
   darwinOnly = lib.optionals isDarwin [
     (mkEntry {
+      pkg = pkgs.age-plugin-se;
+      purpose = "ops";
+      reason = "env.age の復号鍵を Secure Enclave に置く (鍵を file として持ち出せない)";
+    })
+    (mkEntry {
       pkg = pkgs.aqua;
       purpose = "util";
       reason = "prebuilt CLI version manager";

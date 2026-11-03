@@ -14,7 +14,7 @@ cat >"$tmp/bin/age" <<'AGE'
 cat "$4.plain"
 AGE
 chmod +x "$tmp/bin/age"
-: >"$tmp/home/.config/secrets/age-key.txt"
+: >"$tmp/home/.config/secrets/age-se.txt"
 : >"$tmp/home/.config/secrets/env.age"
 cat >"$tmp/home/.config/secrets/env.age.plain" <<'PLAIN'
 # comment
@@ -74,7 +74,7 @@ EOF
 
 run_case "missing key fails but present keys are exported" 1 "ALPHA=a" ALPHA NOPE
 
-rm "$tmp/home/.config/secrets/age-key.txt"
+rm "$tmp/home/.config/secrets/age-se.txt"
 run_case "missing key file fails without calling age" 1 "" ALPHA
 
 echo "direnv-use-secrets: ok"

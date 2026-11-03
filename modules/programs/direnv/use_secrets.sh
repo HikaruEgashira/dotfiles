@@ -1,13 +1,14 @@
 # shellcheck shell=bash
-# `use secrets [KEY...]`: ~/.config/secrets/env.age を復号し、指定したキーだけ (無指定なら全部) を export する
+# `use secrets [KEY...]`: ~/.config/secrets/env.age を復号し、指定したキーだけ (無指定なら全部) を export する。
+# 復号鍵は Secure Enclave の identity (age-se.txt)。file は参照に過ぎず、別 Mac へ持ち出しても使えない
 use_secrets() {
   local dir="$HOME/.config/secrets"
   local plain line name value wanted
-  if [ ! -r "$dir/env.age" ] || [ ! -r "$dir/age-key.txt" ]; then
-    log_error "use_secrets: $dir/env.age or age-key.txt is not readable"
+  if [ ! -r "$dir/env.age" ] || [ ! -r "$dir/age-se.txt" ]; then
+    log_error "use_secrets: $dir/env.age or age-se.txt is not readable"
     return 1
   fi
-  plain=$(age -d -i "$dir/age-key.txt" "$dir/env.age") || return 1
+  plain=$(age -d -i "$dir/age-se.txt" "$dir/env.age") || return 1
   local -a found=()
   while IFS= read -r line || [ -n "$line" ]; do
     case $line in '' | '#'*) continue ;; esac

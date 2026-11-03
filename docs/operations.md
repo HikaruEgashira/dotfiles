@@ -350,16 +350,18 @@ upstream (`sst/opencode`) への issue は当面立てない。preflight が int
 
 ### 4.6 secret を rotate する
 
-`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。同じディレクトリの `.env.keys` / `.env` (dotenvx 由来) は読む実装が無い。未使用なので削除してよい。
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-se.txt` が復号鍵の参照 (0600)。鍵本体はこの Mac の Secure Enclave にあり (`age-plugin-se`, access control `none`)、file を複製しても他の機械では復号できない。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。同じディレクトリの `.env.keys` / `.env` (dotenvx 由来) は読む実装が無い。未使用なので削除してよい。
 
 ```bash
 cd ~/.config/secrets
 plain=$(mktemp)
 trap 'rm -f "$plain"' EXIT
-age -d -i age-key.txt env.age >"$plain"
+age -d -i age-se.txt env.age >"$plain"
 $EDITOR "$plain"
-age -e -r "$(age-keygen -y age-key.txt)" -o env.age "$plain"
+age -e -R <(age-plugin-se recipients -i age-se.txt) -o env.age "$plain"
 ```
+
+Mac を乗り換えたら新しい機械で `age-plugin-se keygen --access-control none -o age-se.txt` を作り、旧機械で復号した平文を新 recipient で暗号化し直す。SE の鍵は backup できないので、平文の退避先は 1Password 等の別系統にする。
 
 rotate 後は secret を使う repo で `direnv reload` する。direnv は `.envrc` の変更しか検知しないため、env.age の変更は手動 reload まで反映されない。
 
