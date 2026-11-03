@@ -13,7 +13,8 @@
 | 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 整形             | `cd ~/dotfiles && nix fmt`                         | nixfmt + prettier + shfmt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                                                                                                                                                                                                                                                                                                                                                              |
+| inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + substitutable gate (1.3)。`-- --activate` で適用。週次 GH Actions は同じ gate を通した変更だけを main に直接 push。手動更新は検証後に commit / push する
+| cache 検査       | `cd ~/dotfiles && nix run .#substitutable-gate`    | 現 lock で darwin system + home activation の閉包に cache.nixos.org から取れない package が無いことを確認する (1.3)                                                                                                                                                                                                                                                                                                                                                                              |
 | 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | tombstone (退役 tool の state、`~/ghq` 配下の `.pnpm-store`) は毎回消し、artex / containers / `Documents/Codex` の大きさを週次で `~/.local/state/disk-maintenance/sizes.tsv` に記録する。空き率が 10% 未満のときだけ nix 世代削除 → GC → optimise → キャッシュ (artex `import/` 含む) → Codex 旧 release → ゴミ箱 → podman (未使用 image/container、30 日起動の無い VM) の順に回収して目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す。手元に要らない大物は `--archive PATH` で S3 へ (7.2) |
 | ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示し、どちらかがある clone は `--allow-unpushed` を付けない限り保護する。定期実行も dry-run のみ。詳細と明示削除手順は 7.4                                                                                                                                                                                                                                                                                                                                          |
 | 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`                                                                                                                                                                                                                                                                                                                                    |
@@ -43,6 +44,30 @@ Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex 
 | system activation | Tailscale, Xcode                         | pkg/MAS と app の署名                           |
 
 Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。system app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
+
+### 1.3 substitutable gate (`scripts/substitutable-gate.sh`)
+
+inputs を bump した lock が「ローカル source build 禁止」を守っているかを、適用前に判定する。`nix build --dry-run --option substituters https://cache.nixos.org` で `darwinConfigurations.hikae.system` と `homeConfigurations.hikae.activationPackage` の閉包を評価し、「will be built」に残る derivation を `nix derivation show` で分類する。
+
+| 分類  | 判定                                              | 扱い                                                                                       |
+| ----- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| glue  | `src` / `srcs` / `outputHash` を持たない          | 件数だけ報告                                                                               |
+| fetch | fixed-output (`outputHash`)。hash 固定の download | 件数だけ報告                                                                               |
+| build | `src` または `srcs` を持つ                        | `scripts/substitutable-gate-allow.txt` の regex に合えば理由つきで許可、残りを列挙して失敗 |
+
+「will be built = 0 件」は assert しない。nix-darwin / home-manager の生成物 (`darwin-system-*`, `home-manager-generation`, `etc`, `launchd`, `hm_*` など 190 件前後) は repo の内容と inputs の hash を埋め込むため bump のたびに必ずローカルで作り直され、cache には存在し得ない。これらは bash が store path を並べるだけの derivation で、source build ではない。
+
+本機の `/nix/store` に既にある path は dry-run に出ないため、評価は空の chroot store (`~/.cache/substitutable-gate/store`、`SUBSTITUTABLE_GATE_STORE` で変更) で行い、CI runner と同じ判定にする。初回は flake inputs の source (約 700MB) をそこへ copy するので 1 分前後かかる。
+
+allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / pleno-dlp / say-hook / oh-my-pi / node-darwin-arm64)、Cica font、herdr flake input とその rust toolchain (#215)。
+
+| 実行場所                           | 対象                                             | 備考                                                                                                                |
+| ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| 本機 `nix run .#update`            | darwin system + home activation (aarch64-darwin) | gate が落ちたら flake.lock は bump 済みのまま残る。`git checkout flake.lock` で戻すか、原因 package を 2.5 へ逃がす |
+| `flake-update.yml` (aarch64-linux) | 同じ 2 target                                    | dry-run は eval と cache 問い合わせだけなので runner の system に依存しない。落ちたら push せず workflow が赤になる |
+| `ci.yml`                           | 対象外                                           | PR では lock が変わらない。package 追加時の cache 有無は `nix run .#substitutable-gate` を手で回す                  |
+
+`workflow_dispatch` の `dry_run=true` は bump と gate だけ走らせ push しない。gate 自体の動作確認に使う。
 
 ## 2. 何かを追加する
 

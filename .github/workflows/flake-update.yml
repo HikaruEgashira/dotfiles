@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "0 4 * * 1" # 毎週月曜 04:00 UTC (= 月曜 13:00 JST)
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "bump と gate だけ走らせ、push しない"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -26,8 +31,13 @@ jobs:
       - name: Run nix flake update
         timeout-minutes: 10
         run: nix flake update
+      - name: Substitutable gate
+        # runner は aarch64-linux だが dry-run は eval + cache 問い合わせだけなので darwin 閉包も判定できる
+        timeout-minutes: 10
+        run: nix run '.#substitutable-gate'
       - name: Commit and push if flake.lock changed
         id: push
+        if: ${{ !inputs.dry_run }}
         timeout-minutes: 5
         run: |
           set -euo pipefail

@@ -401,10 +401,42 @@
             coreutils
           ]
         );
+      gateTargets = [
+        ".#darwinConfigurations.hikae.system"
+        ".#homeConfigurations.hikae.activationPackage"
+      ];
+      substitutableGateAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          script = pkgs.writeShellScriptBin "substitutable-gate" ''
+            set -eu
+            root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
+            cd "$root"
+            export PATH=${
+              pkgs.lib.makeBinPath [
+                pkgs.nix
+                pkgs.jq
+                pkgs.gawk
+                pkgs.coreutils
+                pkgs.gnugrep
+                pkgs.gnused
+              ]
+            }
+            [ "$#" -gt 0 ] || set -- ${pkgs.lib.escapeShellArgs gateTargets}
+            export SUBSTITUTABLE_GATE_ALLOWLIST=${./scripts/substitutable-gate-allow.txt}
+            exec ${pkgs.bash}/bin/bash ${./scripts/substitutable-gate.sh} "$@"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/substitutable-gate";
+        };
       updateAppFor =
         system:
         let
           pkgs = pkgsFor system;
+          gate = substitutableGateAppFor system;
           script = pkgs.writeShellScriptBin "update" ''
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
@@ -426,9 +458,8 @@
             ${pkgs.git}/bin/git diff --stat -- flake.lock || true
 
             echo
-            echo "==> eval gate"
-            ${pkgs.nix}/bin/nix eval --raw .#darwinConfigurations.hikae.system.drvPath > /dev/null
-            ${pkgs.nix}/bin/nix eval --raw .#homeConfigurations.hikae.activationPackage.drvPath > /dev/null
+            echo "==> substitutable gate"
+            ${gate.program}
 
             if [ "$activate" -eq 0 ]; then
               echo
@@ -554,6 +585,7 @@
           launchd-audit = launchdAuditAppFor system;
           skills-audit = skillsAuditAppFor system;
           lint = lintAppFor system;
+          substitutable-gate = substitutableGateAppFor system;
           update = updateAppFor system;
           xdg-audit = xdgAuditAppFor system;
         }
