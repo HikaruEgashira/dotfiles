@@ -53,6 +53,7 @@ let
     "${home}/.aws/credentials"
     "${home}/.aws/login"
   ];
+  # ~/.cache/hikaevi/*.json は hikaevi[bot] の installation token で、sandbox の gh wrapper が使う前提なので deny しない
 
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
   sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
@@ -177,6 +178,8 @@ let
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
     export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
+    # export した PAT や text backend を sandbox に継承させず、常に agent socket 経由に固定する
+    unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR
     exec "$real" --settings ${lib.escapeShellArg "${config.xdg.configHome}/claude/sandbox.json"} "$@"
   '';
 
