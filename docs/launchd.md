@@ -16,8 +16,10 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 
 | Label                                 | 管理                                                   | 起動            | 備考                                                                          |
 | ------------------------------------- | ------------------------------------------------------ | --------------- | ----------------------------------------------------------------------------- |
-| `dev.egahika.ssh-agent`               | home-manager (`modules/programs/ssh.nix`)              | 常駐            | SSH agent と socket を管理                                                    |
+| `dev.egahika.ssh-agent`               | home-manager (`modules/programs/ssh.nix`)              | 常駐            | 認証用 SSH agent (`id_ed25519`) と socket を管理                              |
 | `dev.egahika.ssh-add`                 | home-manager (`modules/programs/ssh.nix`)              | login           | agent 起動後に鍵を登録                                                        |
+| `dev.egahika.ssh-sign-agent`          | home-manager (`modules/programs/ssh.nix`)              | 常駐            | 署名専用 SSH agent (`id_ed25519_sign`)。sandbox に渡す唯一の ssh socket       |
+| `dev.egahika.ssh-sign-add`            | home-manager (`modules/programs/ssh.nix`)              | login           | 署名 agent 起動後に署名鍵を登録                                               |
 | `dev.egahika.ghtkn-agent`             | home-manager (`modules/programs/ghtkn.nix`)            | 常駐            | `ghauth` が unlock と auth を吸収                                             |
 | `dev.egahika.aws-cred-agent`          | home-manager (`modules/programs/aws.nix`)              | 常駐            | sandbox へ短寿命 STS credential を socket で配る                              |
 | `com.stablyai.orca.terminal.*`        | Orca 自己管理                                          | terminal 起動時 | インスタンス固有の suffix を許容                                              |
@@ -77,4 +79,4 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 
 `nix run .#launchd-audit` は user domain の非 Apple agent を許容リストと突き合わせ、未知のラベルを `UNKNOWN` として報告し exit 1 する。新しい常駐を足したら、この表と許容リスト (`flake.nix`) の両方を更新する。
 
-動的ラベルは `com.stablyai.orca.terminal.` / `com.superlogical.rex.server.` / `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 2 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。
+動的ラベルは `com.stablyai.orca.terminal.` / `com.superlogical.rex.server.` / `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 4 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。

@@ -490,6 +490,8 @@
         in
         assert lib.elem "dev.egahika.ssh-agent" labels;
         assert lib.elem "dev.egahika.ssh-add" labels;
+        assert lib.elem "dev.egahika.ssh-sign-agent" labels;
+        assert lib.elem "dev.egahika.ssh-sign-add" labels;
         pkgs.runCommand "launchd-audit-test"
           {
             nativeBuildInputs = [

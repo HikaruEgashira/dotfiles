@@ -1,6 +1,6 @@
-# SSH の鍵操作を全て自前の ssh-agent 経由にする。
+# SSH の鍵操作を全て自前の ssh-agent 経由にし、認証鍵と署名鍵で agent を分ける。
 # launchd の socket ($TMPDIR/.../Listeners) は起動ごとにパスが変わり、GUI 以外では
-# SSH_AUTH_SOCK が未設定なので、固定パスの agent を 1 本立てて全経路をそこへ寄せる。
+# SSH_AUTH_SOCK が未設定なので、固定パスの agent を立てて全経路をそこへ寄せる。
 {
   config,
   lib,
@@ -11,49 +11,59 @@
 let
   home = config.home.homeDirectory;
   agentSocket = "${home}/.local/state/ssh-agent.sock";
-  keyFile = "${home}/.ssh/id_ed25519";
+  # sandbox には署名 agent だけを見せ、認証鍵で ssh できないようにする
+  signAgentSocket = "${home}/.local/state/ssh-sign-agent.sock";
 
   # agent と ssh-add の起動順は保証されないので、socket が生えるまで待つ
-  addKey = pkgs.writeShellScript "ssh-add-key" ''
-    for _ in $(seq 30); do
-      [ -S "$SSH_AUTH_SOCK" ] && exec ${pkgs.openssh}/bin/ssh-add ${keyFile}
-      sleep 1
-    done
-    echo "ssh-add: agent socket not found at $SSH_AUTH_SOCK" >&2
-    exit 1
-  '';
-in
-{
-  launchd.agents = {
-    ssh-agent = {
-      enable = true;
-      config = {
-        Label = "dev.egahika.ssh-agent";
-        ProgramArguments = [
-          "${pkgs.python3}/bin/python3"
-          "${../../scripts/ssh-agent-start.py}"
-          agentSocket
-          "${pkgs.openssh}/bin/ssh-agent"
-        ];
-        RunAtLoad = true;
-        KeepAlive = true;
-        StandardOutPath = "${home}/Library/Logs/ssh-agent.log";
-        StandardErrorPath = "${home}/Library/Logs/ssh-agent.log";
-      };
-    };
-    ssh-add = {
-      enable = true;
-      config = {
-        Label = "dev.egahika.ssh-add";
-        ProgramArguments = [ "${addKey}" ];
-        EnvironmentVariables.SSH_AUTH_SOCK = agentSocket;
-        RunAtLoad = true;
-        StandardOutPath = "${home}/Library/Logs/ssh-add.log";
-        StandardErrorPath = "${home}/Library/Logs/ssh-add.log";
-      };
+  addKey =
+    keyFile:
+    pkgs.writeShellScript "ssh-add-key" ''
+      for _ in $(seq 30); do
+        [ -S "$SSH_AUTH_SOCK" ] && exec ${pkgs.openssh}/bin/ssh-add ${keyFile}
+        sleep 1
+      done
+      echo "ssh-add: agent socket not found at $SSH_AUTH_SOCK" >&2
+      exit 1
+    '';
+
+  agent = name: socket: {
+    enable = true;
+    config = {
+      Label = "dev.egahika.${name}";
+      ProgramArguments = [
+        "${pkgs.python3}/bin/python3"
+        "${../../scripts/ssh-agent-start.py}"
+        socket
+        "${pkgs.openssh}/bin/ssh-agent"
+      ];
+      RunAtLoad = true;
+      KeepAlive = true;
+      StandardOutPath = "${home}/Library/Logs/${name}.log";
+      StandardErrorPath = "${home}/Library/Logs/${name}.log";
     };
   };
 
+  loader = name: socket: keyFile: {
+    enable = true;
+    config = {
+      Label = "dev.egahika.${name}";
+      ProgramArguments = [ "${addKey keyFile}" ];
+      EnvironmentVariables.SSH_AUTH_SOCK = socket;
+      RunAtLoad = true;
+      StandardOutPath = "${home}/Library/Logs/${name}.log";
+      StandardErrorPath = "${home}/Library/Logs/${name}.log";
+    };
+  };
+in
+{
+  launchd.agents = {
+    ssh-agent = agent "ssh-agent" agentSocket;
+    ssh-add = loader "ssh-add" agentSocket "${home}/.ssh/id_ed25519";
+    ssh-sign-agent = agent "ssh-sign-agent" signAgentSocket;
+    ssh-sign-add = loader "ssh-sign-add" signAgentSocket "${home}/.ssh/id_ed25519_sign";
+  };
+
+  home.sessionVariables.SSH_SIGN_AUTH_SOCK = signAgentSocket;
   home.sessionVariables.SSH_AUTH_SOCK = agentSocket;
 
   # 鍵ファイルへのフォールバックを潰し、接続も署名も agent だけを見るようにする

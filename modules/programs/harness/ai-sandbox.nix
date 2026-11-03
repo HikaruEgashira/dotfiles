@@ -55,8 +55,8 @@ let
   ];
   # ~/.cache/hikaevi/*.json は hikaevi[bot] の installation token で、sandbox の gh wrapper が使う前提なので deny しない
 
-  # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
-  sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
+  # 署名専用 agent だけを SSH_AUTH_SOCK として見せ、認証鍵の agent には繋がせない
+  sshAuthSock = config.home.sessionVariables.SSH_SIGN_AUTH_SOCK;
 
   # allowAllUnixSockets は docker.sock 等まで開くため、ghtkn / ssh agent / aws broker だけを名前で許可する。
   unixSockets = [
