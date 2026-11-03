@@ -194,47 +194,54 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `system.activationScripts.wifiDnsFromDhcp` (`modules/darwin/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
-### 3.4 署名鍵をローテーションする
+### 3.4 SSH 鍵の役割分担とローテーション
 
-署名鍵は agent が保持し、git は `key::<公開鍵>` (agent 委譲) で署名する。鍵を替えるときは **公開鍵が 2 箇所 (`signing.key` と `allowedSigners`) の単一 let に集約されている**ので、`modules/programs/git.nix` の `signingPubKey` 1 行だけ書き換える。
+鍵は用途で 2 本に分け、agent も 2 本立てる (`modules/programs/ssh.nix`)。
 
-1. 新しい鍵を作る (署名専用。SSH 認証には使わない):
+| 鍵                       | agent (launchd label)        | socket                               | 用途                          | sandbox                    |
+| ------------------------ | ---------------------------- | ------------------------------------ | ----------------------------- | -------------------------- |
+| `~/.ssh/id_ed25519`      | `dev.egahika.ssh-agent`      | `~/.local/state/ssh-agent.sock`      | ssh 認証 (vultr, `*.exe.xyz`) | 非公開                     |
+| `~/.ssh/id_ed25519_sign` | `dev.egahika.ssh-sign-agent` | `~/.local/state/ssh-sign-agent.sock` | git commit 署名のみ           | `SSH_AUTH_SOCK` として公開 |
 
-   ```bash
-   ssh-keygen -t ed25519 -C "$(git config user.email)" -f ~/.ssh/id_ed25519_new
-   ```
+host の `SSH_AUTH_SOCK` は認証 agent を指す。git は `gpg.ssh.program` の wrapper が `SSH_AUTH_SOCK` を署名 agent に差し替えて `ssh-keygen` を呼ぶので、host でも sandbox でも署名は署名 agent で行う。sandbox (`ai-sandbox.nix`) は署名 socket だけを allowlist に入れるため、sandbox 内から認証鍵で ssh できない。署名鍵はどの host の `authorized_keys` にも登録しない。
 
-2. GitHub に **Signing Key 種別**で登録する (auth key とは別枠。Web UI か下記):
+署名公開鍵は `modules/programs/git.nix` の `signingPubKey` 1 箇所に集約している (`signing.key` と `allowedSigners` の両方が参照)。`legacySigningPubKey` は旧署名鍵 (= 現認証鍵) で、過去 commit のローカル検証用に `allowedSigners` に残す。
 
-   ```bash
-   gh auth refresh -h github.com -s admin:ssh_signing_key   # token scope 追加
-   gh api -X POST /user/ssh_signing_keys -f title="$(hostname -s)" -f key="$(cat ~/.ssh/id_ed25519_new.pub)"
-   ```
+#### 署名鍵の再生成 (紛失・漏洩時)
 
-3. `modules/programs/ssh.nix` の `keyFile` と `modules/programs/git.nix` の `signingPubKey` を新鍵に更新し、適用する:
+1. 鍵を作る:
 
    ```bash
-   nix run ~/dotfiles#switch
-   launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-add
+   ssh-keygen -t ed25519 -C "sign@hikae" -N "" -f ~/.ssh/id_ed25519_sign
    ```
 
-4. 検証 (3 経路すべて):
+2. GitHub に **Signing Key 種別**で登録する。ghtkn の token に `admin:ssh_signing_key` が無い場合は https://github.com/settings/ssh/new で Key type を Signing Key にして貼る:
 
    ```bash
-   git commit --allow-empty -m "signing key check"
-   git log -1 --show-signature          # → Good "git" signature for <user noreply email>
-   gh api repos/HikaruEgashira/dotfiles/commits/$(git rev-parse HEAD) --jq .commit.verification
-   ~/.config/ai-sandbox/bin/codex sandbox -- /bin/sh -c 'git -C ~ verify-commit HEAD'   # sandbox 内でも鍵ファイルを読まずに署名できる
+   gh api -X POST /user/ssh_signing_keys -f title="$(hostname -s)-sign" -f key="$(cat ~/.ssh/id_ed25519_sign.pub)"
    ```
 
-5. 旧鍵を GitHub と端末から消す (旧鍵の失効は取り消せないので、検証が通ってから):
+3. `signingPubKey` を新公開鍵に書き換えて merge し、Home Manager を適用して署名 agent に再ロードする:
 
    ```bash
-   gh api -X DELETE /user/ssh_signing_keys/<id>
-   rm ~/.ssh/id_ed25519_new  # 不要になった方
+   nix run .#homeConfigurations.hikae.activationPackage
+   launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-agent
+   launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-add
    ```
 
-`allowed_signers` は repo 管理 (公開情報) で、commit email を principal にしている。principal を変えない限り GitHub 側の verified 表示はアカウント登録鍵だけで決まる。
+4. 検証:
+
+   ```bash
+   SSH_AUTH_SOCK=~/.local/state/ssh-sign-agent.sock ssh-add -l   # sign@hikae のみ
+   SSH_AUTH_SOCK=~/.local/state/ssh-agent.sock ssh-add -l        # id_ed25519 のみ
+   git commit --allow-empty -m "signing key check" && git log -1 --show-signature && git reset --hard HEAD~1
+   ```
+
+5. 漏洩時は旧鍵を GitHub から消す (`gh api /user/ssh_signing_keys` で id を引いて `-X DELETE`)。消すと旧鍵で署名した commit は GitHub 上で unverified に戻る。
+
+#### 認証鍵の再生成
+
+`ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519` で作り直し、各 host の `~/.ssh/authorized_keys` を差し替え、`launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-add` で再ロードする。認証鍵は署名に使わないので git 設定は変えない。
 
 ### 3.5 macOS 自動アップデートを固定する
 

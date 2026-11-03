@@ -97,7 +97,14 @@ if grep -Fq 'allowAllUnixSockets = true' "$source_nix"; then
   exit 1
 fi
 
-printf '%s\n' 'ok: ai-sandbox exposes only ghtkn, ssh agent and aws broker sockets'
+# sandbox には署名 agent だけを渡し、認証鍵の agent で外部 host に ssh させない
+grep -Fq 'sshAuthSock = config.home.sessionVariables.SSH_SIGN_AUTH_SOCK;' "$source_nix"
+if grep -Fq 'SSH_AUTH_SOCK;' "$source_nix" || grep -Fq 'ssh-agent.sock' "$source_nix"; then
+  printf '%s\n' 'FAIL: ai-sandbox exposes the ssh auth agent socket' >&2
+  exit 1
+fi
+
+printf '%s\n' 'ok: ai-sandbox exposes only ghtkn, ssh sign agent and aws broker sockets'
 
 # network proxy 有効時も push / gh api / AWS API が通るよう domain を許可する
 grep -Fq '"github.com"' "$source_nix"

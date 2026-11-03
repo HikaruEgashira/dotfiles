@@ -8,7 +8,14 @@
 let
   hooksDir = "${config.xdg.configHome}/git/hooks";
   userEmail = "39324739+HikaruEgashira@users.noreply.github.com";
-  signingPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9";
+  signingPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAMxbH3D5XgwLpdmeErzYD4STws7IML7sCt6h+ZUhkCa";
+  # 旧署名鍵 (現在の認証鍵) で署名済みの過去 commit をローカル検証し続けるため残す
+  legacySigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9";
+
+  # SSH_AUTH_SOCK は認証 agent のまま、署名だけ署名 agent に向ける
+  signProgram = pkgs.writeShellScript "ssh-keygen-sign" ''
+    SSH_AUTH_SOCK=${lib.escapeShellArg config.home.sessionVariables.SSH_SIGN_AUTH_SOCK} exec ${pkgs.openssh}/bin/ssh-keygen "$@"
+  '';
 
   preCommit = pkgs.writeShellScript "global-pre-commit" (builtins.readFile ./git/pre-commit.sh);
 
@@ -43,8 +50,9 @@ in
       # key:: 形式で agent に委譲する (秘密鍵ファイルは読まない)
       key = "key::${signingPubKey}";
       signByDefault = true;
+      signer = "${signProgram}";
       # 検証データは公開情報なので repo 所有。principal は commit email に揃え、鍵を替えたらここも更新する
-      allowedSigners = "${userEmail} ${signingPubKey}\n";
+      allowedSigners = "${userEmail} ${signingPubKey}\n${userEmail} ${legacySigningPubKey}\n";
     };
 
     settings = {
