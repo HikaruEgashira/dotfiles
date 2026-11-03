@@ -26,6 +26,16 @@ ln -s home-manager-1-link "$HOME/.local/state/nix/profiles/home-manager"
 : >"$HOME/.local/state/nix/profiles/home-manager-1-link"
 touch -t 202001010000 "$HOME/.cache/npm/old.tgz" "$HOME/Library/Caches/pip/old.whl"
 echo fresh >"$HOME/.cache/npm/fresh.tgz"
+artex="$HOME/.local/share/artex"
+mkdir -p "$artex/import" "$artex/pg" "$HOME/.local/share/containers"
+echo old >"$artex/import/old.tar.zst"
+touch -t 202001010000 "$artex/import/old.tar.zst"
+echo fresh >"$artex/import/fresh.tar.zst"
+echo data >"$artex/pg/base"
+touch -t 202001010000 "$artex/pg/base"
+repo="$HOME/ghq/github.com/owner/repo"
+mkdir -p "$repo/.pnpm-store/v3" "$repo/packages/web/.local/share" "$HOME/ghq/.pnpm-store"
+sizes="$HOME/.local/state/disk-maintenance/sizes.tsv"
 
 mkdir -p "$tmp/bin"
 cat >"$tmp/bin/nix-env" <<'EOF'
@@ -36,7 +46,12 @@ cat >"$tmp/bin/nix" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >>"$DISK_MAINT_TEST_NIX_LOG"
 EOF
-chmod +x "$tmp/bin/nix-env" "$tmp/bin/nix"
+cat >"$tmp/bin/podman" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >>"$DISK_MAINT_TEST_PODMAN_LOG"
+EOF
+chmod +x "$tmp/bin/nix-env" "$tmp/bin/nix" "$tmp/bin/podman"
+export DISK_MAINT_TEST_PODMAN_LOG="$tmp/podman.log"
 export DISK_MAINT_TEST_ENV_LOG="$tmp/env.log"
 export DISK_MAINT_TEST_NIX_LOG="$tmp/nix.log"
 export GHQ_CLEAN_TEST_LOG="$tmp/ghq-clean.log"
@@ -49,12 +64,35 @@ EOF
 chmod +x "$GHQ_CLEAN_SCRIPT"
 export PATH="$tmp/bin:/usr/bin:/bin"
 
-# 空き率が目標以上なら何も回収しない
+# 空き率が目標以上でも tombstone と size 記録は毎回。ladder は回さない
+out=$(TARGET_PCT=0 bash "$script" --dry-run)
+grep -Fq "tombstone: $repo/.pnpm-store" <<<"$out" || fail "repo 直下の .pnpm-store を tombstone にしない"
+grep -Fq "tombstone: $HOME/ghq/.pnpm-store" <<<"$out" || fail "ghq 直下の .pnpm-store を tombstone にしない"
+[ -d "$repo/.pnpm-store" ] || fail "dry-run が .pnpm-store を消した"
+[ ! -e "$sizes" ] || fail "dry-run が sizes.tsv に書いた"
+grep -q '^==> sizes: ' <<<"$out" || fail "size 記録を表示しない"
 out=$(TARGET_PCT=0 bash "$script")
 grep -q '空き率が目標以上なので何もしない' <<<"$out" || fail "目標以上で ladder を止めていない"
 [ -e "$HOME/.cache/npm/old.tgz" ] || fail "目標以上で古いファイルを削除した"
+[ -e "$artex/import/old.tar.zst" ] || fail "目標以上で artex import を削除した"
 [ ! -e "$DISK_MAINT_TEST_ENV_LOG" ] || fail "目標以上で nix の世代削除が走った"
-[ "$(cat "$GHQ_CLEAN_TEST_LOG")" = "--dry-run" ] || fail "clone inventory をdry-runで呼んでいない"
+[ ! -e "$DISK_MAINT_TEST_PODMAN_LOG" ] || fail "目標以上で podman を触った"
+[ "$(tail -n 1 "$GHQ_CLEAN_TEST_LOG")" = "--dry-run" ] || fail "clone inventory をdry-runで呼んでいない"
+[ ! -e "$repo/.pnpm-store" ] || fail "repo 直下の .pnpm-store が残っている"
+[ ! -e "$HOME/ghq/.pnpm-store" ] || fail "ghq 直下の .pnpm-store が残っている"
+[ -d "$repo/packages/web/.local" ] || fail "packages/*/.local を削除した (repo 側の責務)"
+[ "$(wc -l <"$sizes" | tr -d ' ')" -eq 1 ] || fail "sizes.tsv に 1 行記録されていない"
+awk -F'\t' -v d="$(date +%F)" 'NF != 4 || $1 != d { exit 1 }' "$sizes" || fail "sizes.tsv の列が 日付 + 3 者 でない"
+# 同じ週に再実行しても追記しない。前回記録から増えていれば差分を出す
+awk -F'\t' -v OFS='\t' '{ $2 = 0; print }' "$sizes" >"$sizes.new" && mv "$sizes.new" "$sizes"
+out=$(TARGET_PCT=0 bash "$script")
+[ "$(wc -l <"$sizes" | tr -d ' ')" -eq 1 ] || fail "7 日以内の再実行で sizes.tsv に追記した"
+grep -q "増加: $artex" <<<"$out" || fail "前回比の増加を表示しない"
+grep -q "増加: $HOME/.local/share/containers" <<<"$out" && fail "増えていない項目を増加と表示した"
+# 前回記録が 7 日より古ければ追記する
+awk -F'\t' -v OFS='\t' '{ $1 = "2000-01-01"; print }' "$sizes" >"$sizes.new" && mv "$sizes.new" "$sizes"
+TARGET_PCT=0 bash "$script" >/dev/null
+[ "$(wc -l <"$sizes" | tr -d ' ')" -eq 2 ] || fail "7 日より古い記録の後に追記していない"
 
 # 乾燥実行は 30 日を超えた日付 folder だけを提示し、current release を削除候補にしない
 out=$(TARGET_PCT=0 bash "$script" --dry-run)
@@ -73,10 +111,19 @@ grep -q '\[dry-run\] nix-env --delete-generations 30d' <<<"$out" || fail "dry-ru
 grep -Fq "[dry-run] rm -rf $releases/old" <<<"$out" || fail "古い Codex release を dry-run が提示しない"
 grep -Fq "[dry-run] rm -rf $releases/current" <<<"$out" && fail "current Codex release が dry-run の削除候補になった"
 [ ! -e "$DISK_MAINT_TEST_ENV_LOG" ] || fail "dry-run が nix-env を実行した"
+grep -Fq "[dry-run] $artex/import (1 files)" <<<"$out" || fail "古い artex import を dry-run が提示しない"
+grep -Fq '[dry-run] podman system prune -f' <<<"$out" || fail "dry-run が podman system prune を提示しない"
+grep -Eq '^(system prune|machine rm)' "$DISK_MAINT_TEST_PODMAN_LOG" && fail "dry-run が podman の削除を実行した"
+grep -Fq "$repo/packages/web/.local" <<<"$(TARGET_PCT=100 bash "$script" --dry-run 2>&1 >/dev/null)" || fail "packages/*/.local を候補として報告しない"
 
 # 実削除は 30 日より古いファイルだけ
 TARGET_PCT=100 bash "$script" >"$tmp/run.log" && fail "目標未達で 0 終了した"
 [ ! -e "$HOME/.cache/npm/old.tgz" ] || fail "古いキャッシュが残っている"
+[ ! -e "$artex/import/old.tar.zst" ] || fail "古い artex import が残っている"
+[ -e "$artex/import/fresh.tar.zst" ] || fail "新しい artex import が消えた"
+[ -e "$artex/pg/base" ] || fail "artex pg を削除した"
+grep -qx 'system prune -f' "$DISK_MAINT_TEST_PODMAN_LOG" || fail "podman system prune が実行されていない"
+grep -q 'machine rm' "$DISK_MAINT_TEST_PODMAN_LOG" && fail "--podman-machine 無しで machine を削除した"
 [ ! -e "$HOME/Library/Caches/pip/old.whl" ] || fail "古い pip キャッシュが残っている"
 [ -e "$HOME/.cache/npm/fresh.tgz" ] || fail "新しいキャッシュが消えた"
 [ ! -e "$releases/old" ] || fail "古い Codex release が消えていない"

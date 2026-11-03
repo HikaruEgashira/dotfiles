@@ -8,9 +8,10 @@
 #   4   cache  : 再取得できるキャッシュ
 #   5   codex  : current 以外の Codex CLI release。auto-update が戻す
 #   6   trash  : 7 日以上放置されたゴミ箱
-#   7   podman : CACHE_AGE_DAYS 起動していない停止済み VM と --podman-machine で指定した VM (image は再 pull できる)
-# 空き率に関係なく毎回消すもの:
-#   tombstone  : 退役した tool の state。宣言 (registry / xdg) に無いので存在自体が drift
+#   7   podman : 未使用 image/container、CACHE_AGE_DAYS 起動していない停止済み VM、--podman-machine で指定した VM
+# 空き率に関係なく毎回やること:
+#   tombstone  : 退役した tool の state と sandbox fallback の .pnpm-store。宣言に無いので存在自体が drift
+#   sizes      : artex / containers / Documents/Codex の大きさを週次で記録し、前回比の増加を出す
 # ladder の外 (手動、SSO セッションが要る):
 #   --archive PATH : S3 (GLACIER_IR) へ退避し、size / sha256 を照合してからローカルを消す
 set -euo pipefail
@@ -84,6 +85,16 @@ CACHES=(
   "$HOME/Library/Caches/bun"
   "$HOME/Library/Caches/node-gyp"
   "$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle"
+  "$HOME/.local/share/artex/import" # 取り込み済みの残骸。元データから再取り込みできる
+)
+
+SIZES_TSV=$HOME/.local/state/disk-maintenance/sizes.tsv
+SIZES_INTERVAL_DAYS=7
+# pg は削除せず記録だけ。Documents/Codex は --archive の判断材料
+WATCHED=(
+  "$HOME/.local/share/artex"
+  "$HOME/.local/share/containers"
+  "$HOME/Documents/Codex"
 )
 
 # 存在してはいけない path。退役済みで、再出現は env 漏れ (GOPATH 無しの process) か sandbox の fallback
@@ -95,6 +106,20 @@ TOMBSTONES=(
   "$HOME/.local/state/mise" # 同上
   "$HOME/.cache/mise"       # 同上
 )
+
+days_ago() { # N -> YYYY-MM-DD
+  if date --version >/dev/null 2>&1; then
+    date -d "$1 days ago" +%F
+  else
+    date -v-"$1"d +%F
+  fi
+}
+
+# sandbox が ~/.local/share/pnpm に書けなかったとき pnpm が黙って上位 dir へ落とす store。再 fetch できる
+pnpm_fallback_stores() {
+  [ -d "$HOME/ghq" ] || return 0
+  find "$HOME/ghq" -maxdepth 5 -type d -name .pnpm-store -prune 2>/dev/null
+}
 
 avail_mib() { df -Pk "$HOME" | awk 'NR==2 {print int($4 / 1024)}'; }
 used_pct() { df -Pk "$HOME" | awk 'NR==2 {print int($3 * 100 / ($3 + $4))}'; }
@@ -118,14 +143,43 @@ pace() { # label
 }
 
 step_tombstones() {
-  local path
-  for path in "${TOMBSTONES[@]}"; do
+  local path paths=("${TOMBSTONES[@]}")
+  while read -r path; do paths+=("$path"); done < <(pnpm_fallback_stores)
+  for path in "${paths[@]}"; do
     [ -e "$path" ] || continue
     echo "==> tombstone: $path ($(du -sh "$path" 2>/dev/null | cut -f1))"
     # go の module cache は書込不可で rm が止まる
     run chmod -R u+w "$path"
     run rm -rf "$path"
   done
+}
+
+record_sizes() {
+  local today row prev cur name size i
+  today=$(date +%F)
+  [ -f "$SIZES_TSV" ] && prev=$(tail -n 1 "$SIZES_TSV") || prev=
+  row=$today
+  for name in "${WATCHED[@]}"; do
+    # 読めない file があると du は合計を出した上で非 0 になるので、終了値ではなく出力の有無で判断する
+    size=$(du -sk "$name" 2>/dev/null | cut -f1 || true)
+    row+=$'\t'${size:-0}
+  done
+  echo "==> sizes: $(printf '%s' "$row" | tr '\t' ' ') (KiB; artex containers Documents/Codex)"
+  if [ -n "$prev" ]; then
+    IFS=$'\t' read -r -a prev <<<"$prev"
+    IFS=$'\t' read -r -a cur <<<"$row"
+    for i in "${!WATCHED[@]}"; do
+      [ "${cur[i + 1]}" -gt "${prev[i + 1]:-0}" ] || continue
+      echo "  増加: ${WATCHED[i]} ${prev[i + 1]:-0} -> ${cur[i + 1]} KiB (前回 ${prev[0]})"
+    done
+  fi
+  [ "$DRY_RUN" -eq 1 ] && return 0
+  # 6h 毎の起動で週次の記録に揃える
+  if [ -n "${prev[0]}" ] && ! [[ ${prev[0]} < $(days_ago "$SIZES_INTERVAL_DAYS") ]]; then
+    return 0
+  fi
+  mkdir -p "$(dirname "$SIZES_TSV")"
+  printf '%s\n' "$row" >>"$SIZES_TSV"
 }
 
 step_nix_generations() {
@@ -191,11 +245,7 @@ step_codex_releases() {
 
 report_codex_workspaces() {
   local cutoff dir name size
-  if date --version >/dev/null 2>&1; then
-    cutoff=$(date -d '30 days ago' +%F)
-  else
-    cutoff=$(date -v-30d +%F)
-  fi
+  cutoff=$(days_ago 30)
   for dir in "$HOME/Documents/Codex/"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]; do
     [ -d "$dir" ] || continue
     name=${dir##*/}
@@ -228,6 +278,9 @@ step_podman() {
     echo "==> podman: stopped machine $PODMAN_MACHINE を削除 (VM 内のデータも失われる)"
     run podman machine rm --force "$PODMAN_MACHINE"
   fi
+  echo "==> podman: 未使用 image / 停止 container"
+  # machine が停止中は socket に繋がらない。VM 側の削除は下で扱うのでここでは止めない
+  run podman system prune -f || echo "podman: 接続できないので system prune を飛ばす" >&2
   # BSD date は -d を持たない
   date --version >/dev/null 2>&1 || return 0
   echo "==> podman: ${CACHE_AGE_DAYS}d 起動していない停止済み machine"
@@ -293,7 +346,8 @@ archive() { # path
 report_candidates() {
   echo "!! 目標空き率 ${TARGET_PCT}% に届いていない。判断が要る候補:" >&2
   local staged odd
-  staged=$(du -sh /System/Volumes/Preboot/*/cryptex1/proposed 2>/dev/null | cut -f1)
+  # staged 更新が無い Mac では du が失敗し、pipefail + errexit で report が途中で止まる
+  staged=$(du -sh /System/Volumes/Preboot/*/cryptex1/proposed 2>/dev/null | cut -f1 || true)
   [ -z "$staged" ] || echo "  $staged  適用待ち macOS 更新 (Preboot)。sudo softwareupdate で適用: docs/operations.md 7.1" >&2
   if command -v podman >/dev/null; then
     while IFS='|' read -r name last disk; do
@@ -301,10 +355,14 @@ report_candidates() {
       echo "  podman machine $name (${disk}, 最終起動 ${last}) — --podman-machine $name で回収" >&2
     done < <(podman machine list --format '{{.Name}}|{{.LastUp}}|{{.DiskSize}}' 2>/dev/null)
   fi
-  for odd in "$HOME/.local/share/artex/import" "$HOME/Documents/Codex"; do
-    [ -e "$odd" ] && echo "  $(du -sh "$odd" 2>/dev/null | cut -f1)  $odd — $0 --archive <path> で S3 へ退避: docs/operations.md 7.2" >&2
-  done
+  odd=$HOME/Documents/Codex
+  [ -e "$odd" ] && echo "  $(du -sh "$odd" 2>/dev/null | cut -f1)  $odd — $0 --archive <path> で S3 へ退避: docs/operations.md 7.2" >&2
   report_codex_workspaces >&2
+  # HOME を package dir に差し替えた検証の残骸。repo の gitignore 対象なので削除は repo 側の clean 手順
+  [ -d "$HOME/ghq" ] && find "$HOME/ghq" -maxdepth 6 -type d -path '*/packages/*/.local' -prune 2>/dev/null |
+    while read -r odd; do
+      echo "  $(du -sh "$odd" 2>/dev/null | cut -f1)  $odd — repo 側の clean 手順で消す (gitignore 済み)" >&2
+    done
 }
 
 report_ghq_candidates() {
@@ -329,6 +387,7 @@ BEFORE=$(avail_mib)
 echo "start: 空き $(free_pct)% (${BEFORE}MiB)"
 report_ghq_candidates
 step_tombstones
+record_sizes
 
 if ! below_target; then
   echo "空き率が目標以上なので何もしない"
