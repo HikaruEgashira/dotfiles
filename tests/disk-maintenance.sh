@@ -18,12 +18,6 @@ releases="$HOME/.codex/packages/standalone/releases"
 codex_workspaces="$HOME/Documents/Codex"
 mkdir -p "$releases/old" "$releases/current" "$codex_workspaces/2000-01-01" "$codex_workspaces/2999-01-01"
 ln -s releases/current "$HOME/.codex/packages/standalone/current"
-mkdir -p "$HOME/.local/state/nix/profiles"
-: >"$HOME/nix-profile-target"
-: >"$HOME/.local/state/nix/profiles/home-manager-1-link"
-ln -s nix-profile-target "$HOME/.nix-profile"
-ln -s home-manager-1-link "$HOME/.local/state/nix/profiles/home-manager"
-: >"$HOME/.local/state/nix/profiles/home-manager-1-link"
 touch -t 202001010000 "$HOME/.cache/npm/old.tgz" "$HOME/Library/Caches/pip/old.whl"
 echo fresh >"$HOME/.cache/npm/fresh.tgz"
 artex="$HOME/.local/share/artex"
@@ -38,9 +32,9 @@ mkdir -p "$repo/.pnpm-store/v3" "$repo/packages/web/.local/share" "$HOME/ghq/.pn
 sizes="$HOME/.local/state/disk-maintenance/sizes.tsv"
 
 mkdir -p "$tmp/bin"
-cat >"$tmp/bin/nix-env" <<'EOF'
+cat >"$tmp/bin/nix-collect-garbage" <<'EOF'
 #!/bin/sh
-printf '%s\n' "$*" >>"$DISK_MAINT_TEST_ENV_LOG"
+printf '%s\n' "$*" >>"$DISK_MAINT_TEST_GC_LOG"
 EOF
 cat >"$tmp/bin/nix" <<'EOF'
 #!/bin/sh
@@ -50,9 +44,9 @@ cat >"$tmp/bin/podman" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >>"$DISK_MAINT_TEST_PODMAN_LOG"
 EOF
-chmod +x "$tmp/bin/nix-env" "$tmp/bin/nix" "$tmp/bin/podman"
+chmod +x "$tmp/bin/nix-collect-garbage" "$tmp/bin/nix" "$tmp/bin/podman"
 export DISK_MAINT_TEST_PODMAN_LOG="$tmp/podman.log"
-export DISK_MAINT_TEST_ENV_LOG="$tmp/env.log"
+export DISK_MAINT_TEST_GC_LOG="$tmp/gc.log"
 export DISK_MAINT_TEST_NIX_LOG="$tmp/nix.log"
 export GHQ_CLEAN_TEST_LOG="$tmp/ghq-clean.log"
 export GHQ_CLEAN_SCRIPT="$tmp/ghq-clean-stub"
@@ -75,7 +69,7 @@ out=$(TARGET_PCT=0 bash "$script")
 grep -q '空き率が目標以上なので何もしない' <<<"$out" || fail "目標以上で ladder を止めていない"
 [ -e "$HOME/.cache/npm/old.tgz" ] || fail "目標以上で古いファイルを削除した"
 [ -e "$artex/import/old.tar.zst" ] || fail "目標以上で artex import を削除した"
-[ ! -e "$DISK_MAINT_TEST_ENV_LOG" ] || fail "目標以上で nix の世代削除が走った"
+[ ! -e "$DISK_MAINT_TEST_GC_LOG" ] || fail "目標以上で nix GC が走った"
 [ ! -e "$DISK_MAINT_TEST_PODMAN_LOG" ] || fail "目標以上で podman を触った"
 [ "$(tail -n 1 "$GHQ_CLEAN_TEST_LOG")" = "--dry-run" ] || fail "clone inventory をdry-runで呼んでいない"
 [ ! -e "$repo/.pnpm-store" ] || fail "repo 直下の .pnpm-store が残っている"
@@ -105,12 +99,12 @@ grep -Fq "$codex_workspaces/2999-01-01" <<<"$out" && fail "新しい Codex works
 # dry-run は何も消さない
 out=$(TARGET_PCT=100 bash "$script" --dry-run) && fail "目標未達で 0 終了した"
 [ -e "$HOME/.cache/npm/old.tgz" ] || fail "dry-run が古いファイルを削除した"
-grep -q "nix: 30d より古い generation" <<<"$out" || fail "世代削除の見出しが無い"
-grep -q '\[dry-run\] nix-env --delete-generations 30d' <<<"$out" || fail "dry-run が世代削除を表示していない"
+grep -q "nix: 30d より古い generation と未参照 path の回収" <<<"$out" || fail "nix GC の見出しが無い"
+grep -q '\[dry-run\] nix-collect-garbage --delete-older-than 30d' <<<"$out" || fail "dry-run が nix GC を表示していない"
 [ -d "$releases/current" ] || fail "current release が dry-run で維持されていない"
 grep -Fq "[dry-run] rm -rf $releases/old" <<<"$out" || fail "古い Codex release を dry-run が提示しない"
 grep -Fq "[dry-run] rm -rf $releases/current" <<<"$out" && fail "current Codex release が dry-run の削除候補になった"
-[ ! -e "$DISK_MAINT_TEST_ENV_LOG" ] || fail "dry-run が nix-env を実行した"
+[ ! -e "$DISK_MAINT_TEST_GC_LOG" ] || fail "dry-run が nix-collect-garbage を実行した"
 grep -Fq "[dry-run] $artex/import (1 files)" <<<"$out" || fail "古い artex import を dry-run が提示しない"
 grep -Fq '[dry-run] podman system prune -f' <<<"$out" || fail "dry-run が podman system prune を提示しない"
 grep -Eq '^(system prune|machine rm)' "$DISK_MAINT_TEST_PODMAN_LOG" && fail "dry-run が podman の削除を実行した"
@@ -129,18 +123,15 @@ grep -q 'machine rm' "$DISK_MAINT_TEST_PODMAN_LOG" && fail "--podman-machine 無
 [ ! -e "$releases/old" ] || fail "古い Codex release が消えていない"
 [ -d "$releases/current" ] || fail "current Codex release が削除された"
 [ "$(readlink "$HOME/.codex/packages/standalone/current")" = "releases/current" ] || fail "current symlink が変わった"
-[ "$(grep -c 'delete-generations 30d -p' "$tmp/env.log")" -eq 2 ] ||
-  fail "世代削除が .nix-profile と home-manager の 2 プロファイルで走っていない"
-grep -q -- '-link$' "$tmp/env.log" && fail "世代リンク自体をプロファイルとして渡している"
-grep -qx 'store gc' "$tmp/nix.log" || fail "nix store gc が実行されていない"
+[ "$(cat "$tmp/gc.log")" = "--delete-older-than 30d" ] || fail "nix-collect-garbage が保持日数つきで 1 回だけ走っていない"
 grep -qx 'store optimise' "$tmp/nix.log" || fail "nix store optimise が実行されていない"
 grep -q -- '-> caches:' "$tmp/run.log" || fail "段ごとの回収量が出ていない"
 
 # nix が無い環境では nix の段を飛ばす (PATH 依存で store を触らない)
-rm -f "$tmp/env.log" "$tmp/nix.log"
+rm -f "$tmp/gc.log" "$tmp/nix.log"
 out=$(PATH="/usr/bin:/bin" TARGET_PCT=100 bash "$script") && fail "目標未達で 0 終了した"
 grep -q 'nix: ' <<<"$out" && fail "nix 不在時に nix の段を実行した"
-[ ! -e "$tmp/env.log" ] || fail "nix 不在時に nix-env を呼んだ"
+[ ! -e "$tmp/gc.log" ] || fail "nix 不在時に nix-collect-garbage を呼んだ"
 
 # --days は整数のみ
 if bash "$script" --days abc >/dev/null 2>&1; then
