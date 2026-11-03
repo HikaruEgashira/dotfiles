@@ -15,6 +15,7 @@
     ./modules/programs/direnv.nix
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix
+    ./modules/programs/t3code
     ./modules/programs/harness/ai-sandbox.nix
     ./modules/programs/harness/ai-cli.nix
     ./modules/programs/harness/claude.nix

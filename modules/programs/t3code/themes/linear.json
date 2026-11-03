@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "name": "Linear",
+  "appearance": "dark",
+  "canvas": "#0f0f0f",
+  "accent": "#202020",
+  "colors": {
+    "sidebar": "#0b0b0b",
+    "sidebarControlSurface": "#171717",
+    "sidebarRowSelected": "#202020",
+    "accentSurface": "#202020",
+    "messageAction": "#e5e5e5",
+    "messageActionForeground": "#0f0f0f",
+    "messageActionHover": "#ffffff"
+  },
+  "variants": {
+    "light": {
+      "canvas": "#fcfcfc",
+      "accent": "#ededed",
+      "sidebar": "#f6f6f6",
+      "sidebarControlSurface": "#ededed",
+      "sidebarRowSelected": "#e6e6e6",
+      "accentSurface": "#ededed",
+      "surface": "#ffffff",
+      "secondary": "#f1f1f1",
+      "border": "#e2e2e2",
+      "input": "#e2e2e2",
+      "text": "#1a1a1a",
+      "mutedForeground": "#6b6b6b",
+      "codeBackground": "#f3f3f3",
+      "messageSurface": "#efefef",
+      "messageAction": "#1f1f1f",
+      "messageActionForeground": "#fcfcfc",
+      "messageActionHover": "#000000"
+    }
+  }
+}
