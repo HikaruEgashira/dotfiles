@@ -8,7 +8,7 @@
 (import ../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" [
   {
     rel = ".claude/CLAUDE.md";
-    source = ./claude/CLAUDE.md;
+    source = ./harness/AGENTS.md;
   }
   {
     rel = ".claude/bin/claude-caffeinate.sh";

@@ -108,7 +108,6 @@
           # AGENTS.md's agentops marker region is machine-rewritten
           settings.formatter.prettier.excludes = [
             "AGENTS.md"
-            "modules/programs/claude/CLAUDE.md"
             # lazy.nvim rewrites these on every :Lazy sync; formatting them fights the tool
             "modules/programs/nvim/config/*.json"
           ];

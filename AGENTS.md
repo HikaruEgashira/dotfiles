@@ -10,7 +10,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | 設定が要る program | `modules/programs/<name>.nix` を作り `home.nix` に import |
 | システム層 (nix.conf, firewall, sudo, Homebrew) | `modules/darwin/*.nix` |
 | nixpkgs に無い GUI / kext | `modules/darwin/homebrew.nix` (理由と nix 化のトリガーを行コメントで) |
-| AI agent 共有 system prompt | `modules/programs/claude/CLAUDE.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
+| AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
 
