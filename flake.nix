@@ -170,6 +170,10 @@
             printf '%s' "$JSON" \
               | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, .name, .reason] | @tsv' \
               | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-32s %s\n", $1, $2, $3, $4 }'
+            echo ""
+            export PATH=${pkgs.coreutils}/bin
+            exec ${pkgs.bash}/bin/bash ${./scripts/gh-extension-audit.sh} \
+              "''${XDG_DATA_HOME:-$HOME/.local/share}/gh/extensions"
           '';
         in
         {

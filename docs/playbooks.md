@@ -42,6 +42,7 @@
 | secret rotate      | API key を入れ替える       | `docs/operations.md` §4.6 |
 | dotfiles-sync 停止 | 日次同期が来ない           | `docs/operations.md` §4.4 |
 | opencode ハング    | TUI が空画面のまま返らない | `docs/operations.md` §4.5 |
+| gh extension 不能  | `audit` が DANGLING/BROKEN | `docs/operations.md` §4.8 |
 | HM ロールバック    | 直近適用を戻したい         | `docs/operations.md` §5.1 |
 | main revert        | 悪い commit を戻したい     | `docs/operations.md` §5.2 |
 | cachix trust 撤回  | substituter を止めたい     | `docs/operations.md` §5.3 |

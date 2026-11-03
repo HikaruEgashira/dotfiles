@@ -7,7 +7,7 @@
 | やりたいこと     | コマンド                                           | 備考                                                                                                                                                                                                                                                                                                                            |
 | ---------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 設定を反映       | `nix run ~/dotfiles#switch`                        | ユーザー層 (`homeConfigurations.hikae`) を root なしで activate。OS 層に差分がある時だけ `sudo darwin-rebuild switch` が走り Touch ID で承認する                                                                                                                                                                                |
-| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数                                                                                                                                                                                                                                                                                 |
+| ledger 棚卸し    | `nix run ~/dotfiles#audit`                         | purpose 別集計 + 全 entry 表 + expires 切れ件数。続けて gh extension の実行ファイルを検証し、dangling symlink や実行ファイル欠落があれば終了コード 1 (復旧は 4.8)                                                                                                                                                               |
 | launchd 棚卸し   | `nix run ~/dotfiles#launchd-audit`                 | 野良 agent を `UNKNOWN` 報告。一覧と撤去は `docs/launchd.md`                                                                                                                                                                                                                                                                    |
 | XDG 棚卸し       | `nix run ~/dotfiles#xdg-audit`                     | 宣言した entry と live の drift (未移設 / legacy と target の両存 / env 不一致) を報告。entry 自体は `lib/xdg-entries.nix`                                                                                                                                                                                                      |
 | 静的検査         | `cd ~/dotfiles && nix run .#lint`                  | statix + deadnix + shellcheck (CI と同一)                                                                                                                                                                                                                                                                                       |
@@ -15,7 +15,7 @@
 | flake gate       | `nix flake check ~/dotfiles --accept-flake-config` | formatter + eval + apps + checks                                                                                                                                                                                                                                                                                                |
 | inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + eval gate。`-- --activate` で適用。週次 GH Actions は変更を main に直接 push。手動更新は検証後に commit / push する                                                                                                                                                                               |
 | 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | tombstone (退役 tool の state) は毎回消し、空き率が 10% 未満のときだけ nix 世代削除 → GC → optimise → キャッシュ → Codex 旧 release → ゴミ箱 → 30 日起動の無い podman VM の順に回収して目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す。手元に要らない大物は `--archive PATH` で S3 へ (7.2) |
-| ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示し、どちらかがある clone は `--allow-unpushed` を付けない限り保護する。定期実行も dry-run のみ。詳細と明示削除手順は 7.4                                                                                                                                                |
+| ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示し、どちらかがある clone は `--allow-unpushed` を付けない限り保護する。定期実行も dry-run のみ。詳細と明示削除手順は 7.4                                                                                                                                           |
 | 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`                                                                                                                                     |
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
@@ -331,6 +331,29 @@ nix run ~/dotfiles#switch
 
 plist は `/nix` のマウント前に読める実ファイルとして nix-darwin activation が配置する。Determinate の実行ファイルやサービスは復元しない。再起動後に `mount` と `nix store info` を再確認する。
 
+### 4.8 gh extension が起動しない
+
+`gh extension list` に出るのに実行が `no such file or directory` で失敗する場合、`~/.local/share/gh/extensions/gh-<name>` が消えた clone を指す dangling symlink か、directory はあるのに実行ファイル `gh-<name>` が無い状態になっている。`nix run ~/dotfiles#audit` は ledger の後に全 extension を検証し、`DANGLING` (symlink 先が無い) / `BROKEN` (実行ファイルが無い、または実行不可) を報告して終了コード 1 で止まる。
+
+`gh extension install` は既存 entry があると修復せず拒否するため、どちらの復旧も dangling entry を先に消す。
+
+```bash
+nix run ~/dotfiles#audit
+rm ~/.local/share/gh/extensions/gh-<name>
+gh extension install <owner>/gh-<name>            # 配布版に戻す
+```
+
+ローカル開発中の extension (symlink 型) は clone を戻してから symlink を張り直す。ローカル install は clone 内で `.` を指定した時だけ symlink を作る。
+
+```bash
+rm ~/.local/share/gh/extensions/gh-<name>
+ghq get <owner>/gh-<name>
+(cd ~/ghq/github.com/<owner>/gh-<name> && gh extension install .)
+nix run ~/dotfiles#audit
+```
+
+symlink 型の clone は `ghq-clean.py` が `gh extension target` として保護する (7.4)。
+
 ## 5. 緊急時 / ロールバック
 
 ### 5.1 直近の switch を巻き戻す
@@ -445,4 +468,4 @@ remote metadata は最大25 repository slugを1 GraphQL requestにまとめ、ow
 
 `--apply` は実行直前に対象 remote metadata、local HEAD/ref OID、dirty/worktree 状態、Orca setup を再検証し、候補数の確認入力を要求する。Orca は exact local path と `hostId=local` を照合し、対象 setup があれば `--force` なしで先に削除して readback する。Orca が live terminal / saved workspace を理由に拒否した場合は clone を残す。setup 削除後に clone 削除が失敗した場合は、同じ project/path を再登録する recovery command を表示する。bundle / backup は作らず、削除した local-only commit 数を結果に記録する。
 
-`gh extension list` に出るのに実行が `no such file or directory` で失敗する場合、`~/.local/share/gh/extensions/<name>` が消えた clone を指す dangling symlink になっている。`gh extension install` はここを修復できないので、clone を `gh repo clone` で戻すか、symlink を消してから install し直す。
+gh extension の symlink が dangling になった時の復旧は 4.8。
