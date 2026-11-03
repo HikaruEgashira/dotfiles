@@ -213,7 +213,7 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 ### 3.5 macOS 自動アップデートを固定する
 
-`system.defaults.CustomSystemPreferences."com.apple.SoftwareUpdate"` (`modules/darwin/system.nix`) が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する。手で `sudo defaults write` する必要は無い。check と download は自動、macOS 本体の install は手動 (再起動を伴うため、§7.1 の月次 window で適用する)。
+`modules/darwin/system.nix` の activation script が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する (`system.defaults.CustomSystemPreferences` は root の `~/Library/Preferences` に書くだけで実効値に届かないため使わない)。手で `sudo defaults write` する必要は無い。check と download は自動、macOS 本体の install は手動 (再起動を伴うため、§7.1 の月次 window で適用する)。
 
 確認:
 
