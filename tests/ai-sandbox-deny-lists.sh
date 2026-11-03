@@ -117,3 +117,13 @@ printf '%s\n' 'ok: codex proxy allows github domains and gh falls back to a toke
 grep -Fq '"${config.xdg.cacheHome}/ghtkn/agent"' "$source_nix"
 
 printf '%s\n' 'ok: ghtkn encrypted token store stays out of the sandbox'
+
+# export した PAT / text backend を claude sandbox に継承させず、token 取得経路を agent socket に固定する
+grep -Fq 'unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR' "$source_nix"
+# hikaevi の installation token cache は sandbox の gh が使う前提なので deny 対象外
+if grep -Fq 'hikaevi' <<<"$(list_body secrets)"; then
+  printf '%s\n' 'FAIL: ~/.cache/hikaevi is denied; the sandbox gh wrapper needs its installation token' >&2
+  exit 1
+fi
+
+printf '%s\n' 'ok: claude sandbox cannot inherit a PAT and keeps the hikaevi installation token cache'
