@@ -208,14 +208,31 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
-ARTEX と Postgres は loopback (`127.0.0.1:8787` / `:8788` / `:5432`) でしか待ち受けない。Mac は受信を一切公開しない (ALF blockall を維持し、`tailscale serve` / Funnel は使わない)。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。Mac は受信を一切公開しない (ALF blockall を維持し、`tailscale serve` / Funnel は使わない)。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+
+Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を exec する (drift の修復ログは `pg.log`)。
+
+接続:
+
+```bash
+set -a; . ~/.local/share/artex/local.env; set +a
+psql "$ARTEX_PG_DSN"
+```
 
 確認:
 
 ```bash
-lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788|5432) '   # 全て 127.0.0.1
-tailscale serve status                                      # No serve config
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788) '   # 全て 127.0.0.1
+nc -z 127.0.0.1 5432; echo $?                          # 1 (Postgres は TCP を開けない)
+psql -h ~/.local/share/artex/run -U artex -d artex -c 'select 1'   # password を求められる
+tailscale serve status                                 # No serve config
 ```
+
+復旧 (password 紛失・pg_hba 切替失敗で ARTEX が DB に繋がらない):
+
+1. `launchctl bootout gui/$(id -u)/dev.egahika.artex-postgres` で止め、`~/.local/share/artex/pg/pg_hba.conf` を `local all all trust` に書き換えて `postgres -D ~/.local/share/artex/pg -k ~/.local/share/artex/run -c listen_addresses=` を手で起動する。
+2. `openssl rand -hex 32` で新 password を作り、`psql -h ~/.local/share/artex/run -U artex -d postgres -c "ALTER USER artex PASSWORD '<pw>'"` を実行、`local.env` の `ARTEX_PG_DSN` を書き換える (直前の版は `local.env.bak`)。
+3. 手起動の postgres を止めて `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.egahika.artex-postgres.plist` で戻す。wrapper が pg_hba を scram-sha-256 に修復する。`launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で ARTEX を再起動し、`artex.log` に `listening on 127.0.0.1:8787` が出ることを確認する。
 
 ## 4. トラブルシュート
 
