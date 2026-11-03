@@ -91,3 +91,13 @@ if grep -Fq 'allowAllUnixSockets = true' "$source_nix"; then
 fi
 
 printf '%s\n' 'ok: ai-sandbox exposes only ghtkn and ssh agent sockets'
+
+# network proxy 有効時も push と gh api が通るよう、github.com / api.github.com を許可する
+grep -Fq '"github.com"' "$source_nix"
+grep -Fq '"api.github.com"' "$source_nix"
+grep -Fq 'domains=${codexDomainsToml}' "$source_nix"
+
+# sandbox では hosts.yml が denyRead されるため、gh は token を含まない config dir へ逃がす
+grep -Fq 'GH_CONFIG_DIR="$HOME/.cache/ai-sandbox/gh"' "$root/lib/package-registry.nix"
+
+printf '%s\n' 'ok: codex proxy allows github domains and gh falls back to a tokenless config dir'

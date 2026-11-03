@@ -57,6 +57,13 @@ let
   ];
   unixSocketsToml = "{${lib.concatMapStringsSep "," (p: ''"${p}"="allow"'') unixSockets}}";
 
+  # network proxy 有効時は domain も明示許可が要る。push と gh api の最小集合。
+  codexDomains = [
+    "github.com"
+    "api.github.com"
+  ];
+  codexDomainsToml = "{${lib.concatMapStringsSep "," (d: ''"${d}"="allow"'') codexDomains}}";
+
   # sandbox からの永続化経路 (自動実行・自己書き換え・プロンプト注入) を塞ぐ
   persistence = [
     "${home}/Library/LaunchAgents"
@@ -127,7 +134,7 @@ let
   codexArgs = [
     ''default_permissions="dev"''
     "permissions.dev.filesystem=${filesystemToml}"
-    "permissions.dev.network={enabled=true,unix_sockets=${unixSocketsToml}}"
+    "permissions.dev.network={enabled=true,unix_sockets=${unixSocketsToml},domains=${codexDomainsToml}}"
     # codex は env を渡さないので、agent socket だけ明示的に通す
     "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
   ];

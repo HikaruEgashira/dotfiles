@@ -40,6 +40,12 @@ let
           rm "$out/bin/gh"
           {
             echo '#!${pkgs.runtimeShell}'
+            # sandbox では hosts.yml が読めず gh が起動できないため、token を含まない config へ逃がす
+            echo 'if [ -z "''${GH_CONFIG_DIR:-}" ] && ! [ -r "$HOME/.config/gh/hosts.yml" ]; then'
+            echo '  export GH_CONFIG_DIR="$HOME/.cache/ai-sandbox/gh"'
+            echo '  mkdir -p "$GH_CONFIG_DIR"'
+            echo '  cp "$HOME/.config/gh/config.yml" "$GH_CONFIG_DIR/config.yml" 2>/dev/null || true'
+            echo 'fi'
             echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then exec ${pkgs.gh}/bin/gh "$@"; fi'
             echo 'exec ${pkgs.ghtkn}/bin/ghtkn exec -e GH_TOKEN -- ${pkgs.gh}/bin/gh "$@"'
           } > "$out/bin/gh"
