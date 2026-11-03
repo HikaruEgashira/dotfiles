@@ -6,7 +6,7 @@ unexpected=0
 while IFS= read -r label; do
   [ -n "$label" ] || continue
   case "$label" in
-  com.stablyai.orca.terminal.?* | dev.herdr.server.?*) continue ;;
+  com.stablyai.orca.terminal.?* | dev.herdr.server.?* | com.superlogical.rex.server.?*) continue ;;
   esac
   if ! printf '%s\n' "$known" | grep -qxF "$label"; then
     printf '  UNKNOWN  %s\n' "$label"
