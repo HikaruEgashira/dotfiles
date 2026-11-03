@@ -13,8 +13,8 @@
     ./modules/programs/zsh.nix
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix
-    ./modules/programs/ai-sandbox.nix
-    ./modules/programs/ai-cli.nix
+    ./modules/programs/harness/ai-sandbox.nix
+    ./modules/programs/harness/ai-cli.nix
     ./modules/programs/claude.nix
     ./modules/programs/codex.nix
     ./modules/programs/opencode.nix

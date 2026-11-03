@@ -7,7 +7,7 @@ trap 'rm -rf "$tmp"' EXIT
 export AI_CLI_TEST_ROOT="$tmp/native" AI_CLI_TEST_LOG="$tmp/downloads"
 mkdir -p "$tmp/bin"
 # shellcheck disable=SC2016
-sed 's/\$HOME/\$AI_CLI_TEST_ROOT/g' "$root/modules/programs/ai-cli-install.sh" >"$tmp/install.sh"
+sed 's/\$HOME/\$AI_CLI_TEST_ROOT/g' "$root/modules/programs/harness/ai-cli-install.sh" >"$tmp/install.sh"
 cat >"$tmp/bin/curl" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail

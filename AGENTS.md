@@ -18,7 +18,8 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 
 | コマンド | 効果 |
 | --- | --- |
-| `nix run .#switch` | システムのビルド結果が現行世代と異なると sudo で darwin-rebuild を実行し、その後ユーザー層を適用する。実行前に適用範囲を確認する |
+| `nix run .#switch` | システム更新の適用。sudo で darwin-rebuild を実行する。ソフトウェア変更では使わない。 |
+| `nix run .#homeConfigurations.hikae.activationPackage` | ソフトウェア層 (home-manager) の適用。sudo も OS 層の build も走らない。 |
 | `nix fmt` / `nix run .#lint` | 整形 / deadnix + shellcheck |
 | `nix flake check` | formatter + eval + guards |
 | `nix run .#update` | 全 inputs を bump + eval gate |

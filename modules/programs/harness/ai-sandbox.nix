@@ -83,7 +83,7 @@ let
   codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;
 
   claudeSettings = {
-    autoMode = builtins.fromJSON (builtins.readFile ./claude/auto-mode.json);
+    autoMode = builtins.fromJSON (builtins.readFile ../claude/auto-mode.json);
     sandbox = {
       enabled = true;
       autoAllowBashIfSandboxed = true;

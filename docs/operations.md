@@ -30,7 +30,7 @@ Codex・Claude Code・OpenCode は Homebrew / Nix package にせず、公式の�
 | Claude Code | `~/.local/bin/claude`      | `claude update`    |
 | OpenCode 2  | `~/.opencode/bin/opencode` | `opencode upgrade` |
 
-導入処理は `modules/programs/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。Homebrew 版が残っているマシンでは、ネイティブ版の起動確認後に該当パッケージを `brew uninstall` する。`--zap` は設定やセッションを削除し得るため使わない。
+導入処理は `modules/programs/harness/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。Homebrew 版が残っているマシンでは、ネイティブ版の起動確認後に該当パッケージを `brew uninstall` する。`--zap` は設定やセッションを削除し得るため使わない。
 
 Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex などの外部ツールがこのパスにラッパーを置いている場合、そのツール側で更新後の再登録が必要になる。
 
@@ -421,7 +421,7 @@ upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手�
 | `~/.cache/incident-2026-10-25-actions-runner` | 456M   | runner 事故 (#150) の証跡。post-mortem 後に消す                                 |
 | `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す                      |
 
-`disk-maintenance.sh --dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち30日より古いものを archive 候補として表示する。自動退避・削除はしない。pnpm の project-local `.pnpm-store` は tombstone に加えない。`modules/programs/ai-sandbox.nix` は現在 `$HOME` を writable に含めるため `~/.local/share/pnpm` はその範囲内だが、fallback の実行時原因は未確認 (#175)。
+`disk-maintenance.sh --dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち30日より古いものを archive 候補として表示する。自動退避・削除はしない。pnpm の project-local `.pnpm-store` は tombstone に加えない。`modules/programs/harness/ai-sandbox.nix` は現在 `$HOME` を writable に含めるため `~/.local/share/pnpm` はその範囲内だが、fallback の実行時原因は未確認 (#175)。
 
 ### 7.4 ghq clone / branch の棚卸し
 

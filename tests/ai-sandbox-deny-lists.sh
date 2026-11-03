@@ -3,7 +3,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-source_nix="$root/modules/programs/ai-sandbox.nix"
+source_nix="$root/modules/programs/harness/ai-sandbox.nix"
 
 list_body() {
   awk -v target="$1" '
