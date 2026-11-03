@@ -4,7 +4,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-preflight="$root/modules/programs/opencode/preflight.sh"
+preflight="$root/modules/programs/harness/opencode/preflight.sh"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 

@@ -5,10 +5,10 @@
   ...
 }:
 
-(import ../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" [
+(import ../../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" [
   {
     rel = ".claude/CLAUDE.md";
-    source = ./harness/AGENTS.md;
+    source = ./AGENTS.md;
   }
   {
     rel = ".claude/bin/claude-caffeinate.sh";

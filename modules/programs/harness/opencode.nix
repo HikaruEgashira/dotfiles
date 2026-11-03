@@ -5,7 +5,7 @@
 }:
 let
   # opencode loads only the first existing global instruction file, so merge ponytail into it.
-  content = builtins.readFile ./harness/AGENTS.md + "\n" + builtins.readFile ./opencode/ponytail.md;
+  content = builtins.readFile ./AGENTS.md + "\n" + builtins.readFile ./opencode/ponytail.md;
   preflight = builtins.readFile ./opencode/preflight.sh;
 in
 {

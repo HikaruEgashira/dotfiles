@@ -47,10 +47,10 @@ let
     done
   '';
 in
-(import ../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Pi" [
+(import ../../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Pi" [
   {
     rel = ".pi/agent/APPEND_SYSTEM.md";
-    source = ./harness/AGENTS.md;
+    source = ./AGENTS.md;
   }
 ]
 // {

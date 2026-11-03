@@ -15,10 +15,10 @@
     ./modules/programs/ghostty.nix
     ./modules/programs/harness/ai-sandbox.nix
     ./modules/programs/harness/ai-cli.nix
-    ./modules/programs/claude.nix
-    ./modules/programs/codex.nix
-    ./modules/programs/opencode.nix
-    ./modules/programs/pi.nix
+    ./modules/programs/harness/claude.nix
+    ./modules/programs/harness/codex.nix
+    ./modules/programs/harness/opencode.nix
+    ./modules/programs/harness/pi.nix
     ./modules/programs/cmux.nix
     ./modules/programs/herdr.nix
     ./modules/programs/hermes.nix
