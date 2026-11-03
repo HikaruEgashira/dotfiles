@@ -22,7 +22,6 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.ssh-sign-add`            | home-manager (`modules/programs/ssh.nix`)              | login           | 署名 agent 起動後に署名鍵を登録                                               |
 | `dev.egahika.ghtkn-agent`             | home-manager (`modules/programs/ghtkn.nix`)            | 常駐            | `ghauth` が unlock と auth を吸収                                             |
 | `dev.egahika.aws-cred-agent`          | home-manager (`modules/programs/aws.nix`)              | 常駐            | sandbox へ短寿命 STS credential を socket で配る                              |
-| `com.stablyai.orca.terminal.*`        | Orca 自己管理                                          | terminal 起動時 | インスタンス固有の suffix を許容                                              |
 | `com.superlogical.rex.server.*`       | Rex 自己管理                                           | app 起動時      | 64 hex の suffix を許容                                                       |
 | `dev.herdr.server.*`                  | herdr 自己管理                                         | server 起動時   | PID 等の suffix を許容                                                        |
 | `dev.egahika.dotfiles-sync`           | home-manager (`modules/programs/dotfiles-sync.nix`)    | 毎日 09:00      | main 追従 + 再 activation                                                     |
@@ -46,7 +45,6 @@ GUI アプリが登録する background item は次のとおり（app 側が管�
 | Label                                             | 由来                   |
 | ------------------------------------------------- | ---------------------- |
 | `com.anthropic.claudefordesktop.ShipIt`           | Claude Desktop updater |
-| `com.stablyai.orca.ShipIt`                        | Orca updater           |
 | `us.zoom.updater` / `us.zoom.updater.login.check` | Zoom updater           |
 | `com.google.GoogleUpdater.wake`                   | Google Chrome          |
 | `com.openssh.ssh-agent`                           | macOS 標準             |
@@ -79,4 +77,4 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 
 `nix run .#launchd-audit` は user domain の非 Apple agent を許容リストと突き合わせ、未知のラベルを `UNKNOWN` として報告し exit 1 する。新しい常駐を足したら、この表と許容リスト (`flake.nix`) の両方を更新する。
 
-動的ラベルは `com.stablyai.orca.terminal.` / `com.superlogical.rex.server.` / `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 4 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。
+動的ラベルは `com.superlogical.rex.server.` / `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 4 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。

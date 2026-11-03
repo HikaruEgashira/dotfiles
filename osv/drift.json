@@ -1,41 +1,6 @@
 [
   {
     "schema_version": "1.7.0",
-    "id": "DRIFT-orca",
-    "modified": "2026-11-03T07:30:00Z",
-    "affected": [
-      {
-        "package": {
-          "purl": "pkg:github/stablyai/orca"
-        },
-        "versions": ["1.4.245"]
-      }
-    ],
-    "references": [
-      {
-        "type": "PACKAGE",
-        "url": "https://github.com/stablyai/orca/releases/download/v1.4.247/orca-macos-arm64.dmg"
-      }
-    ],
-    "database_specific": {
-      "bundle_id": "com.stablyai.orca",
-      "team_id": "6CX3WHS9HZ",
-      "path": "/Applications/Orca.app",
-      "layer": "user",
-      "kind": "dmg",
-      "url": "https://github.com/stablyai/orca/releases/download/v1.4.247/orca-macos-arm64.dmg",
-      "target_version": "1.4.247",
-      "hash": {
-        "sha256": "3a4ac1dfdd5aa4d83e21dd74d291abe00b9001516dc6bfcde40a8885c0956cdf"
-      },
-      "hash_source": "github-release-digest",
-      "pinned": true,
-      "updater": "electron-updater:github",
-      "identity_verified": false
-    }
-  },
-  {
-    "schema_version": "1.7.0",
     "id": "DRIFT-zoom",
     "modified": "2026-11-03T07:30:00Z",
     "affected": [

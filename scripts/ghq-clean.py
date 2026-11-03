@@ -6,7 +6,6 @@ import datetime as dt
 import json
 import os
 import re
-import shlex
 import shutil
 import stat
 import subprocess
@@ -59,21 +58,11 @@ class LocalState:
 
 
 @dataclass(frozen=True)
-class Setup:
-    id: str
-    path: str
-    project_id: str
-    kind: str
-    host_id: str
-
-
-@dataclass(frozen=True)
 class Row:
     local: LocalState
     metadata: Metadata | None
     state: str
     reason: str
-    setup: Setup | None = None
 
 
 def command(argv: list[str], timeout: int = 30) -> subprocess.CompletedProcess[bytes]:
@@ -478,48 +467,9 @@ def read_extension_targets(directory: Path = GH_EXTENSION_DIR) -> frozenset[str]
         raise ScanError(f"cannot enumerate gh extension directory: {directory}") from exc
 
 
-def read_orca_setups() -> list[Setup]:
-    output = command_text(["orca", "project", "setups", "--json"], timeout=20)
-    try:
-        payload = json.loads(output)
-        items = payload["result"]["setups"]
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
-        raise ScanError("Orca setup inventory is invalid") from exc
-    if not isinstance(payload, dict) or payload.get("ok") is not True or not isinstance(items, list):
-        raise ScanError("Orca setup inventory failed")
-    setups = []
-    for item in items:
-        if not isinstance(item, dict):
-            raise ScanError("Orca setup inventory contains an invalid row")
-        setup_id, path, project_id, host_id = (
-            item.get("id"),
-            item.get("path"),
-            item.get("projectId"),
-            item.get("hostId"),
-        )
-        if not all(isinstance(value, str) and value for value in (setup_id, path, project_id, host_id)):
-            raise ScanError("Orca setup inventory omits identity or path")
-        setups.append(
-            Setup(
-                id=setup_id,
-                path=str(Path(path).resolve(strict=False)),
-                project_id=project_id,
-                kind=item.get("kind", "") if isinstance(item.get("kind", ""), str) else "",
-                host_id=host_id,
-            )
-        )
-    return setups
-
-
-def setup_matches(path: Path, setups: list[Setup]) -> list[Setup]:
-    resolved = str(path.resolve(strict=False))
-    return [setup for setup in setups if str(Path(setup.path).resolve(strict=False)) == resolved]
-
-
 def inspect_row(
     local: LocalState,
     metadata: Metadata | None,
-    setups: list[Setup] | None,
     days: int,
     now: int,
     extension_targets: frozenset[str] | None = frozenset(),
@@ -550,22 +500,14 @@ def inspect_row(
     if metadata is None or metadata.state != "fresh":
         detail = metadata.detail if metadata and metadata.detail else "metadata unavailable"
         return Row(local, metadata, "unknown", detail)
-    if setups is None:
-        return Row(local, metadata, "unknown", "Orca setup inventory unavailable")
-    path_matches = setup_matches(local.path, setups)
-    if any(setup.host_id != "local" for setup in path_matches):
-        return Row(local, metadata, "protected", "matching Orca setup belongs to a non-local host")
-    matches = [setup for setup in path_matches if setup.host_id == "local"]
-    if len(matches) > 1:
-        return Row(local, metadata, "unknown", "multiple Orca setups match clone path")
     activity = max(local.latest_commit or 0, metadata.pushed_at or 0)
     age_seconds = now - activity
     age_days = max(0, age_seconds // 86400)
     if metadata.archived:
-        return Row(local, metadata, "candidate", "remote archived", matches[0] if matches else None)
+        return Row(local, metadata, "candidate", "remote archived")
     if age_seconds >= days * 86400:
-        return Row(local, metadata, "candidate", f"no local commit or remote push for {age_days}d", matches[0] if matches else None)
-    return Row(local, metadata, "retained", f"recent activity ({age_days}d)", matches[0] if matches else None)
+        return Row(local, metadata, "candidate", f"no local commit or remote push for {age_days}d")
+    return Row(local, metadata, "retained", f"recent activity ({age_days}d)")
 
 
 def inspect(
@@ -592,10 +534,6 @@ def inspect(
         )
         metadata.update(metadata_override)
     try:
-        setups = read_orca_setups()
-    except ScanError:
-        setups = None
-    try:
         extension_targets = read_extension_targets()
     except ScanError:
         extension_targets = None
@@ -603,7 +541,6 @@ def inspect(
         inspect_row(
             repo,
             metadata.get(repo.slug.casefold()) if repo.slug else None,
-            setups,
             days,
             int(time.time()),
             extension_targets,
@@ -649,47 +586,6 @@ def print_rows(rows: list[Row], linked_count: int, nonrepo_count: int) -> None:
     )
 
 
-def recovery_command(setup: Setup) -> str:
-    host = host_selector(setup.host_id)
-    if setup.kind == "git":
-        kind = " --kind git"
-    else:
-        kind = ""
-    return (
-        "orca project setup-existing-folder "
-        f"--project {shlex.quote(setup.project_id)} --host {shlex.quote(host)} "
-        f"--path {shlex.quote(setup.path)}{kind} --json"
-    )
-
-
-def host_selector(host_id: str) -> str:
-    if not host_id or host_id == "local":
-        return "local"
-    output = command_text(["orca", "host", "list", "--json"], timeout=20)
-    try:
-        payload = json.loads(output)
-        hosts = payload["result"]["hosts"]
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
-        raise ScanError("Orca host inventory is invalid") from exc
-    if not isinstance(payload, dict) or payload.get("ok") is not True or not isinstance(hosts, list):
-        raise ScanError("Orca host inventory failed")
-    matches = [host for host in hosts if isinstance(host, dict) and host.get("id") == host_id]
-    if len(matches) != 1:
-        raise ScanError("Orca host selector is ambiguous")
-    host = matches[0]
-    kind = host.get("kind")
-    if kind == "local":
-        return "local"
-    if kind == "ssh":
-        return f"ssh:{host_id}"
-    if kind == "runtime":
-        return f"runtime:{host_id}"
-    name = host.get("name")
-    if isinstance(name, str) and name:
-        return name
-    raise ScanError("Orca host selector is unavailable")
-
-
 def apply_rows(
     rows: list[Row],
     root: Path,
@@ -704,10 +600,9 @@ def apply_rows(
         return 0
     print("apply candidates:")
     for path, row in sorted(initial.items()):
-        setup_id = row.setup.id if row.setup else "-"
         print(
             f"  {row.local.slug} reason={row.reason} "
-            f"local_only_commits={row.local.local_only_commits} setup_id={setup_id} path={path}"
+            f"local_only_commits={row.local.local_only_commits} path={path}"
         )
     if not sys.stdin.isatty():
         print("apply refused: interactive confirmation required", file=sys.stderr)
@@ -753,7 +648,6 @@ def apply_rows(
             fingerprint(current.local) != fingerprint(old.local)
             or current.reason != old.reason
             or metadata_changed
-            or current.setup != old.setup
         ):
             print(f"apply aborted: candidate changed during confirmation ({path})", file=sys.stderr)
             return 2
@@ -765,24 +659,6 @@ def apply_rows(
             print(f"skip {current.local.slug}: local state changed after review")
             result = 1
             continue
-        try:
-            setups = read_orca_setups()
-        except ScanError as exc:
-            print(f"skip {current.local.slug}: Orca state unknown ({exc})")
-            result = 1
-            continue
-        path_matches = setup_matches(current.local.path, setups)
-        if any(setup.host_id != "local" for setup in path_matches):
-            print(f"skip {current.local.slug}: matching Orca setup belongs to a non-local host")
-            result = 1
-            continue
-        matches = [setup for setup in path_matches if setup.host_id == "local"]
-        expected_id = old.setup.id if old.setup else None
-        if len(matches) > 1 or (matches[0].id if matches else None) != expected_id:
-            print(f"skip {current.local.slug}: Orca setup mapping changed after review")
-            result = 1
-            continue
-
         if current.metadata is None or current.metadata.state != "fresh" or current.metadata.fetched_at is None:
             print(f"skip {current.local.slug}: fresh remote metadata unavailable")
             result = 1
@@ -792,50 +668,9 @@ def apply_rows(
             result = 1
             continue
 
-        removed_setup = False
-        if matches:
-            deleted = command(
-                ["orca", "project", "setup-delete", "--setup", matches[0].id, "--host", "local", "--json"],
-                timeout=30,
-            )
-            if deleted.returncode != 0:
-                print(f"skip {current.local.slug}: Orca setup refused removal; clone retained")
-                result = 1
-                continue
-            try:
-                response = json.loads(deleted.stdout)
-                if not isinstance(response, dict) or response.get("ok") is not True:
-                    raise ScanError("Orca setup-delete did not confirm success")
-                setups_after = read_orca_setups()
-            except (json.JSONDecodeError, ScanError) as exc:
-                print(f"partial {current.local.slug}: setup may be deregistered; clone retained ({exc})")
-                print(f"  recovery: {recovery_command(matches[0])}")
-                result = 1
-                continue
-            if setup_matches(current.local.path, setups_after):
-                print(f"partial {current.local.slug}: setup remains after delete; clone retained")
-                print(f"  recovery: {recovery_command(matches[0])}")
-                result = 1
-                continue
-            removed_setup = True
-
-        try:
-            setups_final = read_orca_setups()
-        except ScanError as exc:
-            print(f"partial {current.local.slug}: Orca state became unknown; clone retained ({exc})")
-            if removed_setup and matches:
-                print(f"  recovery: {recovery_command(matches[0])}")
-            result = 1
-            continue
-        if setup_matches(current.local.path, setups_final):
-            print(f"skip {current.local.slug}: Orca setup appeared before clone removal")
-            result = 1
-            continue
         latest_local = snapshot_repo(current.local.path)
         if fingerprint(latest_local) != fingerprint(current.local):
             print(f"partial {current.local.slug}: local state changed; clone retained")
-            if removed_setup and matches:
-                print(f"  recovery: {recovery_command(matches[0])}")
             result = 1
             continue
         if not current.local.path.is_dir() or current.local.path.is_symlink():
@@ -855,13 +690,11 @@ def apply_rows(
             shutil.rmtree(resolved_path)
         except (OSError, ScanError) as exc:
             print(f"partial {current.local.slug}: clone retained or partially removed ({exc})")
-            if removed_setup and matches:
-                print(f"  recovery: {recovery_command(matches[0])}")
             result = 1
             continue
         print(
             f"removed {current.local.slug} local_only_commits={current.local.local_only_commits} "
-            f"upstreamless_branches={len(current.local.upstreamless_branches)} setup_removed={removed_setup}"
+            f"upstreamless_branches={len(current.local.upstreamless_branches)}"
         )
     return result
 

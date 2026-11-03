@@ -552,6 +552,6 @@ remote metadata は最大25 repository slugを1 GraphQL requestにまとめ、ow
 ~/dotfiles/scripts/ghq-clean.py --apply --allow-unpushed
 ```
 
-`--apply` は実行直前に対象 remote metadata、local HEAD/ref OID、dirty/worktree 状態、Orca setup を再検証し、候補数の確認入力を要求する。Orca は exact local path と `hostId=local` を照合し、対象 setup があれば `--force` なしで先に削除して readback する。Orca が live terminal / saved workspace を理由に拒否した場合は clone を残す。setup 削除後に clone 削除が失敗した場合は、同じ project/path を再登録する recovery command を表示する。bundle / backup は作らず、削除した local-only commit 数を結果に記録する。
+`--apply` は実行直前に対象 remote metadata、local HEAD/ref OID、dirty/worktree 状態を再検証し、候補数の確認入力を要求する。bundle / backup は作らず、削除した local-only commit 数を結果に記録する。
 
 gh extension の symlink が dangling になった時の復旧は 4.8。

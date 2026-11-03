@@ -95,7 +95,7 @@ class GhqCleanTest(unittest.TestCase):
         state = ghq_clean.snapshot_repo(self.repo)
         self.assertIn("symlinked", state.error)
         self.assertEqual(
-            ghq_clean.inspect_row(state, self.metadata(archived=True), [], 14, 2_000_000_000).state,
+            ghq_clean.inspect_row(state, self.metadata(archived=True), 14, 2_000_000_000).state,
             "unknown",
         )
         with self.assertRaisesRegex(ghq_clean.ScanError, "symlinked .git marker"):
@@ -110,17 +110,17 @@ class GhqCleanTest(unittest.TestCase):
         self.assertEqual(targets, frozenset({str(self.repo.resolve())}))
         meta = self.metadata(archived=True)
         local = ghq_clean.snapshot_repo(self.repo)
-        self.assertEqual(ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000).state, "candidate")
-        row = ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000, targets)
+        self.assertEqual(ghq_clean.inspect_row(local, meta, 14, 2_000_000_000).state, "candidate")
+        row = ghq_clean.inspect_row(local, meta, 14, 2_000_000_000, targets)
         self.assertEqual(row.state, "protected")
         self.assertEqual(row.reason, "gh extension target")
-        self.assertEqual(ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000, None).state, "unknown")
+        self.assertEqual(ghq_clean.inspect_row(local, meta, 14, 2_000_000_000, None).state, "unknown")
 
     def test_dirty_and_linked_worktree_protect_candidate(self) -> None:
         meta = self.metadata(archived=True)
         (self.repo / "tracked.txt").write_text("modified\n", encoding="utf-8")
         dirty = ghq_clean.snapshot_repo(self.repo)
-        self.assertEqual(ghq_clean.inspect_row(dirty, meta, [], 14, 2_000_000_000).state, "protected")
+        self.assertEqual(ghq_clean.inspect_row(dirty, meta, 14, 2_000_000_000).state, "protected")
 
         (self.repo / "tracked.txt").write_text("fixture\n", encoding="utf-8")
         linked = self.base / "active-worktree"
@@ -130,7 +130,7 @@ class GhqCleanTest(unittest.TestCase):
             capture_output=True,
         )
         state = ghq_clean.snapshot_repo(self.repo)
-        row = ghq_clean.inspect_row(state, meta, [], 14, 2_000_000_000)
+        row = ghq_clean.inspect_row(state, meta, 14, 2_000_000_000)
         self.assertEqual(row.state, "protected")
         self.assertEqual(len(state.linked_worktrees), 1)
 
@@ -139,16 +139,16 @@ class GhqCleanTest(unittest.TestCase):
         pushed = ghq_clean.snapshot_repo(self.repo)
         self.assertEqual(pushed.local_only_commits, 0)
         self.assertEqual(pushed.upstreamless_branches, ())
-        self.assertEqual(ghq_clean.inspect_row(pushed, meta, [], 14, 2_000_000_000).state, "candidate")
+        self.assertEqual(ghq_clean.inspect_row(pushed, meta, 14, 2_000_000_000).state, "candidate")
 
         (self.repo / "tracked.txt").write_text("local only\n", encoding="utf-8")
         git(self.repo, "commit", "--quiet", "-am", "unpushed")
         local_only = ghq_clean.snapshot_repo(self.repo)
         self.assertEqual(local_only.local_only_commits, 1)
-        row = ghq_clean.inspect_row(local_only, meta, [], 14, 2_000_000_000)
+        row = ghq_clean.inspect_row(local_only, meta, 14, 2_000_000_000)
         self.assertEqual(row.state, "protected")
         self.assertEqual(row.reason, "local_only_commits=1")
-        allowed = ghq_clean.inspect_row(local_only, meta, [], 14, 2_000_000_000, allow_unpushed=True)
+        allowed = ghq_clean.inspect_row(local_only, meta, 14, 2_000_000_000, allow_unpushed=True)
         self.assertEqual(allowed.state, "candidate")
 
         git(self.repo, "reset", "--quiet", "--hard", "origin/main")
@@ -156,10 +156,10 @@ class GhqCleanTest(unittest.TestCase):
         upstreamless = ghq_clean.snapshot_repo(self.repo)
         self.assertEqual(upstreamless.local_only_commits, 0)
         self.assertEqual(upstreamless.upstreamless_branches, ("wip",))
-        row = ghq_clean.inspect_row(upstreamless, meta, [], 14, 2_000_000_000)
+        row = ghq_clean.inspect_row(upstreamless, meta, 14, 2_000_000_000)
         self.assertEqual(row.state, "protected")
         self.assertEqual(row.reason, "upstreamless_branches=1")
-        allowed = ghq_clean.inspect_row(upstreamless, meta, [], 14, 2_000_000_000, allow_unpushed=True)
+        allowed = ghq_clean.inspect_row(upstreamless, meta, 14, 2_000_000_000, allow_unpushed=True)
         self.assertEqual(allowed.state, "candidate")
 
     def test_allow_unpushed_flag_reaches_inspect_and_apply(self) -> None:
@@ -177,9 +177,9 @@ class GhqCleanTest(unittest.TestCase):
 
     def test_archived_candidate_and_recent_remote_push_override_local_old_commit(self) -> None:
         local = ghq_clean.snapshot_repo(self.repo)
-        archived = ghq_clean.inspect_row(local, self.metadata(archived=True, pushed_at=1_999_900_000), [], 14, 2_000_000_000)
+        archived = ghq_clean.inspect_row(local, self.metadata(archived=True, pushed_at=1_999_900_000), 14, 2_000_000_000)
         self.assertEqual(archived.state, "candidate")
-        recent = ghq_clean.inspect_row(local, self.metadata(pushed_at=1_999_900_000), [], 14, 2_000_000_000)
+        recent = ghq_clean.inspect_row(local, self.metadata(pushed_at=1_999_900_000), 14, 2_000_000_000)
         self.assertEqual(recent.state, "retained")
 
     def test_stale_metadata_and_missing_remote_are_unknown(self) -> None:
@@ -187,33 +187,17 @@ class GhqCleanTest(unittest.TestCase):
         stale = ghq_clean.inspect_row(
             local,
             ghq_clean.Metadata("stale", True, 1, 1, "refresh failed"),
-            [],
             14,
             2_000_000_000,
         )
         missing = ghq_clean.inspect_row(
             local,
             ghq_clean.Metadata("unknown", detail="remote missing or inaccessible"),
-            [],
             14,
             2_000_000_000,
         )
         self.assertEqual(stale.state, "unknown")
         self.assertEqual(missing.state, "unknown")
-
-    def test_orca_matching_is_path_based_and_ambiguous_matches_fail_closed(self) -> None:
-        local = ghq_clean.snapshot_repo(self.repo)
-        same_project_other_path = ghq_clean.Setup("other", str(self.base / "other"), "github:example/sample", "git", "local")
-        row = ghq_clean.inspect_row(local, self.metadata(archived=True), [same_project_other_path], 14, 2_000_000_000)
-        self.assertEqual(row.state, "candidate")
-        same_text_path_remote_host = ghq_clean.Setup(
-            "remote", str(self.repo), "github:example/sample", "git", "ssh:remote-id"
-        )
-        row = ghq_clean.inspect_row(local, self.metadata(archived=True), [same_text_path_remote_host], 14, 2_000_000_000)
-        self.assertEqual(row.state, "protected")
-        exact = ghq_clean.Setup("exact", str(self.repo), "github:example/sample", "git", "local")
-        row = ghq_clean.inspect_row(local, self.metadata(archived=True), [exact, exact], 14, 2_000_000_000)
-        self.assertEqual(row.state, "unknown")
 
     def test_metadata_cache_batches_unique_slugs_and_stale_cache_cannot_be_used_for_deletion(self) -> None:
         value = {
@@ -238,7 +222,7 @@ class GhqCleanTest(unittest.TestCase):
         self.assertEqual(third["example/sample"].state, "stale")
         self.assertEqual(
             ghq_clean.inspect_row(
-                ghq_clean.snapshot_repo(self.repo), third["example/sample"], [], 14, 2_000_004_000
+                ghq_clean.snapshot_repo(self.repo), third["example/sample"], 14, 2_000_004_000
             ).state,
             "unknown",
         )
@@ -261,7 +245,7 @@ class GhqCleanTest(unittest.TestCase):
         with patch.object(ghq_clean, "graphql_batch", side_effect=AssertionError("cache should avoid API")):
             second = ghq_clean.metadata_for(slugs, self.cache, 3600, 2_000_000_001)
         self.assertEqual(first, second)
-        row = ghq_clean.inspect_row(ghq_clean.snapshot_repo(self.repo), second["example/sample"], [], 14, 2_000_000_001)
+        row = ghq_clean.inspect_row(ghq_clean.snapshot_repo(self.repo), second["example/sample"], 14, 2_000_000_001)
         self.assertEqual(row.state, "candidate")
 
     def test_metadata_fetch_is_chunked_to_bound_graphql_cost(self) -> None:
@@ -323,64 +307,11 @@ class GhqCleanTest(unittest.TestCase):
         row = ghq_clean.Row(local, meta, "candidate", "remote archived")
         with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)), \
              patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
-             patch.object(ghq_clean, "read_orca_setups", side_effect=[[], []]), \
              patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
              patch("builtins.input", return_value="REMOVE 1"):
             status = ghq_clean.apply_rows([row], self.ghq, 14, 86400, self.cache)
         self.assertEqual(status, 0)
         self.assertFalse(self.repo.exists())
-
-    def test_apply_fixture_deregisters_exact_setup_without_force_before_removal(self) -> None:
-        current = int(__import__("time").time())
-        local = ghq_clean.snapshot_repo(self.repo)
-        meta = ghq_clean.Metadata("fresh", True, current - 86400, current)
-        setup = ghq_clean.Setup("setup-1", str(self.repo), "github:example/sample", "git", "local")
-        row = ghq_clean.Row(local, meta, "candidate", "remote archived", setup)
-        original_command = ghq_clean.command
-        calls = []
-
-        def fake_command(argv, timeout=30):
-            if argv[:3] == ["orca", "project", "setup-delete"]:
-                calls.append(argv)
-                return subprocess.CompletedProcess(argv, 0, b'{"ok":true}', b"")
-            return original_command(argv, timeout)
-
-        with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)), \
-             patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
-             patch.object(ghq_clean, "read_orca_setups", side_effect=[[setup], [], []]), \
-             patch.object(ghq_clean, "command", side_effect=fake_command), \
-             patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
-             patch("builtins.input", return_value="REMOVE 1"):
-            status = ghq_clean.apply_rows([row], self.ghq, 14, 86400, self.cache)
-        self.assertEqual(status, 0)
-        self.assertFalse(self.repo.exists())
-        self.assertEqual(len(calls), 1)
-        self.assertIn("setup-1", calls[0])
-        self.assertEqual(calls[0][calls[0].index("--host") + 1], "local")
-        self.assertNotIn("--force", calls[0])
-
-    def test_apply_fixture_preserves_clone_when_orca_refuses(self) -> None:
-        current = int(__import__("time").time())
-        local = ghq_clean.snapshot_repo(self.repo)
-        meta = ghq_clean.Metadata("fresh", True, current - 86400, current)
-        setup = ghq_clean.Setup("setup-1", str(self.repo), "github:example/sample", "git", "local")
-        row = ghq_clean.Row(local, meta, "candidate", "remote archived", setup)
-        original_command = ghq_clean.command
-
-        def fake_command(argv, timeout=30):
-            if argv[:3] == ["orca", "project", "setup-delete"]:
-                return subprocess.CompletedProcess(argv, 1, b"", b"refused")
-            return original_command(argv, timeout)
-
-        with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)), \
-             patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
-             patch.object(ghq_clean, "read_orca_setups", return_value=[setup]), \
-             patch.object(ghq_clean, "command", side_effect=fake_command), \
-             patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
-             patch("builtins.input", return_value="REMOVE 1"):
-            status = ghq_clean.apply_rows([row], self.ghq, 14, 86400, self.cache)
-        self.assertEqual(status, 1)
-        self.assertTrue(self.repo.exists())
 
     def test_apply_aborts_if_remote_metadata_changes_after_confirmation(self) -> None:
         current = int(__import__("time").time())
@@ -417,7 +348,6 @@ class GhqCleanTest(unittest.TestCase):
 
         with patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
              patch.object(ghq_clean, "inspect", side_effect=amend_then_inspect), \
-             patch.object(ghq_clean, "read_orca_setups", return_value=[]), \
              patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
              patch("builtins.input", return_value="REMOVE 1"):
             status = ghq_clean.apply_rows([old], self.ghq, 14, 86400, self.cache, allow_unpushed=True)
@@ -427,33 +357,6 @@ class GhqCleanTest(unittest.TestCase):
         self.assertEqual(old_local.upstreamless_branches, amended_state[0].upstreamless_branches)
         self.assertNotEqual(old_local.head_oid, amended_state[0].head_oid)
         self.assertNotEqual(old_local.ref_oids, amended_state[0].ref_oids)
-        self.assertTrue(self.repo.exists())
-
-    def test_final_orca_readback_cannot_hide_a_concurrent_same_timestamp_amend(self) -> None:
-        current = int(__import__("time").time())
-        old_local = ghq_clean.snapshot_repo(self.repo)
-        meta = ghq_clean.Metadata("fresh", True, current - 86400, current)
-        row = ghq_clean.Row(old_local, meta, "candidate", "remote archived")
-        calls = 0
-
-        def read_setups_with_amend():
-            nonlocal calls
-            calls += 1
-            if calls == 2:
-                timestamp = dt.datetime.fromtimestamp(old_local.latest_commit, tz=dt.timezone.utc).isoformat()
-                env = os.environ.copy()
-                env.update({"GIT_AUTHOR_DATE": timestamp, "GIT_COMMITTER_DATE": timestamp})
-                git(self.repo, "commit", "--amend", "--quiet", "-m", "during final Orca readback", env=env)
-            return []
-
-        with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)), \
-             patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
-             patch.object(ghq_clean, "read_orca_setups", side_effect=read_setups_with_amend), \
-             patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
-             patch("builtins.input", return_value="REMOVE 1"):
-            status = ghq_clean.apply_rows([row], self.ghq, 14, 86400, self.cache)
-        self.assertEqual(status, 1)
-        self.assertEqual(calls, 2)
         self.assertTrue(self.repo.exists())
 
     def test_apply_aborts_when_forced_metadata_refresh_is_stale(self) -> None:
