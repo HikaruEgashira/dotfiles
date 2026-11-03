@@ -538,12 +538,6 @@ let
     })
 
     (mkEntry {
-      pkg = herdr;
-      purpose = "edit";
-      source = "github:ogulcancelik/herdr/releases";
-      reason = "AI coding agent multiplexer (TUI)";
-    })
-    (mkEntry {
       pkg = pkgs.pi-coding-agent;
       purpose = "edit";
       reason = "Pi coding agent CLI";
@@ -728,6 +722,12 @@ let
       purpose = "util";
       source = "github:HikaruEgashira/say-hook";
       reason = "herdr の読み上げ通知フック";
+    })
+    (mkEntry {
+      pkg = herdr;
+      purpose = "edit";
+      source = "github:ogulcancelik/herdr/releases";
+      reason = "AI coding agent multiplexer (TUI)";
     })
     (mkEntry {
       pkg = dagger;
