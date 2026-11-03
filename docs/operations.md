@@ -198,12 +198,13 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 ### 3.5 macOS 自動アップデートを固定する
 
-`system.defaults.CustomSystemPreferences."com.apple.SoftwareUpdate"` (`modules/darwin/system.nix`) が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する。手で `sudo defaults write` する必要は無い。
+`system.defaults.CustomSystemPreferences."com.apple.SoftwareUpdate"` (`modules/darwin/system.nix`) が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する。手で `sudo defaults write` する必要は無い。check と download は自動、macOS 本体の install は手動 (再起動を伴うため、§7.1 の月次 window で適用する)。
 
 確認:
 
 ```bash
-defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'AutomaticDownload|AutomaticallyInstallMacOSUpdates|CriticalUpdateInstall'   # すべて 1
+defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'AutomaticCheckEnabled|AutomaticDownload|AutomaticallyInstallMacOSUpdates|CriticalUpdateInstall'
+# AutomaticCheckEnabled = 1, AutomaticDownload = 1, AutomaticallyInstallMacOSUpdates = 0, CriticalUpdateInstall = 1
 ```
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
@@ -418,13 +419,13 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 ディスクは 229G の APFS コンテナ。2026-10-25 の棚卸しで 212G 使用 (空き 17G) だったものを、下記で空き 60G 超まで戻した。再び詰まったら ladder が `report_candidates` で候補を出す。
 
-| 回収経路                            | 対象                                                                                       | 2026-10-25 の回収量 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------ | ------------------- |
-| ladder (6h 毎、空き 10% 未満で発火) | nix 世代 / GC / 再取得できる cache / Codex 旧 release / ゴミ箱 / 30 日起動の無い podman VM | 数百 MB〜数 GB      |
-| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise                                         | 20G                 |
-| 手動 / `--podman-machine NAME`      | 停止済み VM、project 毎の provider 複製、`.pnpm-store`                                     | 17G                 |
-| `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (artex import、Codex 作業 dir、旧 workspace)            | 13G (S3 へ)         |
-| OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`               | 25G (未実施、#166)  |
+| 回収経路                            | 対象                                                                                       | 2026-10-25 の回収量                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| ladder (6h 毎、空き 10% 未満で発火) | nix 世代 / GC / 再取得できる cache / Codex 旧 release / ゴミ箱 / 30 日起動の無い podman VM | 数百 MB〜数 GB                            |
+| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise                                         | 20G                                       |
+| 手動 / `--podman-machine NAME`      | 停止済み VM、project 毎の provider 複製、`.pnpm-store`                                     | 17G                                       |
+| `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (artex import、Codex 作業 dir、旧 workspace)            | 13G (S3 へ)                               |
+| OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`               | 25G (2026-10-25 適用済み、再発防止は 7.1) |
 
 `disk-maintenance.sh` は Nix generation を `.nix-profile` と `~/.local/state/nix/profiles/*` から明示的に削除し、その後 `nix store gc` を実行する。これは、単一の `nix-collect-garbage --delete-older-than 30d` が失敗する場合の運用上の回避である。
 
@@ -432,17 +433,21 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 この回避は失敗した `nix-collect-garbage` 呼び出しを使わず、対象 profile の世代整理と store GC を別々に行う。generation step が指定 profile だけを処理することはスクリプトで確認できるが、`nix-collect-garbage` が home を再帰走査したことや、それが失敗原因だったことまでは確認できていない。`nix-collect-garbage` 1 本へ戻すのは、上流修正または設定変更を確認したうえで、この Mac の同じ profile 構成で `--dry-run` が成功することを確認してからにする。
 
-### 7.1 OS 側 (sudo が要る、ladder の対象外)
+### 7.1 macOS 更新の月次適用 (sudo が要る、ladder の対象外)
 
-Preboot と `/System/Volumes/Update` が膨らむのは適用していない更新が積まれているため。放置すると 20G 前後が常時占有される。
+Preboot と `/System/Volumes/Update` が膨らむのは download 済みで適用していない更新が積まれているため。放置すると 20G 前後が常時占有され、版が進むたびに再 download される。
+
+運用は「download は自動、install は月初の手動 window」に固定する。`AutomaticallyInstallMacOSUpdates` は採用しない。夜間の自動再起動は artex / ghtkn-agent / ssh-agent など常駐 agent を無警告で落とし、ghtkn の再認証 (`ghauth`) と artex の再起動確認が翌朝まで遅れるため。設定は `modules/darwin/system.nix` (§3.5)。
+
+月初の window で次を行う。ladder の `report_candidates` が Preboot の staged サイズを出していれば、それが適用待ちの合図。
 
 ```sh
-softwareupdate --list        # 適用待ちを確認 (2026-10-25 時点: macOS Tahoe 26.7.1, 7.4G)
-tmutil listlocalsnapshots /  # com.apple.os.update-* が staged 更新の実体
-sudo softwareupdate -i 'macOS Tahoe 26.7.1-25G241' --restart
+softwareupdate --list                       # 適用待ちの一覧 (minor を優先、major は別途判断)
+tmutil listlocalsnapshots /                 # com.apple.os.update-* が staged 更新の実体
+sudo softwareupdate --install '<Label>' --restart   # 例: 'macOS Tahoe 26.7.2-25G332'
 ```
 
-スナップショットを先に消すと staged 更新が壊れるので、必ず適用を先に済ませる。
+再起動後は `nix run ~/dotfiles#launchd-audit` と `ghauth` で常駐 agent と認証を戻す。スナップショットを先に消すと staged 更新が壊れるので、必ず適用を先に済ませる。major (27.x) は minor と同じ手順で適用できるが、nix-darwin と Nix installer の対応を確認してから行う。
 
 ### 7.2 S3 への退避 (`--archive`)
 

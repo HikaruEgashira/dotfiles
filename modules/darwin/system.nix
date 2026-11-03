@@ -7,10 +7,11 @@ _:
     # nix-darwin の defaults 系オプションはこのユーザーを対象にする
     primaryUser = "hikae";
 
-    # docs/operations.md にあった 3 つの `sudo defaults write` の置き換え
+    # 自動再起動は常駐 agent を無警告で落とすので download までに留め、適用は docs/operations.md 7.1 の手動 window で行う
     defaults.CustomSystemPreferences."com.apple.SoftwareUpdate" = {
+      AutomaticCheckEnabled = true;
       AutomaticDownload = true;
-      AutomaticallyInstallMacOSUpdates = true;
+      AutomaticallyInstallMacOSUpdates = false;
       CriticalUpdateInstall = true;
     };
   };
