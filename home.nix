@@ -12,6 +12,7 @@
     ./modules/programs/aqua.nix
     ./modules/programs/nvim/default.nix
     ./modules/programs/zsh.nix
+    ./modules/programs/direnv.nix
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix
     ./modules/programs/harness/ai-sandbox.nix

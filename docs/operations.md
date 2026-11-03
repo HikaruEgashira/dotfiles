@@ -85,6 +85,21 @@ Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回�
 
 npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@version` / `uvx --from pkg==version` を包む (初回実行時のみネットワーク)。常駐 daemon は npx のキャッシュ path が入れ替わるため、`npm install -g --prefix ~/.local/share/npm-global pkg@version` で固定 prefix に入れ、`~/.local/share/npm-global/bin` を PATH に置く。
 
+### 2.6 repo に secret を渡す (module: `modules/programs/direnv.nix`)
+
+secret は `~/.config/secrets/env.age` にだけ置き、必要な repo の `.envrc` に `use secrets` で宣言する。direnv の stdlib 拡張 (`modules/programs/direnv/use_secrets.sh`) が env.age を復号し、引数のキーだけを export する。引数を省くと全キーを export するので、原則キー名を書く。`FLATT_GUARD_TOKEN` を渡すと `UV_INDEX_URL` も派生する。
+
+```bash
+cd <repo>
+printf 'use secrets FLATT_GUARD_TOKEN\n' >>.envrc
+direnv allow
+```
+
+- `.envrc` は `~/.config/git/ignore` (`modules/programs/git.nix` の `ignores`) に登録済みで、repo の gitignore に足す必要は無い。commit したい repo では `git add -f` する。
+- secret はそのディレクトリ配下のシェルと、そこから起動した子プロセスだけが持つ。`zsh -ic` や別ディレクトリのエージェントには渡らない。
+- 無いキーを指定すると `use_secrets` は非 0 で終わり、direnv が `.envrc` 全体の読み込みを失敗扱いにする。typo はここで気づく。
+- 既存の `.envrc` を宣言管理で書き換えることはしない。secret が無くて困った repo に 1 行足していく。
+
 ## 3. オプトイン機能を有効化する
 
 ### 3.0 Firewall posture (module: `modules/darwin/security.nix`)
@@ -285,7 +300,7 @@ upstream (`sst/opencode`) への issue は当面立てない。preflight が int
 
 ### 4.6 secret を rotate する
 
-`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。シェルは起動時に `age -d` で復号して export する。復号結果は環境変数として子プロセスへ継承されるため、`_SECRETS_GEN` を持つ親 (herdr / tmux) 配下では再復号しない。
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-key.txt` が復号鍵 (0600)。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。同じディレクトリの `.env.keys` / `.env` (dotenvx 由来) は読む実装が無い。未使用なので削除してよい。
 
 ```bash
 cd ~/.config/secrets
@@ -296,7 +311,7 @@ $EDITOR "$plain"
 age -e -r "$(age-keygen -y age-key.txt)" -o env.age "$plain"
 ```
 
-キー名を増減したら `modules/programs/zsh.nix` の `_SECRETS_GEN` を上げる。番号を据え置くと、古い番号を継承したシェルが新しいキーを永久に読まない。
+rotate 後は secret を使う repo で `direnv reload` する。direnv は `.envrc` の変更しか検知しないため、env.age の変更は手動 reload まで反映されない。
 
 ### 4.7 nix-daemon / `/nix` がおかしい
 

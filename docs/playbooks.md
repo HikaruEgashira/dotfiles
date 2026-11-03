@@ -20,6 +20,7 @@
 | host を足す           | 2 台目以降                     | `docs/operations.md` §2.3 |
 | XDG 移設を足す        | dotdir を XDG へ寄せる         | `docs/operations.md` §2.4 |
 | upstream 配布へ逃がす | Nix cache に output が無い     | `docs/operations.md` §2.5 |
+| repo に secret を渡す | API key が要る repo を触る     | `docs/operations.md` §2.6 |
 
 ## オプトイン有効化
 
