@@ -44,7 +44,7 @@ modules/
   packages.nix           CLI / GUI / build deps via nixpkgs
   fonts.nix              Cica + PlemolJP NF (fontconfig)
   programs/
-    artex.nix            launchd agents: ARTEX + Postgres on loopback, no inbound exposure
+    artex.nix            launchd agents: ARTEX on loopback, Postgres on a private unix socket with scram auth
     aqua.nix             checksum 必須の prebuilt CLI registry
     aws.nix              ~/.aws/config; readonly default + step-up MFA role
     cli-tools.nix        fzf / bat / lsd / aria2 / starship
