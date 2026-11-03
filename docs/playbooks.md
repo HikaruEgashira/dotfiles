@@ -10,6 +10,7 @@
 | 棚卸し         | ledger か launchd の drift が気になったら | `docs/operations.md` §1 / `docs/launchd.md` |
 | 静的検査・整形 | commit 前                                 | `docs/operations.md` §1 日常運用            |
 | inputs 更新    | 週次の自動更新を待てない時                | `docs/operations.md` §1 日常運用            |
+| macOS 更新適用 | 月初 / Preboot に staged 更新が溜まったら | `docs/operations.md` §7.1                   |
 
 ## 追加
 
