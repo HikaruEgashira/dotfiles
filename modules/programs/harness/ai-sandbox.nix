@@ -47,22 +47,29 @@ let
     "${home}/.local/share/artex/artex-secrets"
     # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。
     "${home}/.config/herdr/plugins/config"
+    # ~/.aws/config は読ませ、SSO token と credential cache だけ broker (aws-cred-agent) の裏に隠す
+    "${home}/.aws/sso"
+    "${home}/.aws/cli"
+    "${home}/.aws/credentials"
+    "${home}/.aws/login"
   ];
 
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
   sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
 
-  # allowAllUnixSockets は docker.sock 等まで開くため、ghtkn と ssh agent だけを名前で許可する。
+  # allowAllUnixSockets は docker.sock 等まで開くため、ghtkn / ssh agent / aws broker だけを名前で許可する。
   unixSockets = [
     "${config.xdg.cacheHome}/ghtkn/agent.sock"
     sshAuthSock
+    "${config.xdg.cacheHome}/aws-cred/agent.sock"
   ];
   unixSocketsToml = "{${lib.concatMapStringsSep "," (p: ''"${p}"="allow"'') unixSockets}}";
 
-  # network proxy 有効時は domain も明示許可が要る。push と gh api の最小集合。
+  # network proxy 有効時は domain も明示許可が要る。push と gh api と AWS API の最小集合。
   codexDomains = [
     "github.com"
     "api.github.com"
+    "*.amazonaws.com"
   ];
   codexDomainsToml = "{${lib.concatMapStringsSep "," (d: ''"${d}"="allow"'') codexDomains}}";
 
@@ -119,10 +126,10 @@ let
   };
 
   # codex permission profile: "/" 読取、writable 書込、secrets deny (deny は同特異度に勝つ)
-  # codex は credential dir を path 非依存で組み込み deny するため、aws だけ明示許可で上書きする
+  # codex は credential dir を path 非依存で組み込み deny するため、~/.aws/config だけ read で上書きし、secrets の子 path deny を優先させる
   codexFilesystem = {
     "/" = "read";
-    "${home}/.aws" = "write";
+    "${home}/.aws" = "read";
   }
   // lib.genAttrs writable (_: "write")
   // lib.genAttrs secrets (_: "deny")

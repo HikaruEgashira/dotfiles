@@ -36,19 +36,20 @@
 
 ## 復旧
 
-| Playbook           | 使う時                     | 手順                      |
-| ------------------ | -------------------------- | ------------------------- |
-| activation 失敗    | eval が通らない / 反映不能 | `docs/operations.md` §4.1 |
-| CI 失敗            | PR の check が赤           | `docs/operations.md` §4.2 |
-| `git push` 不能    | `Device not configured`    | `docs/operations.md` §4.3 |
-| secret rotate      | API key を入れ替える       | `docs/operations.md` §4.6 |
-| dotfiles-sync 停止 | 日次同期が来ない           | `docs/operations.md` §4.4 |
-| opencode ハング    | TUI が空画面のまま返らない | `docs/operations.md` §4.5 |
-| gh extension 不能  | `audit` が DANGLING/BROKEN | `docs/operations.md` §4.8 |
-| HM ロールバック    | 直近適用を戻したい         | `docs/operations.md` §5.1 |
-| main revert        | 悪い commit を戻したい     | `docs/operations.md` §5.2 |
-| cachix trust 撤回  | substituter を止めたい     | `docs/operations.md` §5.3 |
-| 新マシン bootstrap | マシンを追加               | `docs/operations.md` §6   |
+| Playbook           | 使う時                      | 手順                      |
+| ------------------ | --------------------------- | ------------------------- |
+| activation 失敗    | eval が通らない / 反映不能  | `docs/operations.md` §4.1 |
+| CI 失敗            | PR の check が赤            | `docs/operations.md` §4.2 |
+| `git push` 不能    | `Device not configured`     | `docs/operations.md` §4.3 |
+| secret rotate      | API key を入れ替える        | `docs/operations.md` §4.6 |
+| dotfiles-sync 停止 | 日次同期が来ない            | `docs/operations.md` §4.4 |
+| opencode ハング    | TUI が空画面のまま返らない  | `docs/operations.md` §4.5 |
+| gh extension 不能  | `audit` が DANGLING/BROKEN  | `docs/operations.md` §4.8 |
+| AWS SSO 再ログイン | `aws` が SSO 期限切れで失敗 | `docs/operations.md` §4.9 |
+| HM ロールバック    | 直近適用を戻したい          | `docs/operations.md` §5.1 |
+| main revert        | 悪い commit を戻したい      | `docs/operations.md` §5.2 |
+| cachix trust 撤回  | substituter を止めたい      | `docs/operations.md` §5.3 |
+| 新マシン bootstrap | マシンを追加                | `docs/operations.md` §6   |
 
 ## 記載ルール
 

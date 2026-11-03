@@ -19,6 +19,7 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.ssh-agent`               | home-manager (`modules/programs/ssh.nix`)              | 常駐            | SSH agent と socket を管理                                                    |
 | `dev.egahika.ssh-add`                 | home-manager (`modules/programs/ssh.nix`)              | login           | agent 起動後に鍵を登録                                                        |
 | `dev.egahika.ghtkn-agent`             | home-manager (`modules/programs/ghtkn.nix`)            | 常駐            | `ghauth` が unlock と auth を吸収                                             |
+| `dev.egahika.aws-cred-agent`          | home-manager (`modules/programs/aws.nix`)              | 常駐            | sandbox へ短寿命 STS credential を socket で配る                              |
 | `com.stablyai.orca.terminal.*`        | Orca 自己管理                                          | terminal 起動時 | インスタンス固有の suffix を許容                                              |
 | `com.superlogical.rex.server.*`       | Rex 自己管理                                           | app 起動時      | 64 hex の suffix を許容                                                       |
 | `dev.herdr.server.*`                  | herdr 自己管理                                         | server 起動時   | PID 等の suffix を許容                                                        |

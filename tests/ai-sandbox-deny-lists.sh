@@ -34,14 +34,19 @@ secrets=(
   .claude.json
   .zsh_history
   .config/nix/nix.conf
+  .aws/sso
+  .aws/cli
+  .aws/credentials
+  .aws/login
 )
 for path in "${secrets[@]}"; do
   assert_list_has secrets "$path"
 done
 
+# ~/.aws/config は profile 解決に要るので読ませ、token cache の子 path だけ deny する
 # shellcheck disable=SC2016 # Match the literal Nix home interpolation.
 if grep -Fq '"${home}/.aws"' <<<"$(list_body secrets)"; then
-  printf '%s\n' 'FAIL: secrets still denies ~/.aws; aws must run inside the sandbox' >&2
+  printf '%s\n' 'FAIL: secrets denies ~/.aws entirely; aws cannot resolve profiles inside the sandbox' >&2
   exit 1
 fi
 
@@ -72,17 +77,18 @@ for path in .codex/AGENTS.md .codex/config.toml .config/ai-sandbox; do
   assert_list_has codexReadable "$path"
 done
 
-# codex は ~/.aws を組み込み deny するため、profile 側で明示許可しないと aws が動かない
+# codex は ~/.aws を組み込み deny するため read で上書きし、token cache は secrets の子 path deny に任せる
 # shellcheck disable=SC2016 # Match the literal Nix home interpolation.
-grep -Fq '"${home}/.aws" = "write";' "$source_nix"
+grep -Fq '"${home}/.aws" = "read";' "$source_nix"
 grep -Fq 'codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;' "$source_nix"
 grep -Fq '// lib.genAttrs secrets (_: "deny")' "$source_nix"
 grep -Fq '// lib.genAttrs codexPersistence (_: "deny")' "$source_nix"
 
 printf '%s\n' 'ok: ai-sandbox denies credential stores and persistence without breaking codex reads'
 
-# ghtkn agent と ssh agent の socket だけを通す。allowAllUnixSockets は docker.sock 等まで開くため使わない
+# ghtkn / ssh agent / aws broker の socket だけを通す。allowAllUnixSockets は docker.sock 等まで開くため使わない
 grep -Fq 'ghtkn/agent.sock' "$source_nix"
+grep -Fq 'aws-cred/agent.sock' "$source_nix"
 grep -Fq 'allowUnixSockets = unixSockets;' "$source_nix"
 # shellcheck disable=SC2016
 grep -Fq 'unix_sockets=${unixSocketsToml}' "$source_nix"
@@ -91,11 +97,12 @@ if grep -Fq 'allowAllUnixSockets = true' "$source_nix"; then
   exit 1
 fi
 
-printf '%s\n' 'ok: ai-sandbox exposes only ghtkn and ssh agent sockets'
+printf '%s\n' 'ok: ai-sandbox exposes only ghtkn, ssh agent and aws broker sockets'
 
-# network proxy 有効時も push と gh api が通るよう、github.com / api.github.com を許可する
+# network proxy 有効時も push / gh api / AWS API が通るよう domain を許可する
 grep -Fq '"github.com"' "$source_nix"
 grep -Fq '"api.github.com"' "$source_nix"
+grep -Fq '"*.amazonaws.com"' "$source_nix"
 # shellcheck disable=SC2016
 grep -Fq 'domains=${codexDomainsToml}' "$source_nix"
 
