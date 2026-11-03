@@ -226,7 +226,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。Mac は受信を一切公開しない (ALF blockall を維持し、`tailscale serve` / Funnel は使わない)。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
 
-Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を exec する (drift の修復ログは `pg.log`)。
+Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。`local.env` は sh で source されるので、`&` を含むこの値は single quote で囲む。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を exec する (drift の修復ログは `pg.log`)。
 
 接続:
 
