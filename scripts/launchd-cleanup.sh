@@ -16,8 +16,8 @@ osascript -e 'tell application "System Events" to delete login item "Cloudflare 
 
 # --- Google keystone: empty plists replaced by com.google.GoogleUpdater.wake ---
 say "Google keystone: removing empty plists"
-sudo rm -f /Library/LaunchAgents/com.google.keystone.agent.plist \
-  /Library/LaunchAgents/com.google.keystone.xpcservice.plist
+rm -f ~/Library/LaunchAgents/com.google.keystone.agent.plist \
+  ~/Library/LaunchAgents/com.google.keystone.xpcservice.plist
 sudo rm -rf /Library/Google/GoogleSoftwareUpdate
 
 # --- cloudflared daemon: broken (token file absent); the CLI stays nix-owned ---

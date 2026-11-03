@@ -20,6 +20,7 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.ssh-add`                 | home-manager (`modules/programs/ssh.nix`)              | login           | agent 起動後に鍵を登録                                                        |
 | `dev.egahika.ghtkn-agent`             | home-manager (`modules/programs/ghtkn.nix`)            | 常駐            | `ghauth` が unlock と auth を吸収                                             |
 | `com.stablyai.orca.terminal.*`        | Orca 自己管理                                          | terminal 起動時 | インスタンス固有の suffix を許容                                              |
+| `com.superlogical.rex.server.*`       | Rex 自己管理                                           | app 起動時      | 64 hex の suffix を許容                                                       |
 | `dev.herdr.server.*`                  | herdr 自己管理                                         | server 起動時   | PID 等の suffix を許容                                                        |
 | `dev.egahika.dotfiles-sync`           | home-manager (`modules/programs/dotfiles-sync.nix`)    | 毎日 09:00      | main 追従 + 再 activation                                                     |
 | `dev.egahika.clean-worktree`          | home-manager (`modules/programs/clean-worktree.nix`)   | 毎週月 09:30    | merged worktree 掃除                                                          |
@@ -35,13 +36,14 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 
 npm の extension (`pi-subagents`, `@hikae/pi-prompt-enhancer`) は `~/.pi/agent/settings.json` でバージョン固定して起動時の更新通知を止めており、固定先は `pi-extensions-update` が日次で最新へ進める（`latest` の解決は npm の `min-release-age` に従うため、冷却期間中の版は入らない）。git の extension (ponytail) は upstream の main HEAD を追うと任意の新コミットが pi 内で実行されるため、sha 固定 (`git:.../ponytail@<sha>`) にして手動でしか動かさない（更新は sha を差し替えて `pi update --extensions`）。
 
-twg / opencodex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
+twg / opencodex / Rex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
 
 GUI アプリが登録する background item は次のとおり（app 側が管理、手動操作対象外）。
 
 | Label                                             | 由来                   |
 | ------------------------------------------------- | ---------------------- |
 | `com.anthropic.claudefordesktop.ShipIt`           | Claude Desktop updater |
+| `com.stablyai.orca.ShipIt`                        | Orca updater           |
 | `us.zoom.updater` / `us.zoom.updater.login.check` | Zoom updater           |
 | `com.google.GoogleUpdater.wake`                   | Google Chrome          |
 | `com.openssh.ssh-agent`                           | macOS 標準             |
@@ -62,16 +64,16 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 
 残骸・重複。`scripts/launchd-cleanup.sh` を通常ユーザで実行して削除する（内部で必要な箇所だけ `sudo` を呼ぶ。冪等）。
 
-| 対象                                                                              | 理由                                                                      | 状態                      |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------- |
-| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | スクリプト実行待ち (root) |
-| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | スクリプト実行待ち (root) |
-| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | スクリプト実行待ち (root) |
-| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | スクリプト実行待ち (root) |
-| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                  |
+| 対象                                                                              | 理由                                                                      | 状態 (2026-11-03)                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | 未ロード。`~/Library/LaunchAgents` の plist と root の dir が残り、スクリプト実行待ち |
+| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | 削除済み                                                                              |
+| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | 削除済み                                                                              |
+| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | 削除済み                                                                              |
+| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                                                                              |
 
 ## 検知
 
 `nix run .#launchd-audit` は user domain の非 Apple agent を許容リストと突き合わせ、未知のラベルを `UNKNOWN` として報告し exit 1 する。新しい常駐を足したら、この表と許容リスト (`flake.nix`) の両方を更新する。
 
-動的ラベルは `com.stablyai.orca.terminal.` と `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 2 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。
+動的ラベルは `com.stablyai.orca.terminal.` / `com.superlogical.rex.server.` / `dev.herdr.server.` に続く空でない suffix だけを許容する。SSH の 2 ラベルは `modules/programs/ssh.nix` の宣言から自動導出する。`net.tunnelblick.launcher` は撤去対象のため許容しない。ラベル判定は `bash tests/launchd-labels.sh` でサービスに触れず検証できる。

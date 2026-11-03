@@ -212,6 +212,7 @@
           "io.tailscale.ipn.macsys.login-item-helper"
           "jp.kiok.nani.ShipIt"
           "com.anthropic.claudefordesktop.ShipIt"
+          "com.stablyai.orca.ShipIt"
           "us.zoom.updater"
           "us.zoom.updater.login.check"
         ];
