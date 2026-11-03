@@ -1,0 +1,383 @@
+[
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-orca",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:github/stablyai/orca"
+        },
+        "versions": ["1.4.245"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://github.com/stablyai/orca/releases/download/v1.4.247/orca-macos-arm64.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.stablyai.orca",
+      "team_id": "6CX3WHS9HZ",
+      "path": "/Applications/Orca.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://github.com/stablyai/orca/releases/download/v1.4.247/orca-macos-arm64.dmg",
+      "target_version": "1.4.247",
+      "hash": {
+        "sha256": "3a4ac1dfdd5aa4d83e21dd74d291abe00b9001516dc6bfcde40a8885c0956cdf"
+      },
+      "hash_source": "github-release-digest",
+      "pinned": true,
+      "updater": "electron-updater:github",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-zoom",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/zoom.us"
+        },
+        "versions": ["7.2.2.88465"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://zoom.us/client/7.2.2.88465/zoomusInstallerFull.pkg?archType=arm64"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "us.zoom.xos",
+      "team_id": "BJ4HAAB9B3",
+      "path": "/Applications/zoom.us.app",
+      "layer": "system",
+      "kind": "pkg",
+      "url": "https://zoom.us/client/7.2.2.88465/zoomusInstallerFull.pkg?archType=arm64",
+      "target_version": "7.2.2.88465",
+      "hash": {
+        "sha256": "ff15d926ef5a714c6683cc23ed628a7c2fc43d080a88ac54af4e200ba03a2456"
+      },
+      "hash_source": "nixpkgs",
+      "pinned": true,
+      "updater": "vendor",
+      "receipt": "us.zoom.pkg.videomeeting",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-google-chrome",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/google-chrome"
+        },
+        "versions": ["156.0.8078.80"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.google.Chrome",
+      "team_id": "EQHXZ8M8AV",
+      "path": "/Applications/Google Chrome.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg",
+      "target_version": null,
+      "hash": null,
+      "hash_source": null,
+      "pinned": false,
+      "updater": "google-updater",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-claude",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/claude-desktop"
+        },
+        "versions": ["4.4212.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://downloads.claude.ai/releases/darwin/universal/4.4212.0/Claude-cbfe3c56d49c49332ad5a9588303c9dbc70a5e7f.zip"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.anthropic.claudefordesktop",
+      "team_id": "Q6L2SF6YDW",
+      "path": "/Applications/Claude.app",
+      "layer": "user",
+      "kind": "zip",
+      "url": "https://downloads.claude.ai/releases/darwin/universal/4.4212.0/Claude-cbfe3c56d49c49332ad5a9588303c9dbc70a5e7f.zip",
+      "manifest": "https://downloads.claude.ai/releases/darwin/universal/RELEASES.json",
+      "target_version": "4.4212.0",
+      "hash": null,
+      "hash_source": null,
+      "pinned": true,
+      "updater": "squirrel",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-claude-science",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/claude-science"
+        },
+        "versions": ["0.1.71"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://downloads.claude.ai/claude-science/latest/mac-arm64.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.anthropic.operon",
+      "team_id": "Q6L2SF6YDW",
+      "path": "/Applications/Claude Science.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://downloads.claude.ai/claude-science/latest/mac-arm64.dmg",
+      "target_version": null,
+      "hash": null,
+      "hash_source": null,
+      "pinned": false,
+      "updater": "self",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-codex-desktop",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/codex-desktop"
+        },
+        "versions": ["26.1027.30824"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://persistent.oaistatic.com/codex-app-prod/Codex.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.openai.codex",
+      "team_id": "2DC432GLL2",
+      "path": "/Applications/ChatGPT.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://persistent.oaistatic.com/codex-app-prod/Codex.dmg",
+      "target_version": null,
+      "hash": null,
+      "hash_source": null,
+      "pinned": false,
+      "updater": "sparkle",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-openscreen",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:github/getopenscreen/openscreen"
+        },
+        "versions": ["1.11.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://github.com/getopenscreen/openscreen/releases/download/v2.2.0/Openscreen-macOS-Apple-Silicon-2.2.0.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.etiennelescot.openscreen",
+      "team_id": "M4LK7C6S84",
+      "path": "/Applications/Openscreen.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://github.com/getopenscreen/openscreen/releases/download/v2.2.0/Openscreen-macOS-Apple-Silicon-2.2.0.dmg",
+      "target_version": "2.2.0",
+      "hash": {
+        "sha256": "07ea3b247333d490e14b6cc003618ee86fbe144ed1995abc1ae1a8e19f5d322e"
+      },
+      "hash_source": "github-release-digest",
+      "pinned": true,
+      "updater": "squirrel",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-typeless",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/typeless"
+        },
+        "versions": ["2.9.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://typeless-static.com/desktop-release/Typeless-2.9.0-arm64.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "now.typeless.desktop",
+      "team_id": "947QKAND4W",
+      "path": "/Applications/Typeless.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://typeless-static.com/desktop-release/Typeless-2.9.0-arm64.dmg",
+      "manifest": "https://typeless-static.com/desktop-release/arm64-mac.yml",
+      "target_version": "2.9.0",
+      "hash": {
+        "sha512": "d1ff2e04a4de5dbbff17478f7bc32bd2da6b30d100a7c08a8f9108118744a52e96c9cfa980c133a737bf829d5b4e3b8b94a676ea9af84a8ffcbb5f9f9853a67d"
+      },
+      "hash_source": "vendor-manifest",
+      "pinned": true,
+      "updater": "electron-updater:generic",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-cua-driver",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:github/trycua/cua"
+        },
+        "versions": ["0.22.2"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-darwin-arm64.tar.gz"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.trycua.driver",
+      "team_id": "YCK386LBJ7",
+      "path": "/Applications/CuaDriver.app",
+      "layer": "user",
+      "kind": "tgz",
+      "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.38.0/cua-driver-rs-0.38.0-darwin-arm64.tar.gz",
+      "target_version": "0.38.0",
+      "hash": {
+        "sha256": "5f71191c082ca07c9dfc13b7c9a6eec60a82818c245a93534cc0eb7911471d72"
+      },
+      "hash_source": "github-release-digest",
+      "pinned": true,
+      "updater": "self",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-rex",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/rex-beta"
+        },
+        "versions": ["0.1.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://blob.superlogical.com/public/rex-app/preview/Rex-0.1.0-1758.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.superlogical.rex",
+      "team_id": "AG92C3PT77",
+      "path": "/Applications/Rex Beta.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://blob.superlogical.com/public/rex-app/preview/Rex-0.1.0-1758.dmg",
+      "manifest": "https://blob.superlogical.com/public/rex-app/preview/appcast.xml",
+      "target_version": "0.1.0",
+      "hash": null,
+      "hash_source": null,
+      "pinned": true,
+      "updater": "sparkle",
+      "sparkle_ed_signature": "u5KLhkicJlHY5YuV5y2zzessQMEZVp2bON4X0A0gwFvk1WXS4N2TeJrIgll1Gy5ybK8wEggKVhtw5RoVeVeLBw==",
+      "identity_verified": false
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "DRIFT-herdr-app",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/herdr-app"
+        },
+        "versions": ["0.1.11"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://releases.herdr.dev/app/0.1.12/herdr-app-macos-aarch64.tar.gz"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "dev.herdr.app",
+      "team_id": "2W9652Q7QR",
+      "path": "/Applications/Herdr.app",
+      "layer": "user",
+      "kind": "tgz",
+      "url": "https://releases.herdr.dev/app/0.1.12/herdr-app-macos-aarch64.tar.gz",
+      "manifest": "https://releases.herdr.dev/app/latest.json",
+      "target_version": "0.1.12",
+      "hash": {
+        "sha256": "006a4f68409a79548d1aa6c5f99da8911b7d14910ef2ac6bd1a3dce634ca5d03"
+      },
+      "hash_source": "vendor-manifest",
+      "pinned": true,
+      "updater": "self",
+      "identity_verified": false
+    }
+  }
+]

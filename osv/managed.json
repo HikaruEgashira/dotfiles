@@ -1,0 +1,136 @@
+[
+  {
+    "schema_version": "1.7.0",
+    "id": "MANAGED-tailscale",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/tailscale"
+        },
+        "versions": ["1.104.4"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "io.tailscale.ipn.macsys",
+      "team_id": "W5364U7YZB",
+      "path": "/Applications/Tailscale.app",
+      "layer": "system",
+      "kind": "pkg",
+      "url": "https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg",
+      "target_version": "1.104.5",
+      "hash": {
+        "sha256": "f1a2afb589dc16487cff9f23c59d0021a1a4dcf8476d2637ab493c628422b810"
+      },
+      "hash_source": "dotfiles",
+      "declared_in": "modules/darwin/native-apps/install-system-apps.sh",
+      "receipt": "com.tailscale.ipn.macsys"
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "MANAGED-xcode",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/xcode"
+        },
+        "versions": ["27.2"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "macappstore://itunes.apple.com/app/id497799835"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.apple.dt.Xcode",
+      "team_id": "59GAB85EFG",
+      "path": "/Applications/Xcode.app",
+      "layer": "system",
+      "kind": "mas",
+      "url": "macappstore://itunes.apple.com/app/id497799835",
+      "mas_id": 497799835,
+      "target_version": null,
+      "hash": null,
+      "hash_source": null,
+      "declared_in": "modules/darwin/native-apps/install-system-apps.sh"
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "MANAGED-ghostty",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:generic/ghostty"
+        },
+        "versions": ["1.4.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://release.files.ghostty.org/1.4.0/Ghostty.dmg"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": "com.mitchellh.ghostty",
+      "team_id": null,
+      "path": "~/Applications/Home Manager Apps/Ghostty.app",
+      "layer": "user",
+      "kind": "dmg",
+      "url": "https://release.files.ghostty.org/1.4.0/Ghostty.dmg",
+      "target_version": "1.4.0",
+      "hash": {
+        "sha256": "3a02075dbd24318d778426af41dee5507d53ecc4578ede96912ec9ce6d18d3e8"
+      },
+      "hash_source": "nixpkgs",
+      "nix_attr": "ghostty-bin",
+      "declared_in": "lib/package-registry.nix"
+    }
+  },
+  {
+    "schema_version": "1.7.0",
+    "id": "MANAGED-terminal-notifier",
+    "modified": "2026-11-03T07:30:00Z",
+    "affected": [
+      {
+        "package": {
+          "purl": "pkg:github/julienXX/terminal-notifier"
+        },
+        "versions": ["3.1.0"]
+      }
+    ],
+    "references": [
+      {
+        "type": "PACKAGE",
+        "url": "https://github.com/julienXX/terminal-notifier/archive/refs/tags/3.1.0.tar.gz"
+      }
+    ],
+    "database_specific": {
+      "bundle_id": null,
+      "team_id": null,
+      "path": "~/Applications/Home Manager Apps/terminal-notifier.app",
+      "layer": "user",
+      "kind": "source",
+      "url": "https://github.com/julienXX/terminal-notifier/archive/refs/tags/3.1.0.tar.gz",
+      "target_version": "3.1.0",
+      "hash": {
+        "nix_nar_sha256": "sha256-VnXGC8Yq7WoLPPMyn0MdwJ+evCk3lDoSznDF+MJI2lM="
+      },
+      "hash_source": "nixpkgs",
+      "nix_attr": "terminal-notifier",
+      "declared_in": "lib/package-registry.nix"
+    }
+  }
+]
