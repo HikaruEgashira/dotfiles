@@ -80,3 +80,14 @@ grep -Fq '// lib.genAttrs secrets (_: "deny")' "$source_nix"
 grep -Fq '// lib.genAttrs codexPersistence (_: "deny")' "$source_nix"
 
 printf '%s\n' 'ok: ai-sandbox denies credential stores and persistence without breaking codex reads'
+
+# ghtkn agent と ssh agent の socket だけを通す。allowAllUnixSockets は docker.sock 等まで開くため使わない
+grep -Fq 'ghtkn/agent.sock' "$source_nix"
+grep -Fq 'allowUnixSockets = unixSockets;' "$source_nix"
+grep -Fq 'unix_sockets=${unixSocketsToml}' "$source_nix"
+if grep -Fq 'allowAllUnixSockets = true' "$source_nix"; then
+  printf '%s\n' 'FAIL: allowAllUnixSockets reopens every unix socket' >&2
+  exit 1
+fi
+
+printf '%s\n' 'ok: ai-sandbox exposes only ghtkn and ssh agent sockets'

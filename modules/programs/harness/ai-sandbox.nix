@@ -51,6 +51,13 @@ let
   # 署名鍵は agent が保持するので sandbox に鍵ファイルを見せる必要はない
   sshAuthSock = config.home.sessionVariables.SSH_AUTH_SOCK;
 
+  # allowAllUnixSockets は docker.sock 等まで開くため、ghtkn と ssh agent だけを名前で許可する。
+  unixSockets = [
+    "${config.xdg.cacheHome}/ghtkn/agent.sock"
+    sshAuthSock
+  ];
+  unixSocketsToml = "{${lib.concatMapStringsSep "," (p: ''"${p}"="allow"'') unixSockets}}";
+
   # sandbox からの永続化経路 (自動実行・自己書き換え・プロンプト注入) を塞ぐ
   persistence = [
     "${home}/Library/LaunchAgents"
@@ -90,7 +97,7 @@ let
       allowUnsandboxedCommands = true;
       network = {
         allowedDomains = [ "*" ];
-        allowAllUnixSockets = true;
+        allowUnixSockets = unixSockets;
         allowLocalBinding = true;
         allowMachLookup = [ "*" ];
       };
@@ -121,7 +128,7 @@ let
   codexArgs = [
     ''default_permissions="dev"''
     "permissions.dev.filesystem=${filesystemToml}"
-    "permissions.dev.network={enabled=true}"
+    "permissions.dev.network={enabled=true,unix_sockets=${unixSocketsToml}}"
     # codex は env を渡さないので、agent socket だけ明示的に通す
     "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
   ];
