@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 CACHE_VERSION = 1
 DEFAULT_DAYS = 14
+GH_EXTENSION_DIR = Path.home() / ".local" / "share" / "gh" / "extensions"
 DEFAULT_TTL_SECONDS = 24 * 60 * 60
 MAX_ALIASES = 25
 APPLY_METADATA_MAX_AGE = 5 * 60
@@ -467,6 +468,20 @@ def metadata_for(
     return result
 
 
+def read_extension_targets(directory: Path = GH_EXTENSION_DIR) -> frozenset[str]:
+    targets = set()
+    try:
+        entries = list(directory.iterdir())
+    except FileNotFoundError:
+        return frozenset()
+    except OSError as exc:
+        raise ScanError(f"cannot enumerate gh extension directory: {directory}") from exc
+    for entry in entries:
+        if entry.is_symlink():
+            targets.add(str(entry.resolve(strict=False)))
+    return frozenset(targets)
+
+
 def read_orca_setups() -> list[Setup]:
     output = command_text(["orca", "project", "setups", "--json"], timeout=20)
     try:
@@ -505,9 +520,20 @@ def setup_matches(path: Path, setups: list[Setup]) -> list[Setup]:
     return [setup for setup in setups if str(Path(setup.path).resolve(strict=False)) == resolved]
 
 
-def inspect_row(local: LocalState, metadata: Metadata | None, setups: list[Setup] | None, days: int, now: int) -> Row:
+def inspect_row(
+    local: LocalState,
+    metadata: Metadata | None,
+    setups: list[Setup] | None,
+    days: int,
+    now: int,
+    extension_targets: frozenset[str] | None = frozenset(),
+) -> Row:
     if local.error:
         return Row(local, metadata, "unknown", local.error)
+    if extension_targets is None:
+        return Row(local, metadata, "unknown", "gh extension inventory unavailable")
+    if str(local.path.resolve(strict=False)) in extension_targets:
+        return Row(local, metadata, "protected", "gh extension target")
     reasons = []
     if local.dirty:
         reasons.append("dirty")
@@ -564,8 +590,19 @@ def inspect(
         setups = read_orca_setups()
     except ScanError:
         setups = None
+    try:
+        extension_targets = read_extension_targets()
+    except ScanError:
+        extension_targets = None
     rows = [
-        inspect_row(repo, metadata.get(repo.slug.casefold()) if repo.slug else None, setups, days, int(time.time()))
+        inspect_row(
+            repo,
+            metadata.get(repo.slug.casefold()) if repo.slug else None,
+            setups,
+            days,
+            int(time.time()),
+            extension_targets,
+        )
         for repo in local
     ]
     return rows, linked_count, nonrepo_count

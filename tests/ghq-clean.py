@@ -93,6 +93,21 @@ class GhqCleanTest(unittest.TestCase):
         with self.assertRaisesRegex(ghq_clean.ScanError, "symlinked .git marker"):
             ghq_clean.discover_roots(self.ghq)
 
+    def test_gh_extension_target_protects_clone(self) -> None:
+        extensions = self.base / "gh" / "extensions"
+        self.assertEqual(ghq_clean.read_extension_targets(extensions), frozenset())
+        extensions.mkdir(parents=True)
+        (extensions / "sample").symlink_to(self.repo)
+        targets = ghq_clean.read_extension_targets(extensions)
+        self.assertEqual(targets, frozenset({str(self.repo.resolve())}))
+        meta = self.metadata(archived=True)
+        local = ghq_clean.snapshot_repo(self.repo)
+        self.assertEqual(ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000).state, "candidate")
+        row = ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000, targets)
+        self.assertEqual(row.state, "protected")
+        self.assertEqual(row.reason, "gh extension target")
+        self.assertEqual(ghq_clean.inspect_row(local, meta, [], 14, 2_000_000_000, None).state, "unknown")
+
     def test_dirty_and_linked_worktree_protect_candidate(self) -> None:
         meta = self.metadata(archived=True)
         (self.repo / "tracked.txt").write_text("modified\n", encoding="utf-8")

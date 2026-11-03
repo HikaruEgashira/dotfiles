@@ -425,7 +425,7 @@ upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手�
 
 ### 7.4 ghq clone / branch の棚卸し
 
-`ghq-clean.py` は `~/ghq/github.com/<owner>/<repo>` 直下の `.git` directory を clone root として扱い、linked worktree (`.git` file) は既存 `clean-worktree.sh` の管理対象として数を分けて表示する。候補は remote が archived、または最新 local ref commit と GitHub `pushedAt` の新しい方が既定14日以上前の clone。dirty な clone と linked worktree を持つ clone は保護する。upstream の無い branch 名と remote ref から到達できない commit 数も表示する。
+`ghq-clean.py` は `~/ghq/github.com/<owner>/<repo>` 直下の `.git` directory を clone root として扱い、linked worktree (`.git` file) は既存 `clean-worktree.sh` の管理対象として数を分けて表示する。候補は remote が archived、または最新 local ref commit と GitHub `pushedAt` の新しい方が既定14日以上前の clone。dirty な clone と linked worktree を持つ clone は保護する。`~/.local/share/gh/extensions` の symlink が指す clone も保護する (ローカル開発中の gh extension は binary を repo 内に持つため、clone を消すと extension が起動しなくなる)。gh extension directory を読めない場合は全 clone を `unknown` として削除候補にしない。upstream の無い branch 名と remote ref から到達できない commit 数も表示する。
 
 remote metadata は最大25 repository slugを1 GraphQL requestにまとめ、owner-onlyの `~/.cache/ghq-clean/metadata.json` に24時間 cache する。失敗時は同じ期間 API を再試行せず、cache が無い/古い/取得失敗なら `unknown` として削除候補にしない。GraphQL の null は deleted と権限不足の private repository を区別できないため、どちらも `unknown` にする。
 
