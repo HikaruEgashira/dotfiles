@@ -12,6 +12,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | upstream binary の CLI | `modules/programs/aqua/` の local registry + checksum |
 | nixpkgs cache に無い GUI | 上流署名済み installer。root installer は `modules/darwin/native-apps/` |
 | AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
+| repo が使う secret | 正史は `~/.config/secrets/env.age`。repo の `.envrc` に `use secrets <KEY>` を書いて direnv で局所ロードする (`docs/operations.md` §2.6) |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
 
@@ -40,7 +41,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - `home.packages` を直接書かず ledger 経由にする。purpose は `build/edit/ops/comm/observe/play/util`。
 - ローカル source build 禁止。`cache.nixos.org` から output が取れる pkg だけを Nix registry に入れ、無い CLI は checksum 必須の Aqua、GUI は hash と Team ID を検証する上流署名済み installer へ逃がす。`overrideAttrs` でハッシュを変質させるパッチも禁止。
 - git transport は HTTPS only。認証は `ghtkn git-credential` (GitHub App `ghtkn-hikae` の 8h user access token)。`gh` も ghtkn 経由の wrapper。再認証は `ghauth` を端末で実行する。
-- 新規 secret は `direnv` でセッション局所に閉じ、commit も `home.file` へのハードコードもしない。
+- secret は `~/.config/secrets/env.age` に置き、`.envrc` の `use secrets <KEY>` で必要な repo にだけ渡す。シェル起動時の全キー export、commit、`home.file` へのハードコードはしない。
 - `flake.lock` は週次 workflow が更新する。手動で書き換えない。
 - CI を緑にしてから merge。
 

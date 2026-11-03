@@ -114,6 +114,7 @@ in
       ".env"
       ".env.keys"
       ".env.local"
+      ".envrc"
       ".idea/tasks.xml"
       ".idea/workspace.xml"
       ".vscode/launch.json"

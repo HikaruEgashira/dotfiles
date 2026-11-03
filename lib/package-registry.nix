@@ -250,11 +250,6 @@ let
       reason = "Terraform CLI";
     })
     (mkEntry {
-      pkg = pkgs.direnv;
-      purpose = "util";
-      reason = "per-directory env from .envrc";
-    })
-    (mkEntry {
       pkg = pkgs.agent-browser;
       purpose = "util";
       reason = "browser automation CLI for agents";
