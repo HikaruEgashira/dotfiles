@@ -84,6 +84,7 @@ printf '%s\n' 'ok: ai-sandbox denies credential stores and persistence without b
 # ghtkn agent と ssh agent の socket だけを通す。allowAllUnixSockets は docker.sock 等まで開くため使わない
 grep -Fq 'ghtkn/agent.sock' "$source_nix"
 grep -Fq 'allowUnixSockets = unixSockets;' "$source_nix"
+# shellcheck disable=SC2016
 grep -Fq 'unix_sockets=${unixSocketsToml}' "$source_nix"
 if grep -Fq 'allowAllUnixSockets = true' "$source_nix"; then
   printf '%s\n' 'FAIL: allowAllUnixSockets reopens every unix socket' >&2
@@ -95,9 +96,11 @@ printf '%s\n' 'ok: ai-sandbox exposes only ghtkn and ssh agent sockets'
 # network proxy 有効時も push と gh api が通るよう、github.com / api.github.com を許可する
 grep -Fq '"github.com"' "$source_nix"
 grep -Fq '"api.github.com"' "$source_nix"
+# shellcheck disable=SC2016
 grep -Fq 'domains=${codexDomainsToml}' "$source_nix"
 
 # sandbox では hosts.yml が denyRead されるため、gh は token を含まない config dir へ逃がす
+# shellcheck disable=SC2016
 grep -Fq 'GH_CONFIG_DIR="$HOME/.cache/ai-sandbox/gh"' "$root/lib/package-registry.nix"
 
 printf '%s\n' 'ok: codex proxy allows github domains and gh falls back to a tokenless config dir'
