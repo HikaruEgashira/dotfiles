@@ -1,0 +1,6 @@
+# substitutable-gate が「build」と分類した derivation のうち、cache.nixos.org に無いことを承知で持っているもの
+# 1 行 1 regex (hash を除いた drv 名に対して ERE)。`#` 以降は理由
+^(dagger|pleno-dlp|say-hook|oh-my-pi|node-darwin-arm64)-[0-9.]+\.drv$   # lib/package-registry.nix: 上流 darwin-arm64 binary の展開のみ
+^cica-[0-9.]+\.drv$                                                      # modules/fonts.nix: 上流 zip の展開のみ
+^(cargo|rustc|rust-std|rust-docs|clippy-preview|rustfmt-preview)-[0-9.]+-aarch64-apple-darwin\.drv$   # herdr flake input の rust-overlay toolchain (binary tarball の展開)。#215
+^herdr-[0-9.]+\.drv$                                                     # flake input から cargo build。#215
