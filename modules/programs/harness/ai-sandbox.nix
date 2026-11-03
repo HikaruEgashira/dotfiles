@@ -41,6 +41,8 @@ let
     "${home}/.zsh_history"
     "${home}/.config/nix/nix.conf"
     "${home}/.local/share/ghtkn"
+    # socket は許可するが、暗号化 token store は sandbox に読ませない
+    "${config.xdg.cacheHome}/ghtkn/agent"
     "${home}/.local/share/artex/local.env"
     "${home}/.local/share/artex/artex-secrets"
     # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。
