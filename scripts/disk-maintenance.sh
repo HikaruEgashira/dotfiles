@@ -4,11 +4,11 @@
 # 週次・年齢ベースの掃除は増加に追従しない (週 5GB 増えて 3GB しか消えない)。トリガを
 # 空き率に置き、回収できる段を順に試して目標に届いた時点で止める。
 # 各段の「失うもの」:
-#   1-3 nix    : 未参照 path と古い generation。再ビルドで戻る
-#   4   cache  : 再取得できるキャッシュ
-#   5   codex  : current 以外の Codex CLI release。auto-update が戻す
-#   6   trash  : 7 日以上放置されたゴミ箱
-#   7   podman : 未使用 image/container、CACHE_AGE_DAYS 起動していない停止済み VM、--podman-machine で指定した VM
+#   1-2 nix    : 古い generation と未参照 path、重複内容。再ビルドで戻る
+#   3   cache  : 再取得できるキャッシュ
+#   4   codex  : current 以外の Codex CLI release。auto-update が戻す
+#   5   trash  : 7 日以上放置されたゴミ箱
+#   6   podman : 未使用 image/container、CACHE_AGE_DAYS 起動していない停止済み VM、--podman-machine で指定した VM
 # 空き率に関係なく毎回やること:
 #   tombstone  : 退役した tool の state と sandbox fallback の .pnpm-store。宣言に無いので存在自体が drift
 #   sizes      : artex / containers / Documents/Codex の大きさを週次で記録し、前回比の増加を出す
@@ -182,22 +182,10 @@ record_sizes() {
   printf '%s\n' "$row" >>"$SIZES_TSV"
 }
 
-step_nix_generations() {
-  command -v nix-env >/dev/null || return 0
-  echo "==> nix: ${CACHE_AGE_DAYS}d より古い generation"
-  local profile
-  for profile in "$HOME/.nix-profile" "$HOME/.local/state/nix/profiles"/*; do
-    [ -e "$profile" ] || continue
-    case "$profile" in *-link) continue ;; esac
-    run nix-env --delete-generations "${CACHE_AGE_DAYS}d" -p "$profile"
-  done
-}
-
 step_nix_gc() {
-  command -v nix >/dev/null || return 0
-  echo "==> nix: 未参照 path の回収"
-  # nix-collect-garbage は ~/Library 配下の FUSE マウントを読みに行き失敗するため nix store gc を使う
-  run nix store gc
+  command -v nix-collect-garbage >/dev/null || return 0
+  echo "==> nix: ${CACHE_AGE_DAYS}d より古い generation と未参照 path の回収"
+  run nix-collect-garbage --delete-older-than "${CACHE_AGE_DAYS}d"
 }
 
 step_nix_optimise() {
@@ -395,7 +383,7 @@ if ! below_target; then
   exit 0
 fi
 
-for step in nix_generations nix_gc nix_optimise caches codex_releases trash podman; do
+for step in nix_gc nix_optimise caches codex_releases trash podman; do
   below_target || break
   "step_$step"
   pace "$step"
