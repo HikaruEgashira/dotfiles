@@ -539,9 +539,6 @@ let
       reason = "Hugging Face Hub CLI (hf / huggingface-cli)";
     })
 
-    # GUI apps are homebrew casks (modules/darwin/homebrew.nix): nix pins stale builds that hijack LaunchServices,
-    # and each flake.lock bump re-downloads hundreds of MiB (see docs/operations.md).
-
     (mkEntry {
       pkg = pkgs.ffmpeg;
       purpose = "util";
@@ -573,7 +570,7 @@ let
       reason = "GNU triangulated surface lib";
     })
 
-    # brew 野良移行 (output 全部が cache.nixos.org 200 確認済み)
+    # output 全部が cache.nixos.org 200 確認済み
     (mkEntry {
       pkg = pkgs.actionlint;
       purpose = "build";
@@ -641,6 +638,26 @@ let
 
   # CI evaluates on aarch64-linux; entries here must not leak into `cross`
   darwinOnly = lib.optionals isDarwin [
+    (mkEntry {
+      pkg = pkgs.aqua;
+      purpose = "util";
+      reason = "prebuilt CLI version manager";
+    })
+    (mkEntry {
+      pkg = pkgs.gcc-arm-embedded;
+      purpose = "build";
+      reason = "Arm bare-metal compiler from the Nix binary cache";
+    })
+    (mkEntry {
+      pkg = pkgs.iverilog;
+      purpose = "build";
+      reason = "Verilog simulator from the Nix binary cache";
+    })
+    (mkEntry {
+      pkg = pkgs.ghostty-bin;
+      purpose = "util";
+      reason = "terminal app from the Nix binary cache";
+    })
     (mkEntry {
       pkg = pkgs.cocoapods;
       purpose = "build";

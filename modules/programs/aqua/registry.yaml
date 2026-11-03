@@ -1,0 +1,63 @@
+packages:
+  - type: github_release
+    repo_owner: googleworkspace
+    repo_name: cli
+    asset: google-workspace-cli-{{.Arch}}-{{.OS}}.{{.Format}}
+    format: tar.gz
+    files:
+      - name: gws
+    replacements:
+      amd64: x86_64
+      arm64: aarch64
+      darwin: apple-darwin
+      linux: unknown-linux-musl
+      windows: pc-windows-msvc
+    checksum:
+      type: github_release
+      asset: "{{.Asset}}.sha256"
+      algorithm: sha256
+  - type: github_release
+    repo_owner: withgraphite
+    repo_name: homebrew-tap
+    asset: gt-{{.OS}}-{{.Arch}}
+    format: raw
+    overrides:
+      - goos: linux
+        goarch: amd64
+        asset: gt-{{.OS}}
+      - goos: darwin
+        replacements:
+          amd64: x64
+    files:
+      - name: gt
+    replacements:
+      darwin: macos
+    supported_envs:
+      - linux
+      - darwin
+  - type: github_release
+    repo_owner: higgsfield-ai
+    repo_name: cli
+    asset: hf_{{trimV .Version}}_{{.OS}}_{{.Arch}}.{{.Format}}
+    format: tar.gz
+    files:
+      - name: higgsfield
+        src: hf
+      - name: higgs
+        src: hf
+    checksum:
+      type: github_release
+      asset: checksums.txt
+      algorithm: sha256
+  - type: github_release
+    repo_owner: sisaku-security
+    repo_name: sisakulint
+    asset: sisakulint_{{trimV .Version}}_{{.OS}}_{{.Arch}}.{{.Format}}
+    format: tar.gz
+    supported_envs:
+      - linux
+      - darwin
+    checksum:
+      type: github_release
+      asset: sisakulint_{{trimV .Version}}_checksums.txt
+      algorithm: sha256

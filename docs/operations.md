@@ -22,7 +22,7 @@ clean な `main` は `origin/main` と同じでも build を毎回実行し、�
 
 ### 1.1 AI CLI の導入と更新
 
-Codex・Claude Code・OpenCode は Homebrew / Nix package にせず、公式のネイティブインストーラを使う。`nix run .#switch` の home-manager activation が未導入の CLI だけをインストールする。既存の実行ファイルや起動ラッパーは保持し、activation では更新しない。
+Codex・Claude Code・OpenCode は Nix package にせず、公式のネイティブインストーラを使う。`nix run .#switch` の home-manager activation が未導入の CLI だけをインストールする。既存の実行ファイルや起動ラッパーは保持し、activation では更新しない。
 
 | CLI         | 導入先                     | 更新               |
 | ----------- | -------------------------- | ------------------ |
@@ -30,9 +30,20 @@ Codex・Claude Code・OpenCode は Homebrew / Nix package にせず、公式の�
 | Claude Code | `~/.local/bin/claude`      | `claude update`    |
 | OpenCode 2  | `~/.opencode/bin/opencode` | `opencode upgrade` |
 
-導入処理は `modules/programs/harness/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。Homebrew 版が残っているマシンでは、ネイティブ版の起動確認後に該当パッケージを `brew uninstall` する。`--zap` は設定やセッションを削除し得るため使わない。
+導入処理は `modules/programs/harness/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。
 
 Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex などの外部ツールがこのパスにラッパーを置いている場合、そのツール側で更新後の再登録が必要になる。
+
+### 1.2 cache に無い package
+
+| 所有              | 対象                                     | 検証                                            |
+| ----------------- | ---------------------------------------- | ----------------------------------------------- |
+| Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty | `cache.nixos.org` の output                     |
+| Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`  | pin した release asset と `aqua-checksums.json` |
+| user activation   | Discord, Slack, Raycast, OBS             | download hash、bundle ID、Apple Team ID         |
+| system activation | Tailscale, Windows App, Xcode            | pkg/MAS と app の署名                           |
+
+Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。native app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
 
 ## 2. 何かを追加する
 
@@ -66,12 +77,12 @@ Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex 
 4. env を継承しない起動経路 (GUI / launchd) が legacy path を作り直すことがある。ツールが**書かない** config ファイルなら HM が所有してよい (`~/.npmrc` の `cache=` が実例)。ツール自身が書くファイル (`go env -w` の `GOENV`) は綱引きになるので所有しない。
 5. `nix run ~/dotfiles#xdg-audit` が exit 0 になることを確認してから commit する。
 
-### 2.5 nixpkgs に無い GUI / kext を足す
+### 2.5 Nix cache に output が無い package を足す
 
-1. `modules/darwin/homebrew.nix` の `casks` / `brews` / `masApps` に追加。
-2. 直前のコメントに nix 化できない理由を残す (例: `# nixpkgs broken`, `# kext required`)。
-3. 次回 switch で `brew bundle` が走る。即時反映だけしたい場合は `brew bundle --file=<generated>` を待たず `nix run .#switch` を回す。
-4. nix 化できるようになったら homebrew から削除し `lib/package-registry.nix` に移す。
+1. upstream が CLI の release binary を出しているなら `modules/programs/aqua/registry.yaml` と `aqua.yaml` に追加する。
+2. `AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum --config modules/programs/aqua/aqua.yaml --prune` で checksum を更新する。
+3. GUI の DMG は `modules/programs/native-apps/`、root が要る pkg/MAS は `modules/darwin/native-apps/` に置き、hash・bundle ID・Team ID を検証する。
+4. upstream binary がなく Nix cache にも output がない package は追加しない。
 
 npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@version` / `uvx --from pkg==version` を包む (初回実行時のみネットワーク)。常駐 daemon は npx のキャッシュ path が入れ替わるため、`npm install -g --prefix ~/.local/share/npm-global pkg@version` で固定 prefix に入れ、`~/.local/share/npm-global/bin` を PATH に置く。
 
@@ -235,7 +246,7 @@ tailscale serve status                                      # No serve config
 
 ### 4.3 `git push` が `Device not configured` で fail する
 
-`~/.gitconfig` の credential.helper が brew 由来 path に hardcode された旧症状 (PR #15 で修正済)。再発したら:
+`~/.gitconfig` の credential.helper が削除済み package manager の path に hardcode された旧症状 (PR #15 で修正済)。再発したら:
 
 ```bash
 nix run ~/dotfiles#switch
@@ -361,8 +372,7 @@ curl -fsSL https://nixos.org/nix/install | sh -s -- --daemon
 gh repo clone HikaruEgashira/dotfiles ~/dotfiles
 nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
-# 3) Homebrew は switch 内の activation が homebrew module 経由で同期する
-#    (手で brew bundle は叩かない)
+# 3) switch が Aqua link と native app bootstrap まで適用する
 ```
 
 ## 7. 容量
@@ -372,8 +382,8 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 | 回収経路                            | 対象                                                                                       | 2026-10-25 の回収量 |
 | ----------------------------------- | ------------------------------------------------------------------------------------------ | ------------------- |
 | ladder (6h 毎、空き 10% 未満で発火) | nix 世代 / GC / 再取得できる cache / Codex 旧 release / ゴミ箱 / 30 日起動の無い podman VM | 数百 MB〜数 GB      |
-| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise, cask 残骸の `share/`                   | 20G                 |
-| 手動 / `--podman-machine NAME`      | 停止済み VM、未宣言 brew formula/cask、project 毎の provider 複製、`.pnpm-store`           | 17G                 |
+| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise                                         | 20G                 |
+| 手動 / `--podman-machine NAME`      | 停止済み VM、project 毎の provider 複製、`.pnpm-store`                                     | 17G                 |
 | `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (artex import、Codex 作業 dir、旧 workspace)            | 13G (S3 へ)         |
 | OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`               | 25G (未実施、#166)  |
 

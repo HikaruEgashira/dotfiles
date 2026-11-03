@@ -1,0 +1,18 @@
+checksum:
+  enabled: true
+  require_checksum: true
+  supported_envs:
+    - darwin
+registries:
+  - name: local
+    type: local
+    path: registry.yaml
+packages:
+  - name: googleworkspace/cli@v0.22.5
+    registry: local
+  - name: withgraphite/homebrew-tap@v1.8.6
+    registry: local
+  - name: higgsfield-ai/cli@v1.2.3
+    registry: local
+  - name: sisaku-security/sisakulint@v0.3.8
+    registry: local

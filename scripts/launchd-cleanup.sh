@@ -27,17 +27,12 @@ sudo rm -f /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
 sudo rm -rf "/Library/Application Support/com.cloudflare.cloudflared"
 
 # --- Tunnelblick: no VPN profiles; openvpn is nix-managed ----------------------
-say "Tunnelblick: removing cask + daemon"
-brew uninstall --cask tunnelblick 2>/dev/null || true
+say "Tunnelblick: removing app + daemon"
+sudo rm -rf "/Applications/Tunnelblick.app"
 sudo launchctl bootout system/net.tunnelblick.tunnelblick.tunnelblickd 2>/dev/null || true
 sudo launchctl bootout "gui/$(id -u)/net.tunnelblick.launcher" 2>/dev/null || true
 sudo rm -f /Library/LaunchDaemons/net.tunnelblick.tunnelblick.tunnelblickd.plist
 sudo rm -rf "/Library/Application Support/Tunnelblick"
-
-# --- untracked brew formulae superseded by nix --------------------------------
-say "brew: removing watchman/cloudflared (superseded by nix)"
-brew uninstall --formula watchman 2>/dev/null || true
-brew uninstall --formula cloudflared 2>/dev/null || true
 
 # --- WARP support dir (updater may recreate it) -------------------------------
 sudo rm -rf "/Library/Application Support/Cloudflare"

@@ -1,6 +1,6 @@
 # dotfiles
 
-hikae's reproducible dev environment, declared as a Nix flake on top of [nix-darwin](https://github.com/nix-darwin/nix-darwin) and [home-manager](https://github.com/nix-community/home-manager). The OS layer (`/etc`, `defaults`, sudo/PAM, firewall, Homebrew) is `darwinConfigurations.hikae` from `hosts/macbook-air` and needs root; the user layer (packages, dotfiles, launchd agents) is `homeConfigurations.hikae` from `home.nix` and activates as the user. CI evaluates the home-manager configuration and builds a minimum equipment closure on `aarch64-linux` to keep the modules portable.
+hikae's reproducible dev environment, declared as a Nix flake on top of [nix-darwin](https://github.com/nix-darwin/nix-darwin) and [home-manager](https://github.com/nix-community/home-manager). The OS layer (`/etc`, `defaults`, sudo/PAM, firewall, signed system installers) is `darwinConfigurations.hikae` from `hosts/macbook-air` and needs root; the user layer (packages, Aqua, dotfiles, launchd agents) is `homeConfigurations.hikae` from `home.nix` and activates as the user. CI evaluates the home-manager configuration and builds a minimum equipment closure on `aarch64-linux` to keep the modules portable.
 
 ## Install
 
@@ -39,12 +39,13 @@ modules/
     nix.nix              nix.conf (daemon settings, substituters, trusted users)
     security.nix         application firewall + verification, Touch ID sudo, Wi-Fi DNS
     system.nix           stateVersion, primary user, SoftwareUpdate defaults
-    homebrew.nix         nixpkgs に無い formulae / casks / mas (逃げ場)
+    native-apps.nix      signed pkg / Mac App Store bootstrap
   home.nix               username, ~/.npmrc, identity
   packages.nix           CLI / GUI / build deps via nixpkgs
   fonts.nix              Cica + PlemolJP NF (fontconfig)
   programs/
     artex.nix            launchd agents: ARTEX + Postgres on loopback, no inbound exposure
+    aqua.nix             checksum 必須の prebuilt CLI registry
     aws.nix              ~/.aws/config; readonly default + step-up MFA role
     cli-tools.nix        fzf / bat / lsd / aria2 / starship
     cmux.nix             cmux settings.json + macOS defaults
@@ -60,5 +61,5 @@ modules/
 ## Conventions
 
 - `pkgs.<name>` でいけるものは `lib/package-registry.nix` に `mkEntry { pkg; purpose; reason; }` で宣言。設定が要るものは `modules/programs/<name>.nix` に分離。
-- `modules/darwin/homebrew.nix` は **逃げ場**。nixpkgs 化できたら追い出す。各エントリに残す理由をコメントで残す。
+- cache に無い prebuilt CLI は `modules/programs/aqua/`、GUI は署名を検証する native installer に置き、source build はしない。
 - 全 nix / yaml / md / sh は `nix fmt` (treefmt: nixfmt + prettier + shfmt) で揃える。CI は整形、lint、home-manager の eval と determinism、最小構成のビルドを検証する。

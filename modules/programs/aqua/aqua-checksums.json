@@ -1,0 +1,44 @@
+{
+  "checksums": [
+    {
+      "id": "github_release/github.com/googleworkspace/cli/v0.22.5/google-workspace-cli-aarch64-apple-darwin.tar.gz",
+      "checksum": "1D2A9FFD5BC9B2C2C4B48630DAF082FAD13D9E57D741988A2C248EED562F7DAC",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/googleworkspace/cli/v0.22.5/google-workspace-cli-x86_64-apple-darwin.tar.gz",
+      "checksum": "51F9BD731404D4BBA26C36E2E30DD68C56DCCD1F834C01252CB0B14D6A6544B2",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/higgsfield-ai/cli/v1.2.3/hf_1.2.3_darwin_amd64.tar.gz",
+      "checksum": "C97C702127ED74381BD24EAFDC8CF0B917D9C4A1ED1D512483A7676DD1D3FD2A",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/higgsfield-ai/cli/v1.2.3/hf_1.2.3_darwin_arm64.tar.gz",
+      "checksum": "613D83B9288ABDEC08B85E0DA984DF62FAF550E391976C7FE4468D5AA34DAEAE",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/sisaku-security/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_amd64.tar.gz",
+      "checksum": "DD3107CACC022332428BC05995B1A4CF4D5FCDFFDCF04F7B8047FD580E183A73",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/sisaku-security/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_arm64.tar.gz",
+      "checksum": "4816E02BF8579B3D08AA5442014A06F646F8C963B8C1CE80C33C3ACCF2950F48",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/withgraphite/homebrew-tap/v1.8.6/gt-macos-arm64",
+      "checksum": "9153B4B6D9AD8084EC700A1FB80DD8A4B35C08C3116BF41F1FCDD792B326781F",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/withgraphite/homebrew-tap/v1.8.6/gt-macos-x64",
+      "checksum": "A7623F7C545487F69AA593D2BB3DAE76B06FCE544116A3E0F6EEB34291371678",
+      "algorithm": "sha256"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+registries:
+  - name: local
+    type: local
+    path: registry.yaml
+packages:
+  - name: googleworkspace/cli
+    registry: local
+  - name: withgraphite/homebrew-tap
+    registry: local
+  - name: higgsfield-ai/cli
+    registry: local
+  - name: sisaku-security/sisakulint
+    registry: local

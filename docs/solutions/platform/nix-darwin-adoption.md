@@ -2,13 +2,13 @@
 
 ## 決定
 
-マシン層 (`/etc`, `defaults`, sudo/PAM, ALF, launchd, Homebrew) は nix-darwin が宣言管理する。Nix daemon と `/etc/nix/nix.conf` も nix-darwin の所有とし、Determinate Nix は使わない。ユーザー層は home-manager のまま `home-manager.users.hikae` として同じ flake から評価する。
+マシン層 (`/etc`, `defaults`, sudo/PAM, ALF, launchd, signed pkg) は nix-darwin が宣言管理する。Nix daemon と `/etc/nix/nix.conf` も nix-darwin の所有とし、Determinate Nix は使わない。ユーザー層は home-manager のまま `home-manager.users.hikae` として同じ flake から評価する。
 
 ## 構成
 
 - 入口は `hosts/macbook-air/default.nix`、実装は `modules/darwin/*`。2 台目はホスト module を足して `darwinConfigurations` に追加する。
 - 適用は `nix run .#switch` (= `sudo darwin-rebuild switch --flake .#hikae`)。root が要るため 09:00 の `dotfiles-sync` は build 検証と `pending` 記録までに留める。
-- Homebrew は `modules/darwin/homebrew.nix` が Brewfile を生成し、activation で `sudo --user=hikae brew bundle` を実行する。
+- system extension を含む app は `modules/darwin/native-apps.nix` が上流 pkg の hash・installer 署名・app 署名を検証する。
 - firewall は `networking.applicationFirewall` で設定し、activation 末尾で `socketfilterfw` の実効値を読み戻して失敗させる。
 
 ## 根拠

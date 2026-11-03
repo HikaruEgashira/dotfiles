@@ -21,7 +21,7 @@ let
       "!${pkgs.gh}/bin/gh auth git-credential";
 
   # git-lfs invoked by absolute store path: hooks must survive PATH-sanitized
-  # environments (e.g. Homebrew's superenv during `brew tap`)
+  # environments that sanitize PATH
   lfsHook =
     name:
     pkgs.writeShellScript "git-lfs-${name}" ''

@@ -519,6 +519,20 @@
         builtins.seq (mkHome system).activationPackage.drvPath (
           pkgs.runCommand "home-eval" { } "touch $out"
         );
+      noHomebrewCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        pkgs.runCommand "no-homebrew" { nativeBuildInputs = [ pkgs.ripgrep ]; } ''
+          manager=brew
+          if rg -n "home$manager[[:space:]]*=|/opt/home$manager|$manager (install|uninstall|bundle)" ${self}; then
+            echo "Homebrew operational dependency is forbidden" >&2
+            exit 1
+          fi
+          test ! -e ${self}/modules/darwin/homebrew.nix
+          touch "$out"
+        '';
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
@@ -550,6 +564,7 @@
           build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
           mel = melFor "aarch64-linux";
+          brew-free = noHomebrewCheckFor "aarch64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
@@ -558,6 +573,7 @@
           build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
           mel = melFor "x86_64-linux";
+          brew-free = noHomebrewCheckFor "x86_64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
@@ -567,6 +583,7 @@
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
           "home-eval" = homeEvalCheckFor "aarch64-darwin";
+          brew-free = noHomebrewCheckFor "aarch64-darwin";
         };
       };
     };

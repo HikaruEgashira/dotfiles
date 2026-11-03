@@ -8,8 +8,9 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | --- | --- |
 | `pkgs.<name>` だけで足りる package | `lib/package-registry.nix` に `mkEntry { pkg; purpose; reason; }` |
 | 設定が要る program | `modules/programs/<name>.nix` を作り `home.nix` に import |
-| システム層 (nix.conf, firewall, sudo, Homebrew) | `modules/darwin/*.nix` |
-| nixpkgs に無い GUI / kext | `modules/darwin/homebrew.nix` (理由と nix 化のトリガーを行コメントで) |
+| システム層 (nix.conf, firewall, sudo, signed pkg) | `modules/darwin/*.nix` |
+| upstream binary の CLI | `modules/programs/aqua/` の local registry + checksum |
+| nixpkgs cache に無い GUI | `modules/programs/native-apps/`、root installer は `modules/darwin/native-apps/` |
 | AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
@@ -30,14 +31,14 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - 適用の要否は変更内容と実機の状態で判断する。変更ファイルの場所だけで OS 適用を決めない。
 - OS 設定・サービスなどに未反映の変更がある場合だけ darwin-rebuild を実行する。OS 適用を伴う switch は sandbox 外で実行する。
 - ユーザー層だけの反映には Home Manager の activationPackage を使い、OS 全体を適用しない。
-- Homebrew 本体の削除が完了し、宣言から再導入指定を除いただけなら OS 適用は不要。宣言と実機の両方を確認する。
+- root installer の追加・変更は darwin-rebuild、Aqua とユーザー app だけなら Home Manager を適用する。
 - docs / AGENTS.md / CI / tests だけの変更では switch しない。
 
 ## 規約
 
 - declarative 優先。シェルから `git config --global` 等で永続変更しない。
 - `home.packages` を直接書かず ledger 経由にする。purpose は `build/edit/ops/comm/observe/play/util`。
-- ローカル source build 禁止。`cache.nixos.org` から output が取れる pkg だけを registry に入れ、無いものは Homebrew か上流の署名済みインストーラへ逃がす。`overrideAttrs` でハッシュを変質させるパッチも禁止。
+- ローカル source build 禁止。`cache.nixos.org` から output が取れる pkg だけを Nix registry に入れ、無い CLI は checksum 必須の Aqua、GUI は hash と Team ID を検証する上流署名済み installer へ逃がす。`overrideAttrs` でハッシュを変質させるパッチも禁止。
 - git transport は HTTPS only。認証は `ghtkn git-credential` (GitHub App `ghtkn-hikae` の 8h user access token)。`gh` も ghtkn 経由の wrapper。再認証は `ghauth` を端末で実行する。
 - 新規 secret は `direnv` でセッション局所に閉じ、commit も `home.file` へのハードコードもしない。
 - `flake.lock` は週次 workflow が更新する。手動で書き換えない。

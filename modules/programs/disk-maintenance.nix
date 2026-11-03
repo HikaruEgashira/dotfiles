@@ -25,7 +25,7 @@
             pkgs.podman
             pkgs.python3
           ]
-          + ":/opt/homebrew/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          + ":/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "${config.home.homeDirectory}/.cache/disk-maintenance.log";
       StandardErrorPath = "${config.home.homeDirectory}/.cache/disk-maintenance.err";

@@ -45,7 +45,7 @@ GUI アプリが登録する background item は次のとおり（app 側が管�
 | `us.zoom.updater` / `us.zoom.updater.login.check` | Zoom updater           |
 | `com.google.GoogleUpdater.wake`                   | Google Chrome          |
 | `com.openssh.ssh-agent`                           | macOS 標準             |
-| `io.tailscale.ipn.macsys.login-item-helper`       | Tailscale (cask)       |
+| `io.tailscale.ipn.macsys.login-item-helper`       | Tailscale vendor pkg   |
 | `com.openai.codex-sparkle-{progress,updater}`     | Codex (cask)           |
 | `jp.kiok.nani.ShipIt`                             | Nani                   |
 
@@ -68,7 +68,6 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 | `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | スクリプト実行待ち (root) |
 | `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | スクリプト実行待ち (root) |
 | `net.tunnelblick.tunnelblick{,.launcher}` + cask                                  | VPN プロファイルが空。`openvpn` は nix 管理                               | スクリプト実行待ち (root) |
-| brew `watchman` / `cloudflared`                                                   | nix 重複                                                                  | 削除済み                  |
 | watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                  |
 
 ## 検知

@@ -5,6 +5,6 @@ _:
     ../../modules/darwin/system.nix
     ../../modules/darwin/nix.nix
     ../../modules/darwin/security.nix
-    ../../modules/darwin/homebrew.nix
+    ../../modules/darwin/native-apps.nix
   ];
 }

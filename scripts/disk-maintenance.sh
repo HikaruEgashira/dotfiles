@@ -88,14 +88,12 @@ CACHES=(
 
 # 存在してはいけない path。退役済みで、再出現は env 漏れ (GOPATH 無しの process) か sandbox の fallback
 TOMBSTONES=(
-  "$HOME/go"                                     # GOPATH は ~/.local/share/go へ移設済み (xdg-entries)
-  "$HOME/Library/pnpm"                           # pnpm store は XDG_DATA_HOME 配下。XDG 以前の store
-  "$HOME/.local/share/mise"                      # mise は nix へ置換済み (registry に無い)
-  "$HOME/.config/mise"                           # 同上
-  "$HOME/.local/state/mise"                      # 同上
-  "$HOME/.cache/mise"                            # 同上
-  "/opt/homebrew/share/android-commandlinetools" # cask は uninstall 済み。sdkmanager が落とした ndk が残る (#167)
-  "/opt/homebrew/share/google-cloud-sdk"         # 同上
+  "$HOME/go"                # GOPATH は ~/.local/share/go へ移設済み (xdg-entries)
+  "$HOME/Library/pnpm"      # pnpm store は XDG_DATA_HOME 配下。XDG 以前の store
+  "$HOME/.local/share/mise" # mise は nix へ置換済み (registry に無い)
+  "$HOME/.config/mise"      # 同上
+  "$HOME/.local/state/mise" # 同上
+  "$HOME/.cache/mise"       # 同上
 )
 
 avail_mib() { df -Pk "$HOME" | awk 'NR==2 {print int($4 / 1024)}'; }

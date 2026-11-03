@@ -36,7 +36,7 @@ in
       RunAtLoad = false;
       EnvironmentVariables = {
         HOME = config.home.homeDirectory;
-        PATH = "${config.home.homeDirectory}/.opencode/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+        PATH = "${config.home.homeDirectory}/.opencode/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "${config.home.homeDirectory}/.cache/opencode-service-health.log";
       StandardErrorPath = "${config.home.homeDirectory}/.cache/opencode-service-health.err";

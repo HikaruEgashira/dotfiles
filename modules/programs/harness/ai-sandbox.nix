@@ -16,7 +16,6 @@ let
     "/tmp"
     "/private/tmp"
     "/private/var/folders"
-    "/opt/homebrew"
     "/usr/local"
   ];
 

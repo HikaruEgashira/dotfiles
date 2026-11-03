@@ -49,12 +49,12 @@
         typeset -U path PATH
         path=(
           "$HOME/.nix-profile/bin"
+          "$HOME/.local/share/aquaproj-aqua/bin"
           "$HOME/.local/bin"
           "$HOME/.local/share/npm-global/bin"
           "$HOME/.opencode/bin"
           "$HOME/.pdtm/go/bin"
           "$HOME/.spicetify"
-          /opt/homebrew/bin
           /usr/local/bin
           $path
         )
