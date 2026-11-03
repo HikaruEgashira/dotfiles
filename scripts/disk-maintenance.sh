@@ -7,6 +7,7 @@
 #   1-2 nix    : 古い generation と未参照 path、重複内容。再ビルドで戻る
 #   3   cache  : 再取得できるキャッシュ
 #   4   codex  : current 以外の Codex CLI release。auto-update が戻す
+#   4b  artex  : deploy 世代 (backups/ deploy-staging/) の新しい ARTEX_KEEP 個以外。直前世代へ戻せれば足りる
 #   5   trash  : 7 日以上放置されたゴミ箱
 #   6   podman : 未使用 image/container、CACHE_AGE_DAYS 起動していない停止済み VM、--podman-machine で指定した VM
 # 空き率に関係なく毎回やること:
@@ -87,6 +88,13 @@ CACHES=(
   "$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle"
   "$HOME/.local/share/artex/import" # 取り込み済みの残骸。元データから再取り込みできる
 )
+
+# artex/ (server の data dir) と pg/ は消さない。世代 dir だけ新しい順に残す
+ARTEX_GENERATION_DIRS=(
+  "$HOME/.local/share/artex/backups"
+  "$HOME/.local/share/artex/deploy-staging"
+)
+ARTEX_KEEP=2
 
 SIZES_TSV=$HOME/.local/state/disk-maintenance/sizes.tsv
 SIZES_INTERVAL_DAYS=7
@@ -228,6 +236,21 @@ step_codex_releases() {
     [ -d "$rel" ] || continue
     [ "$(cd "$rel" && pwd -P)" != "$current" ] || continue
     run rm -rf "$rel"
+  done
+}
+
+step_artex_generations() {
+  local dir gen n
+  echo "==> artex: 新しい ${ARTEX_KEEP} 世代以外の deploy 残骸"
+  for dir in "${ARTEX_GENERATION_DIRS[@]}"; do
+    [ -d "$dir" ] || continue
+    n=0
+    # mtime 降順。世代 dir 名は hash で順序を持たないので時刻で切る
+    while IFS= read -r gen; do
+      n=$((n + 1))
+      [ "$n" -gt "$ARTEX_KEEP" ] || continue
+      run rm -rf "$gen"
+    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -exec stat -f '%m %N' {} + 2>/dev/null | sort -rn | cut -d' ' -f2-)
   done
 }
 
@@ -383,7 +406,7 @@ if ! below_target; then
   exit 0
 fi
 
-for step in nix_gc nix_optimise caches codex_releases trash podman; do
+for step in nix_gc nix_optimise caches codex_releases artex_generations trash podman; do
   below_target || break
   "step_$step"
   pace "$step"

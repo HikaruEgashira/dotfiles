@@ -34,6 +34,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 - ユーザー層だけの反映には Home Manager の activationPackage を使い、OS 全体を適用しない。
 - root installer の追加・変更は darwin-rebuild、Aqua だけなら Home Manager を適用する。
 - docs / AGENTS.md / CI / tests だけの変更では switch しない。
+- 適用は `~/dotfiles` の main からだけ行う。worktree や並行 agent から activationPackage / switch を実行しない。同時に走った activation は互いの generation を上書きし、host の状態が最後に走った branch で決まる。
 
 ## 規約
 

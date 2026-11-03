@@ -114,8 +114,9 @@ in
     };
   };
 
-  # hm-session-vars は login shell では読まれないため、envExtra でも同じ値を固定する
+  # hm-session-vars は login shell では読まれないため、envExtra でも同じ値を固定する。
+  # sandbox wrapper が署名 socket を指定して起動した shell では上書きしない
   programs.zsh.envExtra = lib.mkAfter ''
-    export SSH_AUTH_SOCK=${lib.escapeShellArg agentSocket}
+    [ "''${SSH_AUTH_SOCK-}" = ${lib.escapeShellArg signAgentSocket} ] || export SSH_AUTH_SOCK=${lib.escapeShellArg agentSocket}
   '';
 }

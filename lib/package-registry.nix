@@ -145,6 +145,25 @@ let
     else
       null;
 
+  # flake input だと rust toolchain ごと local build になる。上流 release の署名無し raw binary を展開だけする
+  herdr =
+    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
+      pkgs.stdenvNoCC.mkDerivation {
+        pname = "herdr";
+        version = "0.9.5";
+        src = pkgs.fetchurl {
+          url = "https://github.com/ogulcancelik/herdr/releases/download/v0.9.5/herdr-macos-aarch64";
+          hash = "sha256-+3fCIyoFqANUITgsiUOS9BdOTjihjkivPdApAVfDp+I=";
+        };
+        dontUnpack = true;
+        dontFixup = true;
+        installPhase = ''
+          install -Dm755 $src "$out/bin/herdr"
+        '';
+      }
+    else
+      null;
+
   # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
   evenTerminal = pkgs.writeShellApplication {
     name = "even-terminal";
@@ -519,9 +538,9 @@ let
     })
 
     (mkEntry {
-      pkg = pkgs.herdr;
+      pkg = herdr;
       purpose = "edit";
-      source = "flake:ogulcancelik/herdr";
+      source = "github:ogulcancelik/herdr/releases";
       reason = "AI coding agent multiplexer (TUI)";
     })
     (mkEntry {
@@ -724,6 +743,7 @@ in
     cross
     darwinOnly
     darwinArmOnly
+    herdr
     sayHook
     ;
   all = cross ++ ghtknOnly ++ darwinOnly ++ darwinArmOnly;

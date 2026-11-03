@@ -8,7 +8,7 @@ aws_nix="$root/modules/programs/aws.nix"
 
 # sandbox 向け profile は broker client だけを使い、SSO token store を読む source profile は host 専用に分ける
 grep -Fq 'Label = "dev.egahika.aws-cred-agent";' "$aws_nix"
-for p in sso-readonly sso-admin seccamp-src iac-aws-apply-chain artex-microvm-chain seccamp-lab-apply-chain; do
+for p in sso-readonly sso-admin iac-aws-apply-chain artex-microvm-chain seccamp-lab-apply-chain; do
   # shellcheck disable=SC2016 # Match the literal Nix interpolation.
   grep -Fq 'credential_process = ${client} '"$p" "$aws_nix"
   grep -Fq "\"$p\"" "$aws_nix"

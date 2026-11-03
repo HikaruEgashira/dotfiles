@@ -134,3 +134,7 @@ if grep -Fq 'hikaevi' <<<"$(list_body secrets)"; then
 fi
 
 printf '%s\n' 'ok: claude sandbox cannot inherit a PAT and keeps the hikaevi installation token cache'
+
+# 署名 socket を指定して起動された shell (sandbox wrapper) では envExtra が SSH_AUTH_SOCK を認証 agent へ戻さない
+grep -Fq "[ \"''\${SSH_AUTH_SOCK-}\" = \${lib.escapeShellArg signAgentSocket} ] || export SSH_AUTH_SOCK=" "$root/modules/programs/ssh.nix"
+printf '%s\n' 'ok: zsh envExtra keeps the sign agent socket when already selected'

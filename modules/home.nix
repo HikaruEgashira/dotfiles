@@ -33,6 +33,7 @@
         minimum-release-age=4320
         trust-policy=no-downgrade
         strict-dep-builds=true
+        store-dir=/Users/hikae/.local/share/pnpm/store
       '';
       force = true;
     };

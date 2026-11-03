@@ -23,7 +23,6 @@ let
   sourceProfiles = [
     "sso-readonly"
     "sso-admin"
-    "seccamp-src"
     "iac-aws-apply-chain"
     "artex-microvm-chain"
     "seccamp-lab-apply-chain"
@@ -53,8 +52,6 @@ in
           "--allow"
           p
         ]) sourceProfiles;
-      # seccamp-src の credential_process は PATH 上の CLI に依存する
-      EnvironmentVariables.PATH = "${home}/.nix-profile/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       RunAtLoad = true;
       KeepAlive = true;
       StandardOutPath = "${home}/Library/Logs/aws-cred-agent.log";
@@ -81,10 +78,6 @@ in
     sso_account_id = 951872725222
     sso_role_name = AdministratorAccess
 
-    [profile seccamp-src]
-    region             = ap-northeast-1
-    credential_process = ${home}/.config/secrets/seccamp-credential-process
-
     # `default` = Identity Center ReadOnlyAccess permission set (長期 AKIA なし)。
     [default]
     region = ap-northeast-1
@@ -94,10 +87,6 @@ in
     [profile hikae-admin-sso]
     region = ap-northeast-1
     credential_process = ${client} sso-admin
-
-    [profile seccamp]
-    region             = ap-northeast-1
-    credential_process = ${client} seccamp-src
 
     # sso-admin → iac-aws-apply の role chain (CI と権限パリティ)。
     # chaining のためセッションは 1h だが、host の CLI が無プロンプトで再 assume する。

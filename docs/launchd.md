@@ -67,13 +67,13 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 
 残骸・重複。`scripts/launchd-cleanup.sh` を通常ユーザで実行して削除する（内部で必要な箇所だけ `sudo` を呼ぶ。冪等）。
 
-| 対象                                                                              | 理由                                                                      | 状態 (2026-11-03)                                                                     |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | 未ロード。`~/Library/LaunchAgents` の plist と root の dir が残り、スクリプト実行待ち |
-| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | 削除済み                                                                              |
-| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | 削除済み                                                                              |
-| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | 削除済み                                                                              |
-| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み                                                                              |
+| 対象                                                                              | 理由                                                                      | 状態 (2026-11-03) |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
+| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | 削除済み          |
+| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | 削除済み          |
+| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | 削除済み          |
+| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | 削除済み          |
+| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み          |
 
 ## 検知
 

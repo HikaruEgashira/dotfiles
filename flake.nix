@@ -24,10 +24,6 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    herdr = {
-      url = "github:ogulcancelik/herdr";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -37,15 +33,10 @@
       nix-darwin,
       home-manager,
       treefmt-nix,
-      herdr,
       ...
     }:
     let
-      overlays = [
-        (final: _prev: {
-          herdr = herdr.packages.${final.stdenv.hostPlatform.system}.default;
-        })
-      ];
+      overlays = [ ];
 
       pkgsFor =
         system:
@@ -171,8 +162,7 @@
               | ${pkgs.jq}/bin/jq -r 'sort_by(.purpose, .name) | .[] | [.purpose, .source, .name, .reason] | @tsv' \
               | ${pkgs.gawk}/bin/awk -F'\t' '{ printf "  %-8s %-9s %-32s %s\n", $1, $2, $3, $4 }'
             echo ""
-            export PATH=${pkgs.coreutils}/bin
-            exec ${pkgs.bash}/bin/bash ${./scripts/gh-extension-audit.sh} \
+            exec ${pkgs.python3}/bin/python3 ${./scripts/gh_extensions.py} \
               "''${XDG_DATA_HOME:-$HOME/.local/share}/gh/extensions"
           '';
         in

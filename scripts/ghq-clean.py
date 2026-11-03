@@ -17,9 +17,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gh_extensions  # noqa: E402
+
 CACHE_VERSION = 1
 DEFAULT_DAYS = 14
-GH_EXTENSION_DIR = Path.home() / ".local" / "share" / "gh" / "extensions"
+GH_EXTENSION_DIR = gh_extensions.DEFAULT_DIR
 DEFAULT_TTL_SECONDS = 24 * 60 * 60
 MAX_ALIASES = 25
 APPLY_METADATA_MAX_AGE = 5 * 60
@@ -469,17 +472,10 @@ def metadata_for(
 
 
 def read_extension_targets(directory: Path = GH_EXTENSION_DIR) -> frozenset[str]:
-    targets = set()
     try:
-        entries = list(directory.iterdir())
-    except FileNotFoundError:
-        return frozenset()
+        return gh_extensions.symlink_targets(directory)
     except OSError as exc:
         raise ScanError(f"cannot enumerate gh extension directory: {directory}") from exc
-    for entry in entries:
-        if entry.is_symlink():
-            targets.add(str(entry.resolve(strict=False)))
-    return frozenset(targets)
 
 
 def read_orca_setups() -> list[Setup]:
