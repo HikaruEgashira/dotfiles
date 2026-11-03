@@ -527,6 +527,7 @@ def inspect_row(
     days: int,
     now: int,
     extension_targets: frozenset[str] | None = frozenset(),
+    allow_unpushed: bool = False,
 ) -> Row:
     if local.error:
         return Row(local, metadata, "unknown", local.error)
@@ -539,6 +540,13 @@ def inspect_row(
         reasons.append("dirty")
     if local.linked_worktrees:
         reasons.append(f"linked_worktrees={len(local.linked_worktrees)}")
+    if not allow_unpushed:
+        if local.local_only_commits is None:
+            return Row(local, metadata, "unknown", "local-only commit count unavailable")
+        if local.local_only_commits > 0:
+            reasons.append(f"local_only_commits={local.local_only_commits}")
+        if local.upstreamless_branches:
+            reasons.append(f"upstreamless_branches={len(local.upstreamless_branches)}")
     if reasons:
         return Row(local, metadata, "protected", ",".join(reasons))
     if local.slug is None:
@@ -572,6 +580,7 @@ def inspect(
     force: bool = False,
     refresh_stale: bool = True,
     metadata_override: dict[str, Metadata] | None = None,
+    allow_unpushed: bool = False,
 ) -> tuple[list[Row], int, int]:
     paths, linked_count, nonrepo_count = discover_roots(root)
     local = [snapshot_repo(path) for path in paths]
@@ -602,6 +611,7 @@ def inspect(
             days,
             int(time.time()),
             extension_targets,
+            allow_unpushed,
         )
         for repo in local
     ]
@@ -684,7 +694,14 @@ def host_selector(host_id: str) -> str:
     raise ScanError("Orca host selector is unavailable")
 
 
-def apply_rows(rows: list[Row], root: Path, days: int, ttl_seconds: int, cache_path: Path) -> int:
+def apply_rows(
+    rows: list[Row],
+    root: Path,
+    days: int,
+    ttl_seconds: int,
+    cache_path: Path,
+    allow_unpushed: bool = False,
+) -> int:
     initial = {str(row.local.path): row for row in rows if row.state == "candidate"}
     if not initial:
         print("apply: no fresh safe candidates")
@@ -720,6 +737,7 @@ def apply_rows(rows: list[Row], root: Path, days: int, ttl_seconds: int, cache_p
         cache_path,
         refresh_stale=False,
         metadata_override=refreshed_metadata,
+        allow_unpushed=allow_unpushed,
     )
     refreshed = {str(row.local.path): row for row in fresh_rows if row.state == "candidate"}
     if set(refreshed) != set(initial):
@@ -861,19 +879,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cache-ttl-hours", type=int, default=24)
     parser.add_argument("--ghq-root", type=Path, default=Path.home() / "ghq" / "github.com")
     parser.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "ghq-clean" / "metadata.json")
+    parser.add_argument(
+        "--allow-unpushed",
+        action="store_true",
+        help="treat clones with local-only commits or upstreamless branches as candidates",
+    )
     args = parser.parse_args(argv)
     if args.days < 1 or args.cache_ttl_hours < 1:
         parser.error("--days and --cache-ttl-hours must be positive integers")
     try:
         rows, linked_count, nonrepo_count = inspect(
-            args.ghq_root, args.days, args.cache_ttl_hours * 3600, args.cache
+            args.ghq_root, args.days, args.cache_ttl_hours * 3600, args.cache, allow_unpushed=args.allow_unpushed
         )
     except ScanError as exc:
         print(f"ghq-clean: {exc}", file=sys.stderr)
         return 2
     print_rows(rows, linked_count, nonrepo_count)
     if args.apply:
-        return apply_rows(rows, args.ghq_root, args.days, args.cache_ttl_hours * 3600, args.cache)
+        return apply_rows(
+            rows, args.ghq_root, args.days, args.cache_ttl_hours * 3600, args.cache, allow_unpushed=args.allow_unpushed
+        )
     return 0
 
 

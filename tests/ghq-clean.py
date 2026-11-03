@@ -57,7 +57,15 @@ class GhqCleanTest(unittest.TestCase):
         timestamp = dt.datetime.fromtimestamp(commit_time, tz=dt.timezone.utc).isoformat()
         env.update({"GIT_AUTHOR_DATE": timestamp, "GIT_COMMITTER_DATE": timestamp})
         git(path, "commit", "--quiet", "-m", "fixture", env=env)
-        git(path, "remote", "add", "origin", f"https://github.com/{slug}.git")
+        mirror = self.base / "mirrors" / slug.replace("/", "-")
+        subprocess.run(["git", "init", "--quiet", "--bare", str(mirror)], check=True, capture_output=True)
+        git(path, "remote", "add", "origin", str(mirror))
+        git(path, "push", "--quiet", "--set-upstream", "origin", "main")
+        git(path, "remote", "set-url", "origin", f"https://github.com/{slug}.git")
+
+    def unpush(self, path: Path) -> None:
+        git(path, "update-ref", "-d", "refs/remotes/origin/main")
+        git(path, "branch", "--unset-upstream", "main")
 
     def metadata(self, *, archived: bool = False, pushed_at: int = 946684800, fetched_at: int = 1_000_000_000):
         return ghq_clean.Metadata("fresh", archived, pushed_at, fetched_at)
@@ -125,6 +133,47 @@ class GhqCleanTest(unittest.TestCase):
         row = ghq_clean.inspect_row(state, meta, [], 14, 2_000_000_000)
         self.assertEqual(row.state, "protected")
         self.assertEqual(len(state.linked_worktrees), 1)
+
+    def test_unpushed_work_protects_candidate_unless_explicitly_allowed(self) -> None:
+        meta = self.metadata(archived=True)
+        pushed = ghq_clean.snapshot_repo(self.repo)
+        self.assertEqual(pushed.local_only_commits, 0)
+        self.assertEqual(pushed.upstreamless_branches, ())
+        self.assertEqual(ghq_clean.inspect_row(pushed, meta, [], 14, 2_000_000_000).state, "candidate")
+
+        (self.repo / "tracked.txt").write_text("local only\n", encoding="utf-8")
+        git(self.repo, "commit", "--quiet", "-am", "unpushed")
+        local_only = ghq_clean.snapshot_repo(self.repo)
+        self.assertEqual(local_only.local_only_commits, 1)
+        row = ghq_clean.inspect_row(local_only, meta, [], 14, 2_000_000_000)
+        self.assertEqual(row.state, "protected")
+        self.assertEqual(row.reason, "local_only_commits=1")
+        allowed = ghq_clean.inspect_row(local_only, meta, [], 14, 2_000_000_000, allow_unpushed=True)
+        self.assertEqual(allowed.state, "candidate")
+
+        git(self.repo, "reset", "--quiet", "--hard", "origin/main")
+        git(self.repo, "branch", "wip")
+        upstreamless = ghq_clean.snapshot_repo(self.repo)
+        self.assertEqual(upstreamless.local_only_commits, 0)
+        self.assertEqual(upstreamless.upstreamless_branches, ("wip",))
+        row = ghq_clean.inspect_row(upstreamless, meta, [], 14, 2_000_000_000)
+        self.assertEqual(row.state, "protected")
+        self.assertEqual(row.reason, "upstreamless_branches=1")
+        allowed = ghq_clean.inspect_row(upstreamless, meta, [], 14, 2_000_000_000, allow_unpushed=True)
+        self.assertEqual(allowed.state, "candidate")
+
+    def test_allow_unpushed_flag_reaches_inspect_and_apply(self) -> None:
+        local = ghq_clean.snapshot_repo(self.repo)
+        row = ghq_clean.Row(local, self.metadata(archived=True), "candidate", "remote archived")
+        with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)) as inspect, \
+             patch.object(ghq_clean, "apply_rows", return_value=0) as apply:
+            status = ghq_clean.main(["--apply", "--allow-unpushed", "--ghq-root", str(self.ghq), "--cache", str(self.cache)])
+        self.assertEqual(status, 0)
+        self.assertTrue(inspect.call_args.kwargs["allow_unpushed"])
+        self.assertTrue(apply.call_args.kwargs["allow_unpushed"])
+        with patch.object(ghq_clean, "inspect", return_value=([row], 0, 0)) as inspect:
+            ghq_clean.main(["--ghq-root", str(self.ghq), "--cache", str(self.cache)])
+        self.assertFalse(inspect.call_args.kwargs["allow_unpushed"])
 
     def test_archived_candidate_and_recent_remote_push_override_local_old_commit(self) -> None:
         local = ghq_clean.snapshot_repo(self.repo)
@@ -348,6 +397,7 @@ class GhqCleanTest(unittest.TestCase):
 
     def test_apply_aborts_if_same_timestamp_amend_changes_head_or_refs(self) -> None:
         current = int(__import__("time").time())
+        self.unpush(self.repo)
         old_local = ghq_clean.snapshot_repo(self.repo)
         meta = ghq_clean.Metadata("fresh", True, current - 86400, current)
         old = ghq_clean.Row(old_local, meta, "candidate", "remote archived")
@@ -362,6 +412,7 @@ class GhqCleanTest(unittest.TestCase):
             kwargs["metadata_override"] = {"example/sample": meta}
             rows, linked_count, nonrepo_count = real_inspect(root, days, ttl_seconds, cache_path, **kwargs)
             amended_state.append(rows[0].local)
+            self.assertEqual(rows[0].state, "candidate")
             return rows, linked_count, nonrepo_count
 
         with patch.object(ghq_clean, "metadata_for", return_value={"example/sample": meta}), \
@@ -369,7 +420,7 @@ class GhqCleanTest(unittest.TestCase):
              patch.object(ghq_clean, "read_orca_setups", return_value=[]), \
              patch.object(ghq_clean.sys.stdin, "isatty", return_value=True), \
              patch("builtins.input", return_value="REMOVE 1"):
-            status = ghq_clean.apply_rows([old], self.ghq, 14, 86400, self.cache)
+            status = ghq_clean.apply_rows([old], self.ghq, 14, 86400, self.cache, allow_unpushed=True)
         self.assertEqual(status, 2)
         self.assertEqual(old_local.latest_commit, amended_state[0].latest_commit)
         self.assertEqual(old_local.local_only_commits, amended_state[0].local_only_commits)
