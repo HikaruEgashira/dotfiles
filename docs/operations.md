@@ -387,6 +387,21 @@ nix run ~/dotfiles#audit
 
 symlink 型の clone は `ghq-clean.py` が `gh extension target` として保護する (7.4)。
 
+### 4.9 AWS の SSO session を張り直す / broker が応答しない
+
+`default` / `hikae-admin-sso` / `seccamp` と role chain の 3 profile は `credential_process` で `~/.local/bin/aws-cred-client` を呼び、`~/.cache/aws-cred/agent.sock` の常駐 broker (`dev.egahika.aws-cred-agent`) が host 側で `aws configure export-credentials` を実行して短寿命 credential だけを返す。SSO token store (`~/.aws/sso`, `~/.aws/cli`) は broker しか読まず、sandbox からは deny される。設計は `docs/solutions/secrets/aws-credential-broker.md`。
+
+```bash
+aws sso login --sso-session hikae                            # sandbox 外の端末で実行 (90 日毎)。profile 名ではなく session 名を渡す
+aws sts get-caller-identity --profile default                # broker 経由で復帰を確認。再起動は不要
+launchctl print gui/$(id -u)/dev.egahika.aws-cred-agent      # broker の state
+launchctl kickstart -k gui/$(id -u)/dev.egahika.aws-cred-agent
+tail -n20 ~/Library/Logs/aws-cred-agent.log
+~/.local/bin/aws-cred-client sso-readonly | jq .Expiration   # broker 単体の疎通。allowlist 外の profile 名は exit 1
+```
+
+sandbox 内の `aws sso login` は cache に書けず失敗する。これは仕様で、login は常に sandbox 外で行う。broker の allowlist (`sso-readonly` / `sso-admin` / `seccamp-src` / `*-chain`) を増減するときは `modules/programs/aws.nix` の `sourceProfiles` と `tests/aws-cred-broker.sh` を同時に更新する。
+
 ## 5. 緊急時 / ロールバック
 
 ### 5.1 直近の switch を巻き戻す
@@ -471,7 +486,7 @@ sudo softwareupdate --install '<Label>' --restart   # 例: 'macOS Tahoe 26.7.2-2
 bucket は `hikae-archive-951872725222` (iac-aws `projects/other/archive.tf`)。CLI の default profile (ReadOnlyAccess) に `PutObject` 系だけ bucket policy で足してあり、削除は `hikae-admin-sso` でしかできない。object は GLACIER_IR (即時取得、$4/TB/月)、key は `<hostname>/<HOME からの相対 path>`、directory は `.tar.zst` に固めて置く。
 
 ```sh
-aws sso login                                                      # 90 日毎
+aws sso login --sso-session hikae                                  # 90 日毎 (4.9)
 ~/dotfiles/scripts/disk-maintenance.sh --archive ~/.local/share/artex/import/opt-artex.tar.zst
 aws s3 ls s3://hikae-archive-951872725222/ --recursive             # 一覧
 aws s3 cp s3://hikae-archive-951872725222/<key> ./                 # 戻す (GLACIER_IR は restore 不要)
