@@ -21,6 +21,11 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/pingdotgg/t3code/v0.1.7/t3-0.1.7-darwin-arm64.tar.gz",
+      "checksum": "fecfb296ed142942d0cb2dee1c53a6faca54a4012a312a470d4dc6c3215d1ab3",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/sisaku-security/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_amd64.tar.gz",
       "checksum": "DD3107CACC022332428BC05995B1A4CF4D5FCDFFDCF04F7B8047FD580E183A73",
       "algorithm": "sha256"

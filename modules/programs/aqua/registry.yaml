@@ -61,3 +61,17 @@ packages:
       type: github_release
       asset: sisakulint_{{trimV .Version}}_checksums.txt
       algorithm: sha256
+  - type: github_release
+    repo_owner: pingdotgg
+    repo_name: t3code
+    asset: t3-{{trimV .Version}}-{{.OS}}-{{.Arch}}.tar.gz
+    format: tar.gz
+    files:
+      - name: t3
+        src: t3-{{trimV .Version}}-{{.OS}}-{{.Arch}}/t3
+    supported_envs:
+      - darwin/arm64
+    checksum:
+      type: github_release
+      asset: SHA256SUMS
+      algorithm: sha256

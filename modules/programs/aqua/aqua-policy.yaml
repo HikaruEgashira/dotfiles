@@ -11,3 +11,5 @@ packages:
     registry: local
   - name: sisaku-security/sisakulint
     registry: local
+  - name: pingdotgg/t3code
+    registry: local
