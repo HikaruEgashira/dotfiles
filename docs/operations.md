@@ -365,6 +365,8 @@ Mac を乗り換えたら新しい機械で `age-plugin-se keygen --access-contr
 
 rotate 後は secret を使う repo で `direnv reload` する。direnv は `.envrc` の変更しか検知しないため、env.age の変更は手動 reload まで反映されない。
 
+Bitwarden CLI の unlock は別系統。`bw-touchid-enroll` が `--access-control any-biometry` の SE 鍵 `bw-se.txt` を作り、マスターパスワードを `bw-master.age` に暗号化する。`bwu` は Touch ID で復号して `bw unlock` に渡し、`BW_SESSION` を現在のシェルに export する。マスターパスワードを変えたら、または指紋を登録し直したら enroll し直す。
+
 ### 4.7 nix-daemon / `/nix` がおかしい
 
 daemon は nix-darwin 管理 (`org.nixos.nix-daemon`)、`/etc/nix/nix.conf` は `nix.settings` の生成物。
