@@ -13,3 +13,5 @@ packages:
     registry: local
   - name: pingdotgg/t3code
     registry: local
+  - name: bitwarden/clients
+    registry: local
