@@ -75,3 +75,19 @@ packages:
       type: github_release
       asset: SHA256SUMS
       algorithm: sha256
+  - type: github_release
+    repo_owner: bitwarden
+    repo_name: clients
+    version_prefix: cli-
+    asset: bw-{{.OS}}-{{.Arch}}-{{trimV .SemVer}}.{{.Format}}
+    format: zip
+    files:
+      - name: bw
+    replacements:
+      darwin: macos
+    overrides:
+      - goos: darwin
+        goarch: amd64
+        asset: bw-{{.OS}}-{{trimV .SemVer}}.{{.Format}}
+    supported_envs:
+      - darwin

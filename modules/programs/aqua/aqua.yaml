@@ -18,3 +18,5 @@ packages:
     registry: local
   - name: pingdotgg/t3code@v0.1.7
     registry: local
+  - name: bitwarden/clients@cli-v2026.10.1
+    registry: local

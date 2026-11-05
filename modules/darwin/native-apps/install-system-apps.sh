@@ -36,3 +36,8 @@ if [ ! -d /Applications/Xcode.app ]; then
   /usr/bin/sudo -u hikae -H "$MAS" install 497799835
 fi
 verify_app /Applications/Xcode.app com.apple.dt.Xcode 59GAB85EFG
+
+if [ ! -d /Applications/Bitwarden.app ]; then
+  /usr/bin/sudo -u hikae -H "$MAS" install 1352778147
+fi
+verify_app /Applications/Bitwarden.app com.bitwarden.desktop LTZ2PFU5D6

@@ -1,6 +1,16 @@
 {
   "checksums": [
     {
+      "id": "github_release/github.com/bitwarden/clients/cli-v2026.10.1/bw-macos-2026.10.1.zip",
+      "checksum": "0F96F40975972DC0EC568E689D21CDB3CB8CAA30EC9BB066A55BF254512FB3C7",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/bitwarden/clients/cli-v2026.10.1/bw-macos-arm64-2026.10.1.zip",
+      "checksum": "4E595F9DA80EF8B30ABCA808D0C78A1560D9589466D1BCCD2B3E70F321FB12BF",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/googleworkspace/cli/v0.22.5/google-workspace-cli-aarch64-apple-darwin.tar.gz",
       "checksum": "1D2A9FFD5BC9B2C2C4B48630DAF082FAD13D9E57D741988A2C248EED562F7DAC",
       "algorithm": "sha256"

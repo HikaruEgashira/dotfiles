@@ -37,11 +37,11 @@ Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex 
 
 ### 1.2 cache に無い package
 
-| 所有              | 対象                                     | 検証                                            |
-| ----------------- | ---------------------------------------- | ----------------------------------------------- |
-| Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty | `cache.nixos.org` の output                     |
-| Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`  | pin した release asset と `aqua-checksums.json` |
-| system activation | Tailscale, Xcode                         | pkg/MAS と app の署名                           |
+| 所有              | 対象                                          | 検証                                            |
+| ----------------- | --------------------------------------------- | ----------------------------------------------- |
+| Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty      | `cache.nixos.org` の output                     |
+| Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`, `bw` | pin した release asset と `aqua-checksums.json` |
+| system activation | Tailscale, Xcode, Bitwarden                   | pkg/MAS と app の署名                           |
 
 Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。system app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
 
