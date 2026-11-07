@@ -6,7 +6,8 @@ let
   dir = "$HOME/.config/secrets";
 in
 {
-  programs.zsh.initContent = ''
+  # age-plugin-se は Secure Enclave 専用で Linux では評価すら通らない
+  programs.zsh.initContent = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin ''
     bw-touchid-enroll() {
       (
         set -euo pipefail
