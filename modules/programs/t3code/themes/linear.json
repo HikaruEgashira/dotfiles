@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "name": "Linear",
+  "name": "Linear Inspired",
   "appearance": "dark",
   "canvas": "#0f0f0f",
-  "accent": "#202020",
+  "accent": "#5e6ad2",
   "colors": {
     "sidebar": "#0b0b0b",
     "sidebarControlSurface": "#171717",
@@ -11,12 +11,20 @@
     "accentSurface": "#202020",
     "messageAction": "#e5e5e5",
     "messageActionForeground": "#0f0f0f",
-    "messageActionHover": "#ffffff"
+    "messageActionHover": "#ffffff",
+    "surface": "#161616",
+    "secondary": "#1c1c1c",
+    "border": "#262626",
+    "input": "#262626",
+    "text": "#ededed",
+    "mutedForeground": "#8f8f8f",
+    "codeBackground": "#171717",
+    "messageSurface": "#1c1c1c"
   },
   "variants": {
     "light": {
       "canvas": "#fcfcfc",
-      "accent": "#ededed",
+      "accent": "#5e6ad2",
       "sidebar": "#f6f6f6",
       "sidebarControlSurface": "#ededed",
       "sidebarRowSelected": "#e6e6e6",
