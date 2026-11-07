@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "name": "Linear Inspired",
+  "name": "Pleno",
   "appearance": "dark",
   "canvas": "#0f0f0f",
-  "accent": "#5e6ad2",
+  "accent": "#e5e5e5",
   "colors": {
     "sidebar": "#0b0b0b",
     "sidebarControlSurface": "#171717",
@@ -15,7 +15,7 @@
     "surface": "#161616",
     "secondary": "#1c1c1c",
     "border": "#262626",
-    "input": "#262626",
+    "input": "#666666",
     "text": "#ededed",
     "mutedForeground": "#8f8f8f",
     "codeBackground": "#171717",
@@ -24,7 +24,7 @@
   "variants": {
     "light": {
       "canvas": "#fcfcfc",
-      "accent": "#5e6ad2",
+      "accent": "#1f1f1f",
       "sidebar": "#f6f6f6",
       "sidebarControlSurface": "#ededed",
       "sidebarRowSelected": "#e6e6e6",
@@ -32,7 +32,7 @@
       "surface": "#ffffff",
       "secondary": "#f1f1f1",
       "border": "#e2e2e2",
-      "input": "#e2e2e2",
+      "input": "#8f8f8f",
       "text": "#1a1a1a",
       "mutedForeground": "#6b6b6b",
       "codeBackground": "#f3f3f3",
