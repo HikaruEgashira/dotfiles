@@ -135,10 +135,6 @@ opencode() {
   _opencode_run opencode "$@"
 }
 
-opencode2() {
-  _opencode_run opencode2 "$@"
-}
-
 if [ -z "${ZSH_VERSION:-}" ] && [ "${BASH_SOURCE[0]:-}" = "$0" ]; then
   _opencode_health
 fi

@@ -20,3 +20,9 @@ packages:
     registry: local
   - name: bitwarden/clients@cli-v2026.10.1
     registry: local
+  - name: openai/codex@0.166.0
+    registry: local
+  - name: anomalyco/opencode@2.2.5
+    registry: local
+  - name: anthropics/claude-code@2.1.311
+    registry: local

@@ -40,6 +40,11 @@ jobs:
             echo "==> $t"
             bash "$t"
           done
+      - name: Verify AI CLI provenance behind Aqua pins
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
       - name: Test encrypted Store unlock
         timeout-minutes: 5
         run: nix shell --inputs-from . nixpkgs#python3 --command python3 tests/nix-store.py

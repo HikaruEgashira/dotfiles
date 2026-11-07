@@ -54,6 +54,21 @@
       "id": "github_release/github.com/withgraphite/homebrew-tap/v1.8.6/gt-macos-x64",
       "checksum": "A7623F7C545487F69AA593D2BB3DAE76B06FCE544116A3E0F6EEB34291371678",
       "algorithm": "sha256"
+    },
+    {
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.311/darwin-arm64/claude",
+      "checksum": "85D8C08707FCFD1E78FFA0204EEFBC6EC9E4FE22F375FB2767EF85D957ED3161",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.166.0-darwin-arm64.tgz",
+      "checksum": "181D2EDA8ADDBECA0B689C996DF207293947928BDD9C88A097837AE1C7E69CA5",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.5.tgz",
+      "checksum": "DFD827DE3281B4C3CA2B0BFC8F4BEB103FA660C419D148A1A515C4344F9E9C02",
+      "algorithm": "sha256"
     }
   ]
 }

@@ -23,25 +23,31 @@ clean な `main` は `origin/main` と同じでも build を毎回実行し、�
 
 ### 1.1 AI CLI の導入と更新
 
-Codex・Claude Code・OpenCode は Nix package にせず、公式のネイティブインストーラを使う。`nix run .#switch` の home-manager activation が未導入の CLI だけをインストールする。既存の実行ファイルや起動ラッパーは保持し、activation では更新しない。
+Codex・Claude Code・OpenCode は Aqua の local registry (`modules/programs/aqua/registry.yaml`) で版を pin する。上流の install script は使わない。install script は検証されていない shell を実行し、取得した binary も同じ配布元の checksum としか照合しないためである。
 
-| CLI         | 導入先                     | 更新               |
-| ----------- | -------------------------- | ------------------ |
-| Codex       | `~/.local/bin/codex`       | `codex update`     |
-| Claude Code | `~/.local/bin/claude`      | `claude update`    |
-| OpenCode 2  | `~/.opencode/bin/opencode` | `opencode upgrade` |
+| CLI         | 配布物                                       | 来歴の根拠                                                                            |
+| ----------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Codex       | npm `@openai/codex@<v>-darwin-arm64`         | npm SLSA provenance (`openai/codex` の `rust-release.yml`)                            |
+| OpenCode    | npm `@opencode/cli-darwin-arm64@<v>`         | npm SLSA provenance (`anomalyco/opencode` の `release.yml`)                           |
+| Claude Code | `downloads.claude.ai` の darwin-arm64 binary | GPG 署名付き `manifest.json` (鍵 `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`) |
 
-導入処理は `modules/programs/harness/ai-cli-install.sh`。初回のみネットワーク接続が必要で、失敗時は activation を失敗させ次回に再試行する。バージョンと自動更新は各 CLI が管理するため、flake の rollback では CLI の版は戻らない。OpenCode は [V2 の公式インストーラ](https://opencode.ai/v2/docs) を使う。
+Aqua 自体は npm provenance と GPG を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
-Codex の公式 updater は `~/.local/bin/codex` を置き換える。OpenCodex などの外部ツールがこのパスにラッパーを置いている場合、そのツール側で更新後の再登録が必要になる。
+更新手順:
+
+1. `aqua.yaml` の版を上げる。npm の `min-release-age` と同じく、公開から 3 日以上経った版を選ぶ。
+2. `AQUA_GLOBAL_CONFIG=modules/programs/aqua/aqua.yaml AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum -a -p` で checksum を更新する。
+3. `bash scripts/aqua-provenance.sh` を実行し、PR を出す。
+
+各 CLI の自己更新は無効化している (Claude `DISABLE_AUTOUPDATER`、Codex `check_for_update_on_startup=false`、OpenCode `OPENCODE_DISABLE_AUTOUPDATE`)。`claude update` などを実行すると、pin 外の binary が `~/.local` 配下に入る。ai-sandbox wrapper と launchd は Aqua の binary だけを参照するため、その binary は使われない。
 
 ### 1.2 cache に無い package
 
-| 所有              | 対象                                          | 検証                                            |
-| ----------------- | --------------------------------------------- | ----------------------------------------------- |
-| Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty      | `cache.nixos.org` の output                     |
-| Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`, `bw` | pin した release asset と `aqua-checksums.json` |
-| system activation | Tailscale, Xcode, Bitwarden                   | pkg/MAS と app の署名                           |
+| 所有              | 対象                                                                         | 検証                                            |
+| ----------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty                                     | `cache.nixos.org` の output                     |
+| Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`, `bw`, `codex`, `opencode`, `claude` | pin した release asset と `aqua-checksums.json` |
+| system activation | Tailscale, Xcode, Bitwarden                                                  | pkg/MAS と app の署名                           |
 
 Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。system app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
 
@@ -332,11 +338,11 @@ tail -n20 ~/.cache/dotfiles-sync/{log,err}                # 出力確認
 tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl             # 直近結果
 ```
 
-### 4.5 `opencode` / `opencode2` が無言でハングする (managed service の stale PID)
+### 4.5 `opencode` が無言でハングする (managed service の stale PID)
 
 opencode v2 は background service (既定 `127.0.0.1:49374`) 経由で TUI を描画する。`~/.local/state/opencode/service.json` の `pid` が死んでいるのに、別の orphan `opencode serve --service` が port を掴んでいると、起動ごとに service 生成 → bind 失敗 → retry を繰り返し、TUI は空画面のまま返らない。
 
-interactive shell では `modules/programs/harness/opencode/preflight.sh` が `opencode` / `opencode2` を包み、起動前に「`service.json` の pid は死んでいるのに port は LISTEN」の不一致を検出して orphan を落とし `service restart` するため、通常は手当て不要。同じ script を `~/.local/bin/opencode-health` として実行でき、launchd (`dev.egahika.opencode-service-health`) が毎日 09:05 に叩き、結果を `~/.cache/opencode-service-health.{log,err}` に残す。orphan が SIGTERM を無視した場合は SIGKILL に escalate し、それでも port が空かなければ TUI を起動せずエラーを返す。以下は preflight を無効化している場合や、PATH に `~/.local/bin` が無い script から `opencode run` を直接叩く場合の復旧手順。
+interactive shell では `modules/programs/harness/opencode/preflight.sh` が `opencode` を包み、起動前に「`service.json` の pid は死んでいるのに port は LISTEN」の不一致を検出して orphan を落とし `service restart` するため、通常は手当て不要。同じ script を `~/.local/bin/opencode-health` として実行でき、launchd (`dev.egahika.opencode-service-health`) が毎日 09:05 に叩き、結果を `~/.cache/opencode-service-health.{log,err}` に残す。orphan が SIGTERM を無視した場合は SIGKILL に escalate し、それでも port が空かなければ TUI を起動せずエラーを返す。以下は preflight を無効化している場合や、PATH に `~/.local/bin` が無い script から `opencode run` を直接叩く場合の復旧手順。
 
 ```bash
 lsof -nP -iTCP:49374 | grep LISTEN        # 掴んでいる pid を特定
