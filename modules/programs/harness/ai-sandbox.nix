@@ -11,6 +11,15 @@
 let
   home = config.home.homeDirectory;
 
+  # aqua-proxy は aqua 本体と global config / policy が無いと local registry の package を解決できない
+  aquaEnv = lib.concatStringsSep "\n" (
+    [ "export PATH=${pkgs.aqua}/bin:$PATH" ]
+    ++ lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") (
+      lib.filterAttrs (k: _: lib.hasPrefix "AQUA_" k) config.home.sessionVariables
+    )
+  );
+  aquaBin = "${config.xdg.dataHome}/aquaproj-aqua/bin";
+
   writable = [
     home
     "/tmp"
@@ -147,6 +156,7 @@ let
     "permissions.dev.network={enabled=true,unix_sockets=${unixSocketsToml},domains=${codexDomainsToml}}"
     # codex は env を渡さないので、agent socket だけ明示的に通す
     "shell_environment_policy.set.SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}"
+    "check_for_update_on_startup=false"
   ];
 
   # エージェントの gh は hikaevi[bot] の installation token で叩き、個人の 5,000/h を消費しない。
@@ -175,8 +185,11 @@ let
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
-    real=${lib.escapeShellArg "${home}/.local/bin/claude"}
+    real=${lib.escapeShellArg "${aquaBin}/claude"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
+    ${aquaEnv}
+    # 版は aqua.yaml の pin が正史なので、自己更新で検証外の binary に置き換わらないようにする
+    export DISABLE_AUTOUPDATER=1
     export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
     # export した PAT や text backend を sandbox に継承させず、常に agent socket 経由に固定する
     unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR
@@ -185,14 +198,14 @@ let
 
   codexWrapper = pkgs.writeShellScript "codex-sandbox" ''
     set -eu
-    real=${lib.escapeShellArg "${home}/.local/bin/codex"}
+    real=${lib.escapeShellArg "${aquaBin}/codex"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
+    ${aquaEnv}
     exec "$real" ${lib.concatMapStringsSep " " (a: "-c ${lib.escapeShellArg a}") codexArgs} "$@"
   '';
 in
 {
-  # claude/codex は自己更新する binary なので PATH を乗っ取らず、専用 dir を先頭に足す。
-  # zsh の path は順序が意味を持つため、重複除去で先頭固定する。
+  # zsh の path は順序が意味を持つため、重複除去で wrapper dir を先頭固定する。
   programs.zsh.initContent = lib.mkAfter ''
     typeset -U path PATH
     path=("$HOME/.config/ai-sandbox/bin" $path)

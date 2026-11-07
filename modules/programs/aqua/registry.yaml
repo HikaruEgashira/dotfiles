@@ -91,3 +91,32 @@ packages:
         asset: bw-{{.OS}}-{{trimV .SemVer}}.{{.Format}}
     supported_envs:
       - darwin
+  - type: http
+    repo_owner: openai
+    repo_name: codex
+    url: https://registry.npmjs.org/@openai/codex/-/codex-{{.Version}}-darwin-arm64.tgz
+    format: tar.gz
+    files:
+      - name: codex
+        src: package/vendor/aarch64-apple-darwin/bin/codex
+    supported_envs:
+      - darwin/arm64
+  - type: http
+    repo_owner: anomalyco
+    repo_name: opencode
+    url: https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-{{.Version}}.tgz
+    format: tar.gz
+    files:
+      - name: opencode
+        src: package/bin/opencode
+    supported_envs:
+      - darwin/arm64
+  - type: http
+    repo_owner: anthropics
+    repo_name: claude-code
+    url: https://downloads.claude.ai/claude-code-releases/{{.Version}}/darwin-arm64/claude
+    format: raw
+    files:
+      - name: claude
+    supported_envs:
+      - darwin/arm64

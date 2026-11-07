@@ -52,7 +52,6 @@
           "$HOME/.local/share/aquaproj-aqua/bin"
           "$HOME/.local/bin"
           "$HOME/.local/share/npm-global/bin"
-          "$HOME/.opencode/bin"
           "$HOME/.pdtm/go/bin"
           "$HOME/.spicetify"
           /usr/local/bin
