@@ -25,5 +25,5 @@ packages:
     registry: local
   - name: anomalyco/opencode@2.2.5
     registry: local
-  - name: anthropics/claude-code@2.1.311
+  - name: anthropics/claude-code@2.1.318
     registry: local

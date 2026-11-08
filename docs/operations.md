@@ -35,11 +35,11 @@ pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と li
 
 Aqua 自体は npm provenance と GPG を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
-更新手順:
+更新は `.github/workflows/aqua-update.yml` が毎日行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ main に push する。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
 
-1. `aqua.yaml` の版を上げる。npm の `min-release-age` と同じく、公開から 3 日以上経った版を選ぶ。
-2. `AQUA_GLOBAL_CONFIG=modules/programs/aqua/aqua.yaml AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum -a -p` で checksum を更新する。
-3. `bash scripts/aqua-provenance.sh` を実行し、PR を出す。
+```bash
+nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
+```
 
 各 CLI の自己更新は無効化している (Claude `DISABLE_AUTOUPDATER`、Codex `check_for_update_on_startup=false`、OpenCode `OPENCODE_DISABLE_AUTOUPDATE`)。`claude update` などを実行すると、pin 外の binary が `~/.local` 配下に入る。ai-sandbox wrapper と launchd は Aqua の binary だけを参照するため、その binary は使われない。
 
@@ -114,7 +114,7 @@ linux host は nix-darwin を使わず、`hosts/<HOST>/home.nix` を `(mkHome "<
 ### 2.5 Nix cache に output が無い package を足す
 
 1. upstream が CLI の release binary を出しているなら `modules/programs/aqua/registry.yaml` と `aqua.yaml` に追加する。
-2. `AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum --config modules/programs/aqua/aqua.yaml --prune` で checksum を更新する。
+2. `AQUA_GLOBAL_CONFIG=modules/programs/aqua/aqua.yaml AQUA_POLICY_CONFIG=modules/programs/aqua/aqua-policy.yaml aqua update-checksum -a --prune` で checksum を更新する。
 3. GUI は上流署名済み installer を使い、root が要る pkg/MAS は `modules/darwin/native-apps/` に置いて hash・bundle ID・Team ID を検証する。
 4. upstream binary がなく Nix cache にも output がない package は追加しない。
 

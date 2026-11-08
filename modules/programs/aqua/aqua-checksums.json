@@ -86,13 +86,13 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/downloads.claude.ai/claude-code-releases/2.1.311/darwin-arm64/claude",
-      "checksum": "85D8C08707FCFD1E78FFA0204EEFBC6EC9E4FE22F375FB2767EF85D957ED3161",
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.318/darwin-arm64/claude",
+      "checksum": "677A2EA7BF576CEDD20E191D973914ED8A41796F53A63B1923381DDC4D5B5E7D",
       "algorithm": "sha256"
     },
     {
-      "id": "http/downloads.claude.ai/claude-code-releases/2.1.311/linux-x64/claude",
-      "checksum": "86DC1FCC69498159EAF15F446613E847010F9036BFBBDFFD4C49350BE8489ADA",
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.318/linux-x64/claude",
+      "checksum": "708C77B204DB30086FF6F1ED34577BDA03E1BE74CED80557CBF7B54249EBF0BD",
       "algorithm": "sha256"
     },
     {

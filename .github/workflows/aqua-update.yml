@@ -1,0 +1,63 @@
+name: "aqua-update"
+on:
+  schedule:
+    - cron: "0 3 * * *" # 毎日 03:00 UTC (= 12:00 JST)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "bump と来歴検証だけ走らせ、push しない"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  update:
+    timeout-minutes: 15
+    runs-on: hikae-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          persist-credentials: true
+      - name: Install Nix
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        timeout-minutes: 5
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Bump AI CLI pins
+        timeout-minutes: 10
+        run: nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
+      - name: Verify AI CLI provenance behind Aqua pins
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+      - name: Commit and push if pins changed
+        id: push
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          if git diff --quiet modules/programs/aqua; then
+            echo "no pin changes"
+            echo "pushed=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/programs/aqua
+          git commit -m "chore(aqua): bump AI CLI pins"
+          git push origin main
+          echo "pushed=true" >>"$GITHUB_OUTPUT"
+      - name: Run CI for the pushed commit
+        # GITHUB_TOKEN の push は workflow を起動しないので、dispatch で明示的に回す
+        if: steps.push.outputs.pushed == 'true'
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run ci.yml --ref main
