@@ -34,6 +34,11 @@ let
     };
     access.api-keys = [ "@CLIPROXYAPI_CLIENT_KEY@" ];
     oauth.auth-dir = "${stateDir}/auths";
+    # catalog-sync が ChatGPT の実 model 一覧で補った local catalog。CPA は変更を検知して再読込する
+    models = {
+      catalog = "${stateDir}/models-catalog.json";
+      codex-catalog = "${stateDir}/codex-catalog.json";
+    };
     routing = {
       session-affinity = true;
       # 接頭辞なしの名前 (gpt-6-luna 等) を ChatGPT OAuth に固定し、他 provider の同名 model へ流さない
@@ -60,6 +65,10 @@ let
     ];
   };
 
+  catalogSync = pkgs.writeShellScript "cliproxyapi-catalog-sync" ''
+    exec ${lib.getExe pkgs.python3} -I ${./cliproxyapi/catalog-sync.py} ${stateDir} "$@"
+  '';
+
   run = pkgs.writeShellScript "cliproxyapi-run" ''
     set -eu
     . ${./artex/load-env.sh}
@@ -79,6 +88,7 @@ let
       ${lib.getExe pkgs.jq} -e 'has("refresh_interval_seconds")' "$f" >/dev/null && continue
       ${lib.getExe pkgs.jq} '.refresh_interval_seconds = 28800' "$f" >"$f.tmp" && mv "$f.tmp" "$f"
     done
+    ${catalogSync} || true
     exec ${lib.getExe pkgs.cliproxyapi} -config ${stateDir}/config.yaml
   '';
 in
@@ -93,6 +103,22 @@ in
       WorkingDirectory = stateDir;
       StandardOutPath = "${stateDir}/service.log";
       StandardErrorPath = "${stateDir}/service.log";
+    };
+  };
+
+  # 起動時の sync は proxy 起動前なので Codex 向け catalog の書き出しはこちらが担う
+  launchd.agents.cliproxyapi-catalog-sync = {
+    enable = true;
+    config = {
+      Label = "dev.egahika.cliproxyapi-catalog-sync";
+      ProgramArguments = [
+        "${catalogSync}"
+        "${home}/.codex/cliproxyapi-catalog.json"
+      ];
+      RunAtLoad = true;
+      StartInterval = 3 * 60 * 60;
+      StandardOutPath = "${stateDir}/catalog-sync.log";
+      StandardErrorPath = "${stateDir}/catalog-sync.log";
     };
   };
 }
