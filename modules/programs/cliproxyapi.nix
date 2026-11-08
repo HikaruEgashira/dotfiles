@@ -36,7 +36,7 @@ let
     oauth.auth-dir = "${stateDir}/auths";
     routing = {
       session-affinity = true;
-      # 接頭辞なしの名前 (gpt-6-luna 等) を ChatGPT OAuth に固定し、opencode-go の同名 model へ流さない
+      # 接頭辞なしの名前 (gpt-6-luna 等) を ChatGPT OAuth に固定し、他 provider の同名 model へ流さない
       force-model-prefix = true;
     };
     observability.usage.usage-statistics-enabled = false;
@@ -57,18 +57,6 @@ let
           alias = "accounts-fireworks-routers-glm-flash-latest";
         }
       ])
-      (compat "opencode-go" "https://opencode.ai/zen/go/v1" "OPENCODE_GO_API_KEY" [
-        "deepseek-v4-flash"
-        "glm-5.3"
-        "glm-5.3-flash"
-        "gpt-5.6-luna"
-        "gpt-6-luna"
-        "kimi-k3.1-pro"
-        "minimax-m3.1-flash"
-        "gemini-4-argon"
-        "hy4"
-        "step-5-preview"
-      ])
     ];
   };
 
@@ -78,7 +66,7 @@ let
     load_env_file ${stateDir}/secrets.env
     : "''${APARTURE_API_KEY:=none}"
     conf=$(<${template})
-    for k in CLIPROXYAPI_CLIENT_KEY APARTURE_API_KEY OPENCODE_GO_API_KEY; do
+    for k in CLIPROXYAPI_CLIENT_KEY APARTURE_API_KEY; do
       v=''${!k:?$k is not set in ${stateDir}/secrets.env}
       conf=''${conf//@$k@/$v}
     done

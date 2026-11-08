@@ -297,12 +297,11 @@ tailscale serve status                                 # No serve config
 
 ### 3.8 CLIProxyAPI で LLM provider を束ねる (module: `modules/programs/cliproxyapi.nix`)
 
-Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture・opencode-go を使う。upstream と model の一覧は module が宣言し、秘密は `~/.local/share/cliproxyapi/secrets.env` (0600、`KEY=VALUE` 行) にだけ置く。
+Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture を使う。upstream と model の一覧は module が宣言し、秘密は `~/.local/share/cliproxyapi/secrets.env` (0600、`KEY=VALUE` 行) にだけ置く。
 
 | キー                     | 用途                                                                                                                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `CLIPROXYAPI_CLIENT_KEY` | client 認証 key。Codex は `~/.codex/config.toml` の `model_providers.cliproxyapi.experimental_bearer_token`、opencode は `{file:~/.local/share/cliproxyapi/client-key}` で渡す |
-| `OPENCODE_GO_API_KEY`    | opencode-go の upstream key                                                                                                                                                    |
 | `APARTURE_API_KEY`       | 省略可 (tailnet 内の Aparture は key 不要)                                                                                                                                     |
 
 wrapper は起動毎に store の template へ秘密を差し込み `config.yaml` (0600) を書き直すので、`config.yaml` を直接編集しない。management API は無効。OAuth 資格情報は `auths/` に置かれ、ai-sandbox の deny 対象。
