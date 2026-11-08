@@ -185,11 +185,11 @@ let
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
-    real=${lib.escapeShellArg "${aquaBin}/claude"}
+    # 自己更新は公式 updater が manifest の sha256 を検証して ~/.local に入れる。Aqua の pin は初回 bootstrap 用
+    real=${lib.escapeShellArg "${home}/.local/bin/claude"}
+    [ -x "$real" ] || real=${lib.escapeShellArg "${aquaBin}/claude"}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
     ${aquaEnv}
-    # 版は aqua.yaml の pin が正史なので、自己更新で検証外の binary に置き換わらないようにする
-    export DISABLE_AUTOUPDATER=1
     export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
     # export した PAT や text backend を sandbox に継承させず、常に agent socket 経由に固定する
     unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR

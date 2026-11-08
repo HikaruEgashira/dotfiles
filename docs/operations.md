@@ -41,7 +41,7 @@ Aqua 自体は npm provenance と GPG を検証できない。そのため `scri
 nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
 ```
 
-各 CLI の自己更新は無効化している (Claude `DISABLE_AUTOUPDATER`、Codex `check_for_update_on_startup=false`、OpenCode `OPENCODE_DISABLE_AUTOUPDATE`)。`claude update` などを実行すると、pin 外の binary が `~/.local` 配下に入る。ai-sandbox wrapper と launchd は Aqua の binary だけを参照するため、その binary は使われない。
+Claude は公式 updater による自己更新を有効にしている。updater は `downloads.claude.ai` の manifest に載った sha256 を検証し、`~/.local/share/claude/versions/` に展開して `~/.local/bin/claude` を差し替える。ai-sandbox wrapper は `~/.local/bin/claude` を優先し、無い場合だけ Aqua の pin 版を起動する。Aqua の pin 版は初回 bootstrap 用で、起動すると updater がネイティブ版を導入する。Codex (`check_for_update_on_startup=false`) と OpenCode (`OPENCODE_DISABLE_AUTOUPDATE`) の自己更新は無効のままで、Aqua の pin が正史である。
 
 ### 1.2 cache に無い package
 
