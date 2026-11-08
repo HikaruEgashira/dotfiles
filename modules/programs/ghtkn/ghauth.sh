@@ -8,9 +8,13 @@ if [ "${1:-}" = "-f" ]; then
   shift
 fi
 
-# launchd 常駐が落ちていても auth を止めない
+# 常駐 (darwin: launchd / linux: systemd) が落ちていても auth を止めない
 if ! ghtkn info 2>/dev/null | jq -e '.agent.running' >/dev/null; then
-  launchctl kickstart "gui/$UID/dev.egahika.ghtkn-agent" 2>/dev/null || true
+  if command -v launchctl >/dev/null; then
+    launchctl kickstart "gui/$UID/dev.egahika.ghtkn-agent" 2>/dev/null || true
+  else
+    systemctl --user start ghtkn-agent 2>/dev/null || true
+  fi
   for _ in {1..5}; do
     ghtkn info 2>/dev/null | jq -e '.agent.running' >/dev/null && break
     sleep 1
@@ -27,5 +31,8 @@ if [ -n "$force" ]; then
   ghtkn revoke "$@" || echo "ghauth: revoke failed; continuing to auth" >&2
 fi
 
-# -p が one-time code を pbcopy し、device flow が入力ページをブラウザで開く
-exec ghtkn auth -p "$@"
+# -p は one-time code を pbcopy するので darwin だけで付ける。linux では表示された code を手で入力する
+if command -v pbcopy >/dev/null; then
+  exec ghtkn auth -p "$@"
+fi
+exec ghtkn auth "$@"
