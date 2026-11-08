@@ -34,7 +34,11 @@ let
     };
     access.api-keys = [ "@CLIPROXYAPI_CLIENT_KEY@" ];
     oauth.auth-dir = "${stateDir}/auths";
-    routing.session-affinity = true;
+    routing = {
+      session-affinity = true;
+      # 接頭辞なしの名前 (gpt-6-luna 等) を ChatGPT OAuth に固定し、opencode-go の同名 model へ流さない
+      force-model-prefix = true;
+    };
     observability.usage.usage-statistics-enabled = false;
     api-keys.openai-compatibility = [
       (compat "Aparture" "https://ai.tailc30b81.ts.net/v1" "APARTURE_API_KEY" [
