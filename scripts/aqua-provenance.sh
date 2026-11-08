@@ -41,15 +41,22 @@ verify_claude() {
   gpg --homedir "$gnupg" --batch --status-fd 1 --verify "$work/manifest.json.sig" "$work/manifest.json" 2>/dev/null |
     grep -q "^\[GNUPG:\] VALIDSIG $claude_fpr "
   jq -e --arg v "$version" '.version == $v' "$work/manifest.json" >/dev/null
-  [ "$(jq -r '.platforms["darwin-arm64"].checksum' "$work/manifest.json")" = \
-    "$(pinned_sha256 "http/downloads.claude.ai/claude-code-releases/$version/darwin-arm64/claude")" ]
-  echo "ok: claude-code $version (GPG $claude_fpr)"
+  for platform in "${platforms[@]}"; do
+    [ "$(jq -r --arg p "$platform" '.platforms[$p].checksum' "$work/manifest.json")" = \
+      "$(pinned_sha256 "http/downloads.claude.ai/claude-code-releases/$version/$platform/claude")" ]
+    echo "ok: claude-code $version $platform (GPG $claude_fpr)"
+  done
 }
+
+# aqua.yaml の checksum.supported_envs と対応させる (npm / claude の platform 表記)
+platforms=(darwin-arm64 linux-x64)
 
 codex=$(version_of openai/codex)
 opencode=$(version_of anomalyco/opencode)
 claude=$(version_of anthropics/claude-code)
 
-verify_npm @openai/codex "$codex-darwin-arm64" openai/codex rust-release.yml "codex-$codex-darwin-arm64.tgz"
-verify_npm @opencode/cli-darwin-arm64 "$opencode" anomalyco/opencode release.yml "cli-darwin-arm64-$opencode.tgz"
+for platform in "${platforms[@]}"; do
+  verify_npm @openai/codex "$codex-$platform" openai/codex rust-release.yml "codex-$codex-$platform.tgz"
+  verify_npm "@opencode/cli-$platform" "$opencode" anomalyco/opencode release.yml "cli-$platform-$opencode.tgz"
+done
 verify_claude "$claude"

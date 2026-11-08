@@ -182,6 +182,12 @@ let
   };
 
   cross = [
+    # aqua-proxy (aquaproj-aqua/bin/*) は PATH 上の aqua を呼ぶので、aqua.yaml が対応する全 platform に置く
+    (mkEntry {
+      pkg = pkgs.aqua;
+      purpose = "util";
+      reason = "prebuilt CLI version manager";
+    })
     (mkEntry {
       pkg = pkgs.cachix;
       purpose = "build";
@@ -656,11 +662,6 @@ let
       pkg = pkgs.age-plugin-se;
       purpose = "ops";
       reason = "env.age の復号鍵を Secure Enclave に置く (鍵を file として持ち出せない)";
-    })
-    (mkEntry {
-      pkg = pkgs.aqua;
-      purpose = "util";
-      reason = "prebuilt CLI version manager";
     })
     (mkEntry {
       pkg = pkgs.gcc-arm-embedded;

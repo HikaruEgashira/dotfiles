@@ -65,11 +65,11 @@ Store の plist は `/nix` が未マウントでも読める通常ファイル�
 
 linux host では launchd の代わりに Home Manager が systemd user service を生成する。鍵の投入は別 job を持たず `ExecStartPost` で行うので、`*-add` に相当する unit は無い。操作手順は `operations.md` §6.1。
 
-| Unit             | 管理                                        | 起動 | 備考                                                    |
-| ---------------- | ------------------------------------------- | ---- | ------------------------------------------------------- |
-| `ssh-agent`      | home-manager (`modules/programs/ssh.nix`)   | 常駐 | `dev.egahika.ssh-agent` + `ssh-add` 相当                |
-| `ssh-sign-agent` | home-manager (`modules/programs/ssh.nix`)   | 常駐 | `dev.egahika.ssh-sign-agent` + `ssh-sign-add` 相当      |
-| `ghtkn-agent`    | home-manager (`modules/programs/ghtkn.nix`) | 常駐 | `ghauth` が `systemctl --user start` と unlock を吸収   |
+| Unit             | 管理                                        | 起動 | 備考                                                  |
+| ---------------- | ------------------------------------------- | ---- | ----------------------------------------------------- |
+| `ssh-agent`      | home-manager (`modules/programs/ssh.nix`)   | 常駐 | `dev.egahika.ssh-agent` + `ssh-add` 相当              |
+| `ssh-sign-agent` | home-manager (`modules/programs/ssh.nix`)   | 常駐 | `dev.egahika.ssh-sign-agent` + `ssh-sign-add` 相当    |
+| `ghtkn-agent`    | home-manager (`modules/programs/ghtkn.nix`) | 常駐 | `ghauth` が `systemctl --user start` と unlock を吸収 |
 
 ## 撤去 (再出現したら drift)
 
