@@ -80,22 +80,24 @@ let
   '';
 in
 {
-  home.file.".local/share/git-win/ssh-keygen-sign".source = signBridge;
-  home.file.".local/share/git-win/git-credential-ghtkn".source = credentialBridge;
+  home = {
+    file.".local/share/git-win/ssh-keygen-sign".source = signBridge;
+    file.".local/share/git-win/git-credential-ghtkn".source = credentialBridge;
 
-  # /mnt/c は home.file の管理外なので activation で書く。初回だけ手書き版を退避する
-  home.activation.windowsGit = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    if [ -d ${winHome} ]; then
-      if [ -f ${winHome}/.gitconfig ] && ! grep -q 'hosts/wsl/windows.nix' ${winHome}/.gitconfig; then
-        $DRY_RUN_CMD cp ${winHome}/.gitconfig ${winHome}/.gitconfig.pre-dotfiles
+    # /mnt/c は home.file の管理外なので activation で書く。初回だけ手書き版を退避する
+    activation.windowsGit = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      if [ -d ${winHome} ]; then
+        if [ -f ${winHome}/.gitconfig ] && ! grep -q 'hosts/wsl/windows.nix' ${winHome}/.gitconfig; then
+          $DRY_RUN_CMD cp ${winHome}/.gitconfig ${winHome}/.gitconfig.pre-dotfiles
+        fi
+        $DRY_RUN_CMD mkdir -p ${winBridgeDir}/hooks
+        $DRY_RUN_CMD cp --no-preserve=mode ${winGitconfig} ${winHome}/.gitconfig
+        $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText "ssh-keygen" (winShim "${bridgeDir}/ssh-keygen-sign")} ${winBridgeDir}/ssh-keygen
+        $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText "git-credential-ghtkn" (winShim "${bridgeDir}/git-credential-ghtkn")} ${winBridgeDir}/git-credential-ghtkn
+        ${lib.concatMapStrings (n: ''
+          $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText n (winHook n)} ${winBridgeDir}/hooks/${n}
+        '') hookNames}
       fi
-      $DRY_RUN_CMD mkdir -p ${winBridgeDir}/hooks
-      $DRY_RUN_CMD cp --no-preserve=mode ${winGitconfig} ${winHome}/.gitconfig
-      $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText "ssh-keygen" (winShim "${bridgeDir}/ssh-keygen-sign")} ${winBridgeDir}/ssh-keygen
-      $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText "git-credential-ghtkn" (winShim "${bridgeDir}/git-credential-ghtkn")} ${winBridgeDir}/git-credential-ghtkn
-      ${lib.concatMapStrings (n: ''
-        $DRY_RUN_CMD cp --no-preserve=mode ${pkgs.writeText n (winHook n)} ${winBridgeDir}/hooks/${n}
-      '') hookNames}
-    fi
-  '';
+    '';
+  };
 }
