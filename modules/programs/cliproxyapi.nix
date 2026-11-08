@@ -73,6 +73,12 @@ let
     umask 077
     ${pkgs.coreutils}/bin/install -d -m 0700 ${stateDir}/auths
     printf '%s\n' "$conf" >${stateDir}/config.yaml
+    # ChatGPT の access token は寿命 (~46h) が CPA の既定 refresh lead (96h) より短く、毎 tick refresh して token を rotate し続けるため間隔を固定する
+    for f in ${stateDir}/auths/codex-*.json; do
+      [ -e "$f" ] || continue
+      ${lib.getExe pkgs.jq} -e 'has("refresh_interval_seconds")' "$f" >/dev/null && continue
+      ${lib.getExe pkgs.jq} '.refresh_interval_seconds = 28800' "$f" >"$f.tmp" && mv "$f.tmp" "$f"
+    done
     exec ${lib.getExe pkgs.cliproxyapi} -config ${stateDir}/config.yaml
   '';
 in
