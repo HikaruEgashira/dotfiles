@@ -31,14 +31,14 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.pi-extensions-update`    | home-manager (`modules/programs/pi.nix`)               | 毎日 09:10    | npm extension の pin 前進 + git extension 更新                                |
 | `com.claude.caffeinate`               | home-manager (`modules/programs/claude.nix`)           | 常駐          | claude 実行中だけ sleep 抑止                                                  |
 | `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)                 | 12 分間隔     | OAuth refresh + upgrade check                                                 |
-| `com.opencodex.proxy`                 | **opencodex 自己管理** (`ocx service`)                 | 常駐          | Codex provider proxy                                                          |
+| `dev.egahika.cliproxyapi`             | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐          | LLM provider proxy、`127.0.0.1:8317` のみ                                     |
 | `dev.egahika.artex`                   | home-manager (`modules/programs/artex.nix`)            | 常駐          | `127.0.0.1:8787`、受信は非公開                                                |
 | `dev.egahika.artex-postgres`          | home-manager (`modules/programs/artex.nix`)            | 常駐          | ARTEX 用 Postgres、unix socket `~/.local/share/artex/run` のみ、scram-sha-256 |
 | `com.google.GoogleUpdater.wake`       | vendor (GoogleUpdater.app)                             | 1 時間間隔    | Chrome/Google app 更新                                                        |
 
 npm の extension (`pi-subagents`, `@hikae/pi-prompt-enhancer`) は `~/.pi/agent/settings.json` でバージョン固定して起動時の更新通知を止めており、固定先は `pi-extensions-update` が日次で最新へ進める（`latest` の解決は npm の `min-release-age` に従うため、冷却期間中の版は入らない）。git の extension (ponytail) は upstream の main HEAD を追うと任意の新コミットが pi 内で実行されるため、sha 固定 (`git:.../ponytail@<sha>`) にして手動でしか動かさない（更新は sha を差し替えて `pi update --extensions`）。
 
-twg / opencodex / Rex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
+twg / Rex は binary が自己更新するため home-manager に持たせない（持たせるとツール更新のたびにパスがずれ、plist を書き戻して綱引きになる）。`nix run .#launchd-audit` の許容リストに含めて drift として扱わない。
 
 GUI アプリが登録する background item は次のとおり（app 側が管理、手動操作対象外）。
 

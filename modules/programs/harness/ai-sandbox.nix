@@ -41,7 +41,7 @@ let
     "${home}/.codex/auth.json"
     "${home}/.claude/.credentials.json"
     "${home}/.config/gcloud"
-    "${home}/.config/opencodex"
+    "${home}/.local/share/cliproxyapi"
     "${home}/.config/secrets"
     "${home}/.terraform.d/credentials.tfrc.json"
     "${home}/.npmrc"

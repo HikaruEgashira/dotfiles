@@ -28,6 +28,7 @@
 
     ./modules/programs/dotfiles-sync.nix
     ./modules/programs/artex.nix
+    ./modules/programs/cliproxyapi.nix
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
   ];

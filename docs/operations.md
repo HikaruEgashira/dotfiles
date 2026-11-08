@@ -295,6 +295,32 @@ tailscale serve status                                 # No serve config
 2. `openssl rand -hex 32` で新 password を作り、`psql -h ~/.local/share/artex/run -U artex -d postgres -c "ALTER USER artex PASSWORD '<pw>'"` を実行、`local.env` の `ARTEX_PG_DSN` を書き換える (直前の版は `local.env.bak`)。
 3. 手起動の postgres を止めて `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.egahika.artex-postgres.plist` で戻す。wrapper が pg_hba を scram-sha-256 に修復する。`launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で ARTEX を再起動し、`artex.log` に `listening on 127.0.0.1:8787` が出ることを確認する。
 
+### 3.8 CLIProxyAPI で LLM provider を束ねる (module: `modules/programs/cliproxyapi.nix`)
+
+Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture・opencode-go を使う。upstream と model の一覧は module が宣言し、秘密は `~/.local/share/cliproxyapi/secrets.env` (0600、`KEY=VALUE` 行) にだけ置く。
+
+| キー                     | 用途                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CLIPROXYAPI_CLIENT_KEY` | client 認証 key。Codex は `~/.codex/config.toml` の `model_providers.cliproxyapi.experimental_bearer_token`、opencode は `{file:~/.local/share/cliproxyapi/client-key}` で渡す |
+| `OPENCODE_GO_API_KEY`    | opencode-go の upstream key                                                                                                                                                    |
+| `APARTURE_API_KEY`       | 省略可 (tailnet 内の Aparture は key 不要)                                                                                                                                     |
+
+wrapper は起動毎に store の template へ秘密を差し込み `config.yaml` (0600) を書き直すので、`config.yaml` を直接編集しない。management API は無効。OAuth 資格情報は `auths/` に置かれ、ai-sandbox の deny 対象。
+
+ChatGPT アカウントの追加・再ログイン (Codex CLI 本体の `~/.codex/auth.json` と refresh token を共有すると rotation で双方が失効するため、必ず別ログインにする):
+
+```bash
+cliproxyapi -config ~/.local/share/cliproxyapi/config.yaml -codex-device-login
+launchctl kickstart -k gui/$(id -u)/dev.egahika.cliproxyapi
+```
+
+確認:
+
+```bash
+curl -s -H "Authorization: Bearer $(cat ~/.local/share/cliproxyapi/client-key)" http://127.0.0.1:8317/v1/models | jq -r '.data[].id'
+lsof -nP -iTCP:8317 -sTCP:LISTEN   # 127.0.0.1 のみ
+```
+
 ## 4. トラブルシュート
 
 ### 共有 skill の名前衝突

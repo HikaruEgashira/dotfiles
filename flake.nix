@@ -194,7 +194,6 @@
         hmLabels
         ++ [
           "com.atlassian.twg.upkeep"
-          "com.opencodex.proxy"
           "com.google.GoogleUpdater.wake"
           "com.openai.codex-sparkle-progress"
           "com.openai.codex-sparkle-updater"

@@ -189,6 +189,11 @@ let
       reason = "prebuilt CLI version manager";
     })
     (mkEntry {
+      pkg = pkgs.cliproxyapi;
+      purpose = "build";
+      reason = "local LLM provider proxy (OAuth login CLI)";
+    })
+    (mkEntry {
       pkg = pkgs.cachix;
       purpose = "build";
       reason = "binary cache CLI";
