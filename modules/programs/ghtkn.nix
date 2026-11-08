@@ -34,7 +34,17 @@
   };
 
   # `ghtkn agent stop` は exit 0 なので SuccessfulExit=false で crash だけ再起動する
-  launchd.agents = lib.mkIf (pkgs ? ghtkn) {
+  # linux (WSL) も同じ常駐を systemd user service で持つ。exit 0 の stop では再起動しない
+  systemd.user.services.ghtkn-agent = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isLinux) {
+    Unit.Description = "ghtkn agent";
+    Service = {
+      ExecStart = "${pkgs.ghtkn}/bin/ghtkn agent start";
+      Restart = "on-failure";
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
+
+  launchd.agents = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isDarwin) {
     ghtkn-agent = {
       enable = true;
       config = {

@@ -26,16 +26,30 @@ let
       exit 1
     '';
 
+  # agent と鍵の対応を 1 箇所に置き、launchd (darwin) と systemd (linux) の両方をここから生成する
+  agents = {
+    ssh-agent = {
+      socket = agentSocket;
+      key = "${home}/.ssh/id_ed25519";
+    };
+    ssh-sign-agent = {
+      socket = signAgentSocket;
+      key = "${home}/.ssh/id_ed25519_sign";
+    };
+  };
+
+  agentArgs = socket: [
+    "${pkgs.python3}/bin/python3"
+    "${../../scripts/ssh-agent-start.py}"
+    socket
+    "${pkgs.openssh}/bin/ssh-agent"
+  ];
+
   agent = name: socket: {
     enable = true;
     config = {
       Label = "dev.egahika.${name}";
-      ProgramArguments = [
-        "${pkgs.python3}/bin/python3"
-        "${../../scripts/ssh-agent-start.py}"
-        socket
-        "${pkgs.openssh}/bin/ssh-agent"
-      ];
+      ProgramArguments = agentArgs socket;
       RunAtLoad = true;
       KeepAlive = true;
       StandardOutPath = "${home}/Library/Logs/${name}.log";
@@ -56,12 +70,25 @@ let
   };
 in
 {
-  launchd.agents = {
+  launchd.agents = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
     ssh-agent = agent "ssh-agent" agentSocket;
-    ssh-add = loader "ssh-add" agentSocket "${home}/.ssh/id_ed25519";
+    ssh-add = loader "ssh-add" agentSocket agents.ssh-agent.key;
     ssh-sign-agent = agent "ssh-sign-agent" signAgentSocket;
-    ssh-sign-add = loader "ssh-sign-add" signAgentSocket "${home}/.ssh/id_ed25519_sign";
+    ssh-sign-add = loader "ssh-sign-add" signAgentSocket agents.ssh-sign-agent.key;
   };
+
+  # 鍵の投入は agent 起動直後の ExecStartPost で行い、launchd の別 job 相当を不要にする
+  systemd.user.services = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
+    lib.mapAttrs (name: a: {
+      Unit.Description = "dedicated ssh-agent (${name})";
+      Service = {
+        ExecStart = lib.escapeShellArgs (agentArgs a.socket);
+        ExecStartPost = "${pkgs.coreutils}/bin/env SSH_AUTH_SOCK=${a.socket} ${addKey a.key}";
+        Restart = "always";
+      };
+      Install.WantedBy = [ "default.target" ];
+    }) agents
+  );
 
   home.sessionVariables.SSH_SIGN_AUTH_SOCK = signAgentSocket;
   home.sessionVariables.SSH_AUTH_SOCK = agentSocket;

@@ -19,6 +19,10 @@ let
     )
   );
   aquaBin = "${config.xdg.dataHome}/aquaproj-aqua/bin";
+  # aqua の local registry は darwin/arm64 しか定義しないため、それ以外では flake.lock で hash 固定された nixpkgs 版を実体にする
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
+  claudeReal = if isDarwin then "${aquaBin}/claude" else lib.getExe pkgs.claude-code;
+  codexReal = if isDarwin then "${aquaBin}/codex" else lib.getExe pkgs.codex;
 
   writable = [
     home
@@ -185,7 +189,7 @@ let
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
-    real=${lib.escapeShellArg "${aquaBin}/claude"}
+    real=${lib.escapeShellArg claudeReal}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
     ${aquaEnv}
     # 版は aqua.yaml の pin が正史なので、自己更新で検証外の binary に置き換わらないようにする
@@ -198,7 +202,7 @@ let
 
   codexWrapper = pkgs.writeShellScript "codex-sandbox" ''
     set -eu
-    real=${lib.escapeShellArg "${aquaBin}/codex"}
+    real=${lib.escapeShellArg codexReal}
     [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
     ${aquaEnv}
     exec "$real" ${lib.concatMapStringsSep " " (a: "-c ${lib.escapeShellArg a}") codexArgs} "$@"
