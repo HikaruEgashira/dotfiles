@@ -25,11 +25,13 @@ clean な `main` は `origin/main` と同じでも build を毎回実行し、�
 
 Codex・Claude Code・OpenCode は Aqua の local registry (`modules/programs/aqua/registry.yaml`) で版を pin する。上流の install script は使わない。install script は検証されていない shell を実行し、取得した binary も同じ配布元の checksum としか照合しないためである。
 
-| CLI         | 配布物                                       | 来歴の根拠                                                                            |
-| ----------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Codex       | npm `@openai/codex@<v>-darwin-arm64`         | npm SLSA provenance (`openai/codex` の `rust-release.yml`)                            |
-| OpenCode    | npm `@opencode/cli-darwin-arm64@<v>`         | npm SLSA provenance (`anomalyco/opencode` の `release.yml`)                           |
-| Claude Code | `downloads.claude.ai` の darwin-arm64 binary | GPG 署名付き `manifest.json` (鍵 `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`) |
+pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と linux/amd64 = NixOS-WSL) で、`scripts/aqua-provenance.sh` の `platforms` も同じ組を検証する。platform を足すときは両方と `registry.yaml` の `supported_envs` を揃える。
+
+| CLI         | 配布物                                                     | 来歴の根拠                                                                            |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Codex       | npm `@openai/codex@<v>-{darwin-arm64,linux-x64}`           | npm SLSA provenance (`openai/codex` の `rust-release.yml`)                            |
+| OpenCode    | npm `@opencode/cli-{darwin-arm64,linux-x64}@<v>`           | npm SLSA provenance (`anomalyco/opencode` の `release.yml`)                           |
+| Claude Code | `downloads.claude.ai` の `{darwin-arm64,linux-x64}` binary | GPG 署名付き `manifest.json` (鍵 `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`) |
 
 Aqua 自体は npm provenance と GPG を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
@@ -97,6 +99,8 @@ allowlist は「cache に無いと分かっていて持っているもの」の�
 1. `hosts/<HOST>/default.nix` を新規作成し、`modules/darwin/*` を import する。host 固有の override (proxy / 別 identity / screenlock) もここに書く。
 2. `flake.nix` の `darwinConfigurations` に `<HOST> = mkDarwin "aarch64-darwin";` を追加する。`home-manager.users.<user>` と `system.primaryUser` も host 側で切り替える。
 3. 新 host で `nix run nix-darwin/master -- switch --flake github:HikaruEgashira/dotfiles#<HOST>`。
+
+linux host は nix-darwin を使わず、`hosts/<HOST>/home.nix` を `(mkHome "<system>").extendModules` で重ねた `homeConfigurations."hikae@<HOST>"` として足す (例: `hosts/wsl/`、手順は §6.1)。署名鍵は端末ごとに発行し、`git.nix` の `allowedSigners` と host の `programs.git.signing.key` に公開鍵を足す (§3.4)。
 
 ### 2.4 XDG entry を足す / 移設する
 
@@ -488,6 +492,31 @@ gh repo clone HikaruEgashira/dotfiles ~/dotfiles
 nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 # 3) switch が Aqua link と native app bootstrap まで適用する
+```
+
+### 6.1 NixOS-WSL (Windows PC)
+
+WSL は Home Manager 単体 (`homeConfigurations."hikae@wsl"`) で適用する。host 差分は `hosts/wsl/` に閉じ、同一 PC の Windows 側 git 設定も同じ activation が生成する (`hosts/wsl/windows.nix`)。
+
+```bash
+# 1) Windows: NixOS-WSL を導入し既定 distro にする (https://github.com/nix-community/NixOS-WSL)
+# 2) WSL: リポを取得して適用する (ghtkn が動く前なので一度だけ HTTPS 匿名 clone)
+git clone https://github.com/HikaruEgashira/dotfiles ~/dotfiles
+nix run home-manager/master -- switch --flake ~/dotfiles#hikae@wsl
+# 3) 端末専用の鍵を作り、署名鍵だけ GitHub に Signing Key として登録する (§3.4)
+ssh-keygen -t ed25519 -N "" -C "hikae@wsl-sign" -f ~/.ssh/id_ed25519_sign
+ssh-keygen -t ed25519 -N "" -C "hikae@wsl" -f ~/.ssh/id_ed25519
+systemctl --user restart ssh-agent ssh-sign-agent
+# 4) ghtkn を unlock して device flow を通す
+ghauth
+```
+
+常駐は launchd の代わりに systemd user service で動く。
+
+```bash
+systemctl --user status ssh-agent ssh-sign-agent ghtkn-agent   # state 確認
+systemctl --user restart ghtkn-agent                           # 再起動 (unlock は ghauth でやり直す)
+journalctl --user -u ssh-sign-agent -n 20                      # ログ
 ```
 
 ## 7. 容量

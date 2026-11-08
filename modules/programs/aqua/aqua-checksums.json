@@ -1,6 +1,11 @@
 {
   "checksums": [
     {
+      "id": "github_release/github.com/bitwarden/clients/cli-v2026.10.1/bw-linux-2026.10.1.zip",
+      "checksum": "EB09C3715291C21CF744819B873A255C1247B1B8B45BAE138621A644EC7AD8F5",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/bitwarden/clients/cli-v2026.10.1/bw-macos-2026.10.1.zip",
       "checksum": "0F96F40975972DC0EC568E689D21CDB3CB8CAA30EC9BB066A55BF254512FB3C7",
       "algorithm": "sha256"
@@ -21,6 +26,11 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/googleworkspace/cli/v0.22.5/google-workspace-cli-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "4DB473DDE4B1AB872E4FF35D769B0D4AF1F1A6441A605E79D5CF8ADA9C87E920",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/higgsfield-ai/cli/v1.2.3/hf_1.2.3_darwin_amd64.tar.gz",
       "checksum": "C97C702127ED74381BD24EAFDC8CF0B917D9C4A1ED1D512483A7676DD1D3FD2A",
       "algorithm": "sha256"
@@ -31,8 +41,18 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/higgsfield-ai/cli/v1.2.3/hf_1.2.3_linux_amd64.tar.gz",
+      "checksum": "0ED594AE42646D494B9EAEEC4359211F6CFD653CE4F790AA4CA6A48C1A431529",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/pingdotgg/t3code/v0.1.7/t3-0.1.7-darwin-arm64.tar.gz",
       "checksum": "fecfb296ed142942d0cb2dee1c53a6faca54a4012a312a470d4dc6c3215d1ab3",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/pingdotgg/t3code/v0.1.7/t3-0.1.7-linux-x64.tar.gz",
+      "checksum": "C089892BF7922E2E73C6F44A5D1EA125C99F70E378C18361CBBED2FBA1920E6C",
       "algorithm": "sha256"
     },
     {
@@ -43,6 +63,16 @@
     {
       "id": "github_release/github.com/sisaku-security/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_arm64.tar.gz",
       "checksum": "4816E02BF8579B3D08AA5442014A06F646F8C963B8C1CE80C33C3ACCF2950F48",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/sisaku-security/sisakulint/v0.3.8/sisakulint_0.3.8_linux_amd64.tar.gz",
+      "checksum": "6DA250932DB1CC6FAE8B8F44185ACACB6E6FFC16DBAFB90B1A37A25AD3AD21DF",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/withgraphite/homebrew-tap/v1.8.6/gt-linux",
+      "checksum": "0E2E0F0160EBE258EC160BA011D6321D0346FCBD7F662D87158623AFBC4427A2",
       "algorithm": "sha256"
     },
     {
@@ -61,13 +91,28 @@
       "algorithm": "sha256"
     },
     {
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.311/linux-x64/claude",
+      "checksum": "86DC1FCC69498159EAF15F446613E847010F9036BFBBDFFD4C49350BE8489ADA",
+      "algorithm": "sha256"
+    },
+    {
       "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.166.0-darwin-arm64.tgz",
       "checksum": "181D2EDA8ADDBECA0B689C996DF207293947928BDD9C88A097837AE1C7E69CA5",
       "algorithm": "sha256"
     },
     {
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.166.0-linux-x64.tgz",
+      "checksum": "CBC00A26D3D0E2CEEFC4BE8891F8A81EF1E349B3B175BC0AE308762BC001FD93",
+      "algorithm": "sha256"
+    },
+    {
       "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.5.tgz",
       "checksum": "DFD827DE3281B4C3CA2B0BFC8F4BEB103FA660C419D148A1A515C4344F9E9C02",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "http/registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.5.tgz",
+      "checksum": "92690EEE07A680D3CB760CA02BA43878DE9EAB1B4E5D5DFAE8795518C53628F4",
       "algorithm": "sha256"
     }
   ]

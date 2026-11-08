@@ -69,8 +69,11 @@ packages:
     files:
       - name: t3
         src: t3-{{trimV .Version}}-{{.OS}}-{{.Arch}}/t3
+    replacements:
+      amd64: x64
     supported_envs:
       - darwin/arm64
+      - linux/amd64
     checksum:
       type: github_release
       asset: SHA256SUMS
@@ -85,38 +88,57 @@ packages:
       - name: bw
     replacements:
       darwin: macos
+    # x64 版だけ asset 名に arch が付かない
     overrides:
       - goos: darwin
         goarch: amd64
         asset: bw-{{.OS}}-{{trimV .SemVer}}.{{.Format}}
+      - goos: linux
+        goarch: amd64
+        asset: bw-{{.OS}}-{{trimV .SemVer}}.{{.Format}}
     supported_envs:
       - darwin
+      - linux/amd64
   - type: http
     repo_owner: openai
     repo_name: codex
-    url: https://registry.npmjs.org/@openai/codex/-/codex-{{.Version}}-darwin-arm64.tgz
+    url: https://registry.npmjs.org/@openai/codex/-/codex-{{.Version}}-{{.OS}}-{{.Arch}}.tgz
     format: tar.gz
     files:
       - name: codex
         src: package/vendor/aarch64-apple-darwin/bin/codex
+    replacements:
+      amd64: x64
+    overrides:
+      - goos: linux
+        files:
+          - name: codex
+            src: package/vendor/x86_64-unknown-linux-musl/bin/codex
     supported_envs:
       - darwin/arm64
+      - linux/amd64
   - type: http
     repo_owner: anomalyco
     repo_name: opencode
-    url: https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-{{.Version}}.tgz
+    url: https://registry.npmjs.org/@opencode/cli-{{.OS}}-{{.Arch}}/-/cli-{{.OS}}-{{.Arch}}-{{.Version}}.tgz
     format: tar.gz
     files:
       - name: opencode
         src: package/bin/opencode
+    replacements:
+      amd64: x64
     supported_envs:
       - darwin/arm64
+      - linux/amd64
   - type: http
     repo_owner: anthropics
     repo_name: claude-code
-    url: https://downloads.claude.ai/claude-code-releases/{{.Version}}/darwin-arm64/claude
+    url: https://downloads.claude.ai/claude-code-releases/{{.Version}}/{{.OS}}-{{.Arch}}/claude
     format: raw
     files:
       - name: claude
+    replacements:
+      amd64: x64
     supported_envs:
       - darwin/arm64
+      - linux/amd64

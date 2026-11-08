@@ -3,6 +3,7 @@ checksum:
   require_checksum: true
   supported_envs:
     - darwin
+    - linux/amd64
 registries:
   - name: local
     type: local
