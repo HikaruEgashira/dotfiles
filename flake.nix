@@ -531,6 +531,28 @@
             ${pkgs.bash}/bin/bash ${./tests/launchd-audit.sh} ${known} "$TMPDIR/launchd-audit-wrapper"
             touch "$out"
           '';
+      aquaPolicyCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        pkgs.runCommand "aqua-policy"
+          {
+            nativeBuildInputs = [
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.gnugrep
+              pkgs.yq-go
+            ];
+          }
+          ''
+            mkdir -p scripts tests modules/programs
+            cp ${./scripts/aqua-policy-check.sh} scripts/aqua-policy-check.sh
+            cp ${./tests/aqua-policy.sh} tests/aqua-policy.sh
+            cp -r ${./modules/programs/aqua} modules/programs/aqua
+            bash tests/aqua-policy.sh
+            touch "$out"
+          '';
       darwinEvalCheckFor =
         system:
         let
@@ -592,6 +614,7 @@
         aarch64-linux = {
           launchd-audit = launchdAuditCheckFor "aarch64-linux";
           skills-audit = skillsAuditCheckFor "aarch64-linux";
+          aqua-policy = aquaPolicyCheckFor "aarch64-linux";
           build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
           mel = melFor "aarch64-linux";
@@ -601,6 +624,7 @@
         x86_64-linux = {
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
+          aqua-policy = aquaPolicyCheckFor "x86_64-linux";
           build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
           mel = melFor "x86_64-linux";
@@ -611,6 +635,7 @@
         aarch64-darwin = {
           launchd-audit = launchdAuditCheckFor "aarch64-darwin";
           skills-audit = skillsAuditCheckFor "aarch64-darwin";
+          aqua-policy = aquaPolicyCheckFor "aarch64-darwin";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
           "home-eval" = homeEvalCheckFor "aarch64-darwin";
