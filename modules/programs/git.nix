@@ -11,6 +11,8 @@ let
   signingPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAMxbH3D5XgwLpdmeErzYD4STws7IML7sCt6h+ZUhkCa";
   # 旧署名鍵 (現在の認証鍵) で署名済みの過去 commit をローカル検証し続けるため残す
   legacySigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMWXJjbIw2llLUJvEIJtklUkgdJAAfso2Jgoi+OaH0v9";
+  # 秘密鍵は端末外に出さず端末ごとに発行するため、他端末の署名鍵も検証対象として列挙する
+  wslSigningPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKMgH2JVbVWM1JEQXafU+Zqeb9Ta1/YBkjPvnUbi8+Ff";
 
   # SSH_AUTH_SOCK は認証 agent のまま、署名だけ署名 agent に向ける
   signProgram = pkgs.writeShellScript "ssh-keygen-sign" ''
@@ -48,11 +50,15 @@ in
     signing = {
       format = "ssh";
       # key:: 形式で agent に委譲する (秘密鍵ファイルは読まない)
-      key = "key::${signingPubKey}";
+      key = lib.mkDefault "key::${signingPubKey}";
       signByDefault = true;
       signer = "${signProgram}";
       # 検証データは公開情報なので repo 所有。principal は commit email に揃え、鍵を替えたらここも更新する
-      allowedSigners = "${userEmail} ${signingPubKey}\n${userEmail} ${legacySigningPubKey}\n";
+      allowedSigners = lib.concatMapStrings (k: "${userEmail} ${k}\n") [
+        signingPubKey
+        legacySigningPubKey
+        wslSigningPubKey
+      ];
     };
 
     settings = {

@@ -564,6 +564,10 @@
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
       homeConfigurations.hikae = mkHome "aarch64-darwin";
+      # WSL2 (NixOS-WSL) 用: ホームを Linux パスにし、macOS 専用の有効化手順を外す
+      homeConfigurations."hikae@wsl" = (mkHome "x86_64-linux").extendModules {
+        modules = [ ./hosts/wsl/home.nix ];
+      };
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (
         system: (treefmtFor system).config.build.wrapper
