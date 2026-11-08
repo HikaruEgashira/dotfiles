@@ -2,3 +2,4 @@ result
 result-*
 .claude/scheduled_tasks.lock
 docs/ideation/
+__pycache__/
