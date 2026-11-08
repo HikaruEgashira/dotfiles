@@ -304,6 +304,8 @@ Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して 
 | `CLIPROXYAPI_CLIENT_KEY` | client 認証 key。Codex は `~/.codex/config.toml` の `model_providers.cliproxyapi.experimental_bearer_token`、opencode は `{file:~/.local/share/cliproxyapi/client-key}` で渡す |
 | `APARTURE_API_KEY`       | 省略可 (tailnet 内の Aparture は key 不要)                                                                                                                                     |
 
+model 一覧は CPA 公式 catalog が upstream の新 model を欠くため、`dev.egahika.cliproxyapi-catalog-sync` (起動時 + 3h 毎) が ChatGPT の `/models` で補った `models-catalog.json` / `codex-catalog.json` を書き、Codex app の picker 用に `~/.codex/cliproxyapi-catalog.json` (`model_catalog_json` が参照) も書き出す。
+
 wrapper は起動毎に store の template へ秘密を差し込み `config.yaml` (0600) を書き直すので、`config.yaml` を直接編集しない。management API は無効。OAuth 資格情報は `auths/` に置かれ、ai-sandbox の deny 対象。
 
 ChatGPT アカウントの追加・再ログイン (Codex CLI 本体の `~/.codex/auth.json` と refresh token を共有すると rotation で双方が失効するため、必ず別ログインにする):
