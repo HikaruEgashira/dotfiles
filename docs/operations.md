@@ -98,6 +98,8 @@ allowlist は「cache に無いと分かっていて持っているもの」の�
 2. `flake.nix` の `darwinConfigurations` に `<HOST> = mkDarwin "aarch64-darwin";` を追加する。`home-manager.users.<user>` と `system.primaryUser` も host 側で切り替える。
 3. 新 host で `nix run nix-darwin/master -- switch --flake github:HikaruEgashira/dotfiles#<HOST>`。
 
+linux host は nix-darwin を使わず、`hosts/<HOST>/home.nix` を `(mkHome "<system>").extendModules` で重ねた `homeConfigurations."hikae@<HOST>"` として足す (例: `hosts/wsl/`、手順は §6.1)。署名鍵は端末ごとに発行し、`git.nix` の `allowedSigners` と host の `programs.git.signing.key` に公開鍵を足す (§3.4)。
+
 ### 2.4 XDG entry を足す / 移設する
 
 1. `lib/xdg-entries.nix` の `entries` に `mkEntry` で追記する。eval 時の assert が legacy の相対パス・target の XDG root 配下・env 名・重複を弾く。
@@ -488,6 +490,31 @@ gh repo clone HikaruEgashira/dotfiles ~/dotfiles
 nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 # 3) switch が Aqua link と native app bootstrap まで適用する
+```
+
+### 6.1 NixOS-WSL (Windows PC)
+
+WSL は Home Manager 単体 (`homeConfigurations."hikae@wsl"`) で適用する。host 差分は `hosts/wsl/` に閉じ、同一 PC の Windows 側 git 設定も同じ activation が生成する (`hosts/wsl/windows.nix`)。
+
+```bash
+# 1) Windows: NixOS-WSL を導入し既定 distro にする (https://github.com/nix-community/NixOS-WSL)
+# 2) WSL: リポを取得して適用する (ghtkn が動く前なので一度だけ HTTPS 匿名 clone)
+git clone https://github.com/HikaruEgashira/dotfiles ~/dotfiles
+nix run home-manager/master -- switch --flake ~/dotfiles#hikae@wsl
+# 3) 端末専用の鍵を作り、署名鍵だけ GitHub に Signing Key として登録する (§3.4)
+ssh-keygen -t ed25519 -N "" -C "hikae@wsl-sign" -f ~/.ssh/id_ed25519_sign
+ssh-keygen -t ed25519 -N "" -C "hikae@wsl" -f ~/.ssh/id_ed25519
+systemctl --user restart ssh-agent ssh-sign-agent
+# 4) ghtkn を unlock して device flow を通す
+ghauth
+```
+
+常駐は launchd の代わりに systemd user service で動く。
+
+```bash
+systemctl --user status ssh-agent ssh-sign-agent ghtkn-agent   # state 確認
+systemctl --user restart ghtkn-agent                           # 再起動 (unlock は ghauth でやり直す)
+journalctl --user -u ssh-sign-agent -n 20                      # ログ
 ```
 
 ## 7. 容量
