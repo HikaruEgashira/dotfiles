@@ -202,16 +202,18 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 ### 3.4 SSH 鍵の役割分担とローテーション
 
-鍵は用途で 2 本に分け、agent も 2 本立てる (`modules/programs/ssh.nix`)。
+鍵は用途で 2 本に分け、agent も 2 本立てる (`modules/programs/ssh.nix`)。agent と鍵の対応表は 1 つで、darwin では launchd agent、linux (WSL) では同名の systemd user service (`ssh-agent` / `ssh-sign-agent`、鍵は `ExecStartPost` で投入) を生成する。鍵は端末ごとに発行し、秘密鍵を端末間でコピーしない。
 
 | 鍵                       | agent (launchd label)        | socket                               | 用途                          | sandbox                    |
 | ------------------------ | ---------------------------- | ------------------------------------ | ----------------------------- | -------------------------- |
 | `~/.ssh/id_ed25519`      | `dev.egahika.ssh-agent`      | `~/.local/state/ssh-agent.sock`      | ssh 認証 (vultr, `*.exe.xyz`) | 非公開                     |
 | `~/.ssh/id_ed25519_sign` | `dev.egahika.ssh-sign-agent` | `~/.local/state/ssh-sign-agent.sock` | git commit 署名のみ           | `SSH_AUTH_SOCK` として公開 |
 
+GitHub への git 通信は HTTPS (ghtkn の credential helper) に限り、認証鍵は GitHub に登録しない。GitHub に登録するのは各端末の署名鍵 (Signing Key 種別) だけである。
+
 host の `SSH_AUTH_SOCK` は認証 agent を指す。git は `gpg.ssh.program` の wrapper が `SSH_AUTH_SOCK` を署名 agent に差し替えて `ssh-keygen` を呼ぶので、host でも sandbox でも署名は署名 agent で行う。sandbox (`ai-sandbox.nix`) は署名 socket だけを allowlist に入れるため、sandbox 内から認証鍵で ssh できない。署名鍵はどの host の `authorized_keys` にも登録しない。
 
-署名公開鍵は `modules/programs/git.nix` の `signingPubKey` 1 箇所に集約している (`signing.key` と `allowedSigners` の両方が参照)。`legacySigningPubKey` は旧署名鍵 (= 現認証鍵) で、過去 commit のローカル検証用に `allowedSigners` に残す。
+署名公開鍵は `modules/programs/git.nix` に端末ごとに置く。`signingPubKey` (mac) が `signing.key` の既定値で、他端末は `hosts/<host>/home.nix` で `programs.git.signing.key` を上書きする (WSL は `wslSigningPubKey` と同値)。`allowedSigners` は全端末の署名公開鍵を列挙し、どの端末で作った commit もローカル検証できるようにする。端末を追加したら公開鍵を両方に足す。`legacySigningPubKey` は旧署名鍵 (= 現認証鍵) で、過去 commit のローカル検証用に `allowedSigners` に残す。
 
 #### 署名鍵の再生成 (紛失・漏洩時)
 
@@ -233,6 +235,7 @@ host の `SSH_AUTH_SOCK` は認証 agent を指す。git は `gpg.ssh.program` �
    nix run .#homeConfigurations.hikae.activationPackage
    launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-agent
    launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-add
+   # linux (WSL): home-manager switch --flake .#hikae@wsl && systemctl --user restart ssh-sign-agent
    ```
 
 4. 検証:
