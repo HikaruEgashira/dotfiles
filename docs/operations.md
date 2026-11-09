@@ -23,7 +23,7 @@ clean な `main` は `origin/main` と同じでも build を毎回実行し、�
 
 ### 1.1 AI CLI の導入と更新
 
-Codex・Claude Code・OpenCode は Aqua の local registry (`modules/programs/aqua/registry.yaml`) で版を pin する。上流の install script は使わない。install script は検証されていない shell を実行し、取得した binary も同じ配布元の checksum としか照合しないためである。
+Codex・OpenCode は Aqua の local registry (`modules/programs/aqua/registry.yaml`) で版を pin する。上流の install script は使わない。install script は検証されていない shell を実行し、取得した binary も同じ配布元の checksum としか照合しないためである。Claude Code だけは例外で、自己更新の追従速度を優先して Aqua から外し、初回導入に限って install script を使う (後述)。
 
 pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と linux/amd64 = NixOS-WSL) で、`scripts/aqua-provenance.sh` の `platforms` も同じ組を検証する。platform を足すときは両方と `registry.yaml` の `supported_envs` を揃える。
 
@@ -31,9 +31,8 @@ pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と li
 | ----------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Codex       | npm `@openai/codex@<v>-{darwin-arm64,linux-x64}`           | npm SLSA provenance (`openai/codex` の `rust-release.yml`)                            |
 | OpenCode    | npm `@opencode/cli-{darwin-arm64,linux-x64}@<v>`           | npm SLSA provenance (`anomalyco/opencode` の `release.yml`)                           |
-| Claude Code | `downloads.claude.ai` の `{darwin-arm64,linux-x64}` binary | GPG 署名付き `manifest.json` (鍵 `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`) |
 
-Aqua 自体は npm provenance と GPG を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
+Aqua 自体は npm provenance を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
 更新は `.github/workflows/aqua-update.yml` が毎日行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ main に push する。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
 
@@ -41,7 +40,7 @@ Aqua 自体は npm provenance と GPG を検証できない。そのため `scri
 nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
 ```
 
-Claude は公式 updater による自己更新を有効にしている。updater は `downloads.claude.ai` の manifest に載った sha256 を検証し、`~/.local/share/claude/versions/` に展開して `~/.local/bin/claude` を差し替える。ai-sandbox wrapper は `~/.local/bin/claude` を優先し、無い場合だけ Aqua の pin 版を起動する。Aqua の pin 版は初回 bootstrap 用で、起動すると updater がネイティブ版を導入する。Codex (`check_for_update_on_startup=false`) と OpenCode (`OPENCODE_DISABLE_AUTOUPDATE`) の自己更新は無効のままで、Aqua の pin が正史である。
+Claude は Nix / Aqua の管理外で、公式 installer (`curl -fsSL https://claude.ai/install.sh | bash`) で新規 host に一度だけ導入する。以後は公式 updater が `downloads.claude.ai` の manifest に載った sha256 を検証し、`~/.local/share/claude/versions/` に展開して `~/.local/bin/claude` を差し替える。ai-sandbox wrapper は `~/.local/bin/claude` だけを起動する。Aqua の link が残ると PATH 上で `~/.local/bin` より前に来て自己更新版を隠すため、`aqua.nix` の activation が `aquaproj-aqua/bin/claude` を消す。Codex (`check_for_update_on_startup=false`) と OpenCode (`OPENCODE_DISABLE_AUTOUPDATE`) の自己更新は無効のままで、Aqua の pin が正史である。
 
 ### 1.2 cache に無い package
 

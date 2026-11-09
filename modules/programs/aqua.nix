@@ -33,6 +33,8 @@ in
       AQUA_ENFORCE_CHECKSUM=true \
       AQUA_ENFORCE_REQUIRE_CHECKSUM=true \
         run ${pkgs.aqua}/bin/aqua install --only-link --all
+      # `install --only-link` は pin から外した package の link を消さない。PATH で ~/.local/bin より前に残ると自己更新版を隠す
+      run rm -f ${lib.escapeShellArg "${aquaRoot}/bin/claude"}
     '';
   };
 }
