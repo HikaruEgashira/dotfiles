@@ -86,23 +86,23 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/downloads.claude.ai/claude-code-releases/2.1.318/darwin-arm64/claude",
-      "checksum": "677A2EA7BF576CEDD20E191D973914ED8A41796F53A63B1923381DDC4D5B5E7D",
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.319/darwin-arm64/claude",
+      "checksum": "1F53587E92DEE8E089FA349188A4CDA64FA34ACE6E7B0CA2EE278DDAA3CC2EBD",
       "algorithm": "sha256"
     },
     {
-      "id": "http/downloads.claude.ai/claude-code-releases/2.1.318/linux-x64/claude",
-      "checksum": "708C77B204DB30086FF6F1ED34577BDA03E1BE74CED80557CBF7B54249EBF0BD",
+      "id": "http/downloads.claude.ai/claude-code-releases/2.1.319/linux-x64/claude",
+      "checksum": "DABAFEC82CA1319FA43D8BE36A10FC61B1D11821CB98AD5DF04AD95E199B8EED",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.166.0-darwin-arm64.tgz",
-      "checksum": "181D2EDA8ADDBECA0B689C996DF207293947928BDD9C88A097837AE1C7E69CA5",
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.0-darwin-arm64.tgz",
+      "checksum": "6989512A93D5FC74CB221DD348C972BF3CD83592E471BFD9557BCCB45EB6FFFC",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.166.0-linux-x64.tgz",
-      "checksum": "CBC00A26D3D0E2CEEFC4BE8891F8A81EF1E349B3B175BC0AE308762BC001FD93",
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.0-linux-x64.tgz",
+      "checksum": "2DC9AA871ABB513C3539D20D025F701FAF1974C46EE906BDA3A1E1F5026D4434",
       "algorithm": "sha256"
     },
     {
