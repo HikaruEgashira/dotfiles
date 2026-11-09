@@ -19,5 +19,3 @@ packages:
     registry: local
   - name: anomalyco/opencode
     registry: local
-  - name: anthropics/claude-code
-    registry: local

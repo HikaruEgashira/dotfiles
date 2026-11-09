@@ -24,7 +24,6 @@ bump() {
   rm "$aqua/aqua.yaml.bak"
 }
 
-bump anthropics/claude-code "$(latest_aged @anthropic-ai/claude-code)"
 bump openai/codex "$(latest_aged @openai/codex)"
 bump anomalyco/opencode "$(latest_aged @opencode/cli-darwin-arm64)"
 

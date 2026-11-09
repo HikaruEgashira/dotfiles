@@ -14,15 +14,17 @@ let
   # sandbox には署名 agent だけを見せ、認証鍵で ssh できないようにする
   signAgentSocket = "${home}/.local/state/ssh-sign-agent.sock";
 
-  # agent と ssh-add の起動順は保証されないので、socket が生えるまで待つ
+  # agent と ssh-add の起動順は保証されないので、agent が接続を受け付けるまで待つ。
+  # 再起動前の stale socket も -S は真になるため、`ssh-add -l` の exit 2 (接続不可) で判定する
   addKey =
     keyFile:
     pkgs.writeShellScript "ssh-add-key" ''
       for _ in $(seq 30); do
-        [ -S "$SSH_AUTH_SOCK" ] && exec ${pkgs.openssh}/bin/ssh-add ${keyFile}
+        ${pkgs.openssh}/bin/ssh-add -l >/dev/null 2>&1
+        [ $? -ne 2 ] && exec ${pkgs.openssh}/bin/ssh-add ${keyFile}
         sleep 1
       done
-      echo "ssh-add: agent socket not found at $SSH_AUTH_SOCK" >&2
+      echo "ssh-add: agent not accepting connections at $SSH_AUTH_SOCK" >&2
       exit 1
     '';
 

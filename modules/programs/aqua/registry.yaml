@@ -130,15 +130,3 @@ packages:
     supported_envs:
       - darwin/arm64
       - linux/amd64
-  - type: http
-    repo_owner: anthropics
-    repo_name: claude-code
-    url: https://downloads.claude.ai/claude-code-releases/{{.Version}}/{{.OS}}-{{.Arch}}/claude
-    format: raw
-    files:
-      - name: claude
-    replacements:
-      amd64: x64
-    supported_envs:
-      - darwin/arm64
-      - linux/amd64

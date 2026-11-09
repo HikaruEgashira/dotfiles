@@ -185,10 +185,9 @@ let
 
   claudeWrapper = pkgs.writeShellScript "claude-sandbox" ''
     set -eu
-    # 自己更新は公式 updater が manifest の sha256 を検証して ~/.local に入れる。Aqua の pin は初回 bootstrap 用
+    # Claude は Nix / Aqua の管理外。公式 installer が入れ、公式 updater が manifest の sha256 を検証して自己更新する
     real=${lib.escapeShellArg "${home}/.local/bin/claude"}
-    [ -x "$real" ] || real=${lib.escapeShellArg "${aquaBin}/claude"}
-    [ -x "$real" ] || { echo "ai-sandbox: $real not found" >&2; exit 127; }
+    [ -x "$real" ] || { echo "ai-sandbox: $real not found. install: curl -fsSL https://claude.ai/install.sh | bash" >&2; exit 127; }
     ${aquaEnv}
     export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
     # export した PAT や text backend を sandbox に継承させず、常に agent socket 経由に固定する
