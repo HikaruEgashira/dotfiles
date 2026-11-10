@@ -30,6 +30,7 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.opencode-service-health` | home-manager (`modules/programs/opencode.nix`)         | 毎日 09:05    | stale service の preflight (`port 49374`)                                     |
 | `dev.egahika.pi-extensions-update`    | home-manager (`modules/programs/pi.nix`)               | 毎日 09:10    | npm extension の pin 前進 + git extension 更新                                |
 | `dev.egahika.nuphy-kvm-switch`        | home-manager (`modules/programs/nuphy-kvm.nix`)        | 常駐          | Mac-Studio のみ。NuPhy の接続先に DELL の HDMI 入力を追従させる               |
+| `dev.egahika.nuphy-snap`              | home-manager (`modules/programs/nuphy-kvm.nix`)        | 常駐          | Caps レイヤのスナップ hotkey。要素スナップは Accessibility 許可が必要         |
 | `com.claude.caffeinate`               | home-manager (`modules/programs/claude.nix`)           | 常駐          | claude 実行中だけ sleep 抑止                                                  |
 | `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)                 | 12 分間隔     | OAuth refresh + upgrade check                                                 |
 | `dev.egahika.cliproxyapi`             | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐          | LLM provider proxy、`127.0.0.1:8317` のみ                                     |
