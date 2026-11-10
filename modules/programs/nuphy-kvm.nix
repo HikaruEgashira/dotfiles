@@ -34,7 +34,7 @@ lib.mkIf pkgs.stdenv.isDarwin {
     };
   };
 
-  # Caps レイヤの F13/F14/F15 でパッド・要素ヒント・ウィンドウヒントを出す。Accessibility 許可が要る
+  # Caps 単押し (F13) でカーソルパッドを出す。Accessibility 許可が要る
   launchd.agents.nuphy-snap = {
     enable = true;
     config = {
