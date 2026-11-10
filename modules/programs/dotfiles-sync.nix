@@ -64,7 +64,11 @@ let
     fi
 
     # OS 層は root が要るので build して未適用を記録するだけ。ユーザー層は root 不要なのでここで適用する
-    built=$(nix build --no-link --print-out-paths ".#darwinConfigurations.hikae.system")
+    case "$(/usr/sbin/scutil --get LocalHostName 2>/dev/null)" in
+      Mac-Studio) host=mac-studio ;;
+      *) host=hikae ;;
+    esac
+    built=$(nix build --no-link --print-out-paths ".#darwinConfigurations.$host.system")
     current=$(readlink -f /run/current-system 2>/dev/null || echo "")
     if [ "$built" != "$current" ]; then
       pending="yes"
