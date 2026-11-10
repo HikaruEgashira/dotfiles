@@ -1,6 +1,11 @@
 {
   "checksums": [
     {
+      "id": "github_release/github.com/HikaruEgashira/nuphy-air60-v2-tools/v0.4.0/nuphy-air60-v2-tools-macos-arm64.tar.gz",
+      "checksum": "AE8647145BA6D27B49B60A952811D7ADE04018125274485BAC81DEAF40F2C8BA",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/bitwarden/clients/cli-v2026.10.1/bw-linux-2026.10.1.zip",
       "checksum": "EB09C3715291C21CF744819B873A255C1247B1B8B45BAE138621A644EC7AD8F5",
       "algorithm": "sha256"
