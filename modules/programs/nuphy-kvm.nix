@@ -34,7 +34,7 @@ lib.mkIf pkgs.stdenv.isDarwin {
     };
   };
 
-  # Caps レイヤの F13-F16 / Shift+F13-F16 でカーソルを要素・ウィンドウへ飛ばす。要素側は Accessibility 許可が要る
+  # Caps レイヤの F13/F14/F15 でパッド・要素ヒント・ウィンドウヒントを出す。Accessibility 許可が要る
   launchd.agents.nuphy-snap = {
     enable = true;
     config = {
