@@ -27,10 +27,10 @@ Codex・OpenCode は Aqua の local registry (`modules/programs/aqua/registry.ya
 
 pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と linux/amd64 = NixOS-WSL) で、`scripts/aqua-provenance.sh` の `platforms` も同じ組を検証する。platform を足すときは両方と `registry.yaml` の `supported_envs` を揃える。
 
-| CLI         | 配布物                                                     | 来歴の根拠                                                                            |
-| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Codex       | npm `@openai/codex@<v>-{darwin-arm64,linux-x64}`           | npm SLSA provenance (`openai/codex` の `rust-release.yml`)                            |
-| OpenCode    | npm `@opencode/cli-{darwin-arm64,linux-x64}@<v>`           | npm SLSA provenance (`anomalyco/opencode` の `release.yml`)                           |
+| CLI      | 配布物                                           | 来歴の根拠                                                  |
+| -------- | ------------------------------------------------ | ----------------------------------------------------------- |
+| Codex    | npm `@openai/codex@<v>-{darwin-arm64,linux-x64}` | npm SLSA provenance (`openai/codex` の `rust-release.yml`)  |
+| OpenCode | npm `@opencode/cli-{darwin-arm64,linux-x64}@<v>` | npm SLSA provenance (`anomalyco/opencode` の `release.yml`) |
 
 Aqua 自体は npm provenance を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
