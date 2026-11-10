@@ -41,7 +41,7 @@ in
           $DRY_RUN_CMD ${pkgs.coreutils}/bin/env \
             ELEVENLABS_VOICE_ID=${lib.escapeShellArg sayHookVoiceId} \
             ELEVENLABS_VOICE_NAME=${lib.escapeShellArg sayHookVoiceName} \
-            ${sayHookBin} check
+            ${sayHookBin} check || echo "say-hook: check failed (missing key?); continuing" >&2
         ''
       );
 
