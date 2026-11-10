@@ -56,9 +56,7 @@
           ];
         };
 
-      mkDarwin =
-        system:
-        mkDarwinHost system ./hosts/macbook-air/default.nix;
+      mkDarwin = system: mkDarwinHost system ./hosts/macbook-air/default.nix;
 
       mkDarwinHost =
         system: hostModule:

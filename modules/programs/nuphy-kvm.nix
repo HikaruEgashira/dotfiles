@@ -33,4 +33,23 @@ lib.mkIf pkgs.stdenv.isDarwin {
       StandardErrorPath = "${config.home.homeDirectory}/.cache/nuphy-kvm-switch.log";
     };
   };
+
+  # Caps レイヤの F13-F16 / Shift+F13-F16 でカーソルを要素・ウィンドウへ飛ばす。要素側は Accessibility 許可が要る
+  launchd.agents.nuphy-snap = {
+    enable = true;
+    config = {
+      Label = "dev.egahika.nuphy-snap";
+      ProgramArguments = [ "${aquaBin}/snap" ];
+      RunAtLoad = true;
+      KeepAlive = true;
+      ProcessType = "Interactive";
+      EnvironmentVariables = {
+        HOME = config.home.homeDirectory;
+        PATH = "${aquaBin}:${pkgs.aqua}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+      }
+      // lib.filterAttrs (k: _: lib.hasPrefix "AQUA_" k) config.home.sessionVariables;
+      StandardOutPath = "${config.home.homeDirectory}/.cache/nuphy-snap.log";
+      StandardErrorPath = "${config.home.homeDirectory}/.cache/nuphy-snap.log";
+    };
+  };
 }

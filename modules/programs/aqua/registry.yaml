@@ -150,3 +150,5 @@ packages:
         src: bin/nrf-dfu
       - name: ble-scan
         src: bin/ble-scan
+      - name: snap
+        src: bin/snap
