@@ -58,10 +58,14 @@
 
       mkDarwin =
         system:
+        mkDarwinHost system ./hosts/macbook-air/default.nix;
+
+      mkDarwinHost =
+        system: hostModule:
         nix-darwin.lib.darwinSystem {
           specialArgs.dotfilesPath = self;
           modules = [
-            ./hosts/macbook-air/default.nix
+            hostModule
             {
               nixpkgs = {
                 hostPlatform = system;
@@ -472,9 +476,13 @@
           script = pkgs.writeShellScriptBin "switch" ''
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
-            system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.hikae.system")
+            case "$(/usr/sbin/scutil --get LocalHostName 2>/dev/null)" in
+              Mac-Studio) host=mac-studio ;;
+              *) host=hikae ;;
+            esac
+            system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.$host.system")
             if [ "$(readlink /run/current-system)" != "$system" ]; then
-              /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#hikae"
+              /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
             fi
             home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.hikae.activationPackage")
             exec "$home/activate"
@@ -584,6 +592,7 @@
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
+      darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations.hikae = mkHome "aarch64-darwin";
       # WSL2 (NixOS-WSL) 用: ホームを Linux パスにし、macOS 専用の有効化手順を外す
       homeConfigurations."hikae@wsl" = (mkHome "x86_64-linux").extendModules {
