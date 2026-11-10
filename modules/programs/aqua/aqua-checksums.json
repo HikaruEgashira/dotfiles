@@ -96,13 +96,13 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.5.tgz",
-      "checksum": "DFD827DE3281B4C3CA2B0BFC8F4BEB103FA660C419D148A1A515C4344F9E9C02",
+      "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.6.tgz",
+      "checksum": "613EBB74DD8EFF767BB9D442A37B40C4D9946BA27F1538985068A1B9678137A3",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.5.tgz",
-      "checksum": "92690EEE07A680D3CB760CA02BA43878DE9EAB1B4E5D5DFAE8795518C53628F4",
+      "id": "http/registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.6.tgz",
+      "checksum": "DFCD69F1D511AE10ED626768B41D84B8100CC4AA64CECB69DA38BA7A29D33551",
       "algorithm": "sha256"
     }
   ]

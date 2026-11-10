@@ -23,5 +23,5 @@ packages:
     registry: local
   - name: openai/codex@0.167.0
     registry: local
-  - name: anomalyco/opencode@2.2.5
+  - name: anomalyco/opencode@2.2.6
     registry: local
