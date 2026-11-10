@@ -31,6 +31,7 @@
     ./modules/programs/cliproxyapi.nix
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
+    ./modules/programs/nuphy-kvm.nix
   ];
 
   programs.home-manager.enable = true;

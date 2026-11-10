@@ -130,3 +130,23 @@ packages:
     supported_envs:
       - darwin/arm64
       - linux/amd64
+  - type: github_release
+    repo_owner: HikaruEgashira
+    repo_name: nuphy-air60-v2-tools
+    asset: nuphy-air60-v2-tools-macos-arm64.tar.gz
+    format: tar.gz
+    supported_envs:
+      - darwin/arm64
+    files:
+      - name: kvm-switch
+        src: bin/kvm-switch
+      - name: ddc
+        src: bin/ddc
+      - name: via-raw
+        src: bin/via-raw
+      - name: input-source
+        src: bin/input-source
+      - name: nrf-dfu
+        src: bin/nrf-dfu
+      - name: ble-scan
+        src: bin/ble-scan
