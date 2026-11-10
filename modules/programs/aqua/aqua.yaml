@@ -25,5 +25,5 @@ packages:
     registry: local
   - name: anomalyco/opencode@2.2.6
     registry: local
-  - name: HikaruEgashira/nuphy-air60-v2-tools@v0.7.0
+  - name: HikaruEgashira/nuphy-air60-v2-tools@v0.8.0
     registry: local
