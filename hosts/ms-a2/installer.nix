@@ -13,14 +13,27 @@ let
   install = pkgs.writeShellScriptBin "install-ms-a2" ''
     set -euo pipefail
     ref=''${1:-${flakeRef}}
+    cfg="$ref#nixosConfigurations.ms-a2.config.system.build"
+
+    until ${pkgs.curl}/bin/curl -fsI https://cache.nixos.org >/dev/null; do echo "network 待ち (nmtui で接続可)"; sleep 3; done
+
+    # copytoram が効かず NVMe 上の p4 を掴んだまま消すと live 環境ごと壊れる
+    [ "$(findmnt -no FSTYPE /iso)" = tmpfs ] || { echo "copytoram 未成立: /iso が RAM 上にない"; exit 1; }
+    if lsblk -no MOUNTPOINTS /dev/nvme0n1 | grep -q .; then echo "/dev/nvme0n1 がまだマウントされている"; exit 1; fi
+
+    # 消去後にネットワークや評価で失敗しても復旧できるよう、必要な closure を先に RAM 上の store へ揃える
+    echo "==> ms-a2 と disko script を事前取得 (数分〜十数分)"
+    system=$(nix build --no-link --print-out-paths "$cfg.toplevel")
+    disko=$(nix build --no-link --print-out-paths "$cfg.diskoScript")
+
     lsblk /dev/nvme0n1
     printf '/dev/nvme0n1 (Windows を含む) を完全に消去して %s を入れます。続けるなら WIPE と入力: ' "$ref"
     read -r answer
     [ "$answer" = WIPE ] || { echo aborted; exit 1; }
-    until ${pkgs.curl}/bin/curl -fsI https://cache.nixos.org >/dev/null; do echo "network 待ち (nmtui で接続可)"; sleep 3; done
-    umount /iso 2>/dev/null || true
-    nix run github:nix-community/disko -- --mode destroy,format,mount --yes-wipe-all-disks --flake "$ref#ms-a2"
-    nixos-install --flake "$ref#ms-a2" --no-root-passwd --no-channel-copy
+
+    "$disko"
+    # 失敗しても再起動せず、この行だけ再実行すれば RAM 上の store から入れ直せる
+    nixos-install --system "$system" --no-root-passwd --no-channel-copy
     echo "完了。reboot してください"
   '';
 in
@@ -59,5 +72,5 @@ in
     "nix-command"
     "flakes"
   ];
-  services.getty.helpLine = "Run `sudo install-ms-a2` to wipe the NVMe and install ms-a2.";
+  services.getty.helpLine = "Run `sudo install-ms-a2 github:HikaruEgashira/dotfiles/main`. If it fails after WIPE, do not reboot; rerun the nixos-install line.";
 }
