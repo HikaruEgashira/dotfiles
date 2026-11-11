@@ -44,6 +44,8 @@
   programs = {
     niri.enable = true;
     zsh.enable = true;
+    # claude 等の汎用 Linux 向け動的リンクバイナリを ~/.local/bin から実行するため
+    nix-ld.enable = true;
   };
   services = {
     greetd = {
