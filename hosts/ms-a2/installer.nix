@@ -2,6 +2,7 @@
 # 自分が載っているディスクを消すため、squashfs を RAM へ複写して /iso を手放してから disko を走らせる。
 # ISO を FAT32 の 4GiB 上限内に収めるため target closure は同梱せず、install 時に cache から取得する。
 {
+  config,
   lib,
   modulesPath,
   pkgs,
@@ -36,7 +37,18 @@ in
     supportedFilesystems.zfs = lib.mkForce false;
   };
   # ISO 既定の iso9660 ではなく、Windows 側で展開した FAT32 パーティションを本体として拾う
-  fileSystems."/iso".fsType = lib.mkForce "vfat";
+  # installation-cd-base が fileSystems 全体を mkImageMediaOverride で固定するため、全体ごとより強く上書きする
+  fileSystems = lib.mkOverride 40 (
+    config.lib.isoFileSystems
+    // {
+      "/iso" = {
+        device = "/dev/disk/by-label/MSA2NIXOS";
+        fsType = "vfat";
+        neededForBoot = true;
+        noCheck = true;
+      };
+    }
+  );
   networking.networkmanager.enable = true;
   networking.wireless.enable = lib.mkForce false;
   environment.systemPackages = [
