@@ -73,6 +73,8 @@
   };
 
   environment.systemPackages = with pkgs; [
+    # niri 既定設定の Mod+T が alacritty を起動する
+    alacritty
     foot
     fuzzel
     firefox
