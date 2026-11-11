@@ -35,6 +35,8 @@ in
     # installer 既定の zfs は latest kernel に追従しておらず、btrfs 運用なので外す
     supportedFilesystems.zfs = lib.mkForce false;
   };
+  # ISO 既定の iso9660 ではなく、Windows 側で展開した FAT32 パーティションを本体として拾う
+  fileSystems."/iso".fsType = lib.mkForce "vfat";
   networking.networkmanager.enable = true;
   networking.wireless.enable = lib.mkForce false;
   environment.systemPackages = [
