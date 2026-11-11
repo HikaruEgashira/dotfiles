@@ -20,6 +20,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -32,6 +36,7 @@
       nixpkgs,
       nix-darwin,
       home-manager,
+      disko,
       treefmt-nix,
       ...
     }:
@@ -74,6 +79,39 @@
             }
           ];
         };
+
+      msA2 = nixpkgs.lib.nixosSystem {
+        modules = [
+          disko.nixosModules.disko
+          home-manager.nixosModules.home-manager
+          ./hosts/ms-a2/default.nix
+          {
+            nixpkgs = {
+              hostPlatform = "x86_64-linux";
+              inherit overlays;
+              config.allowUnfree = true;
+            };
+            system.configurationRevision = self.rev or self.dirtyRev or null;
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              extraSpecialArgs.dotfilesPath = self;
+              users.hikae.imports = [
+                ./home.nix
+                ./hosts/linux/home.nix
+              ];
+            };
+          }
+        ];
+      };
+
+      msA2Installer = nixpkgs.lib.nixosSystem {
+        specialArgs.flakeRef = "github:HikaruEgashira/dotfiles/${self.rev or "main"}";
+        modules = [
+          ./hosts/ms-a2/installer.nix
+          { nixpkgs.hostPlatform = "x86_64-linux"; }
+        ];
+      };
 
       xdgConfigFor =
         system:
@@ -590,6 +628,8 @@
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
+      nixosConfigurations.ms-a2 = msA2;
+      packages.x86_64-linux.ms-a2-installer-iso = msA2Installer.config.system.build.isoImage;
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations.hikae = mkHome "aarch64-darwin";
       # WSL2 (NixOS-WSL) 用: ホームを Linux パスにし、macOS 専用の有効化手順を外す
@@ -637,6 +677,9 @@
           mel = melFor "x86_64-linux";
           brew-free = noHomebrewCheckFor "x86_64-linux";
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
+          ms-a2-eval = builtins.seq msA2.config.system.build.toplevel.drvPath (
+            (pkgsFor "x86_64-linux").runCommand "ms-a2-eval" { } "touch $out"
+          );
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
         aarch64-darwin = {
