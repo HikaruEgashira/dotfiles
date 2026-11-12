@@ -20,6 +20,9 @@
     apps:
       - name: HikaruEgashira/ghtkn-hikae
         client_id: Iv23li4HDmrucWZqsdP4
+      # App: https://github.com/settings/apps/ghtkn-potato
+      - name: HikaruEgashira/ghtkn-potato
+        client_id: Iv23lifOlYpSnmUdsUuA
     backend:
       type: agent
   '';
