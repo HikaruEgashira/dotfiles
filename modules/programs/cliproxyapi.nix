@@ -142,7 +142,10 @@ in
         RunAtLoad = true;
         StartInterval = 300;
         # アプリ内 CLI は TERM がないと GUI 起動と判定する
-        EnvironmentVariables.TERM = "dumb";
+        EnvironmentVariables = {
+          TERM = "dumb";
+          HOME = home;
+        };
         StandardOutPath = "${stateDir}/serve.log";
         StandardErrorPath = "${stateDir}/serve.log";
       };
