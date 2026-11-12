@@ -135,12 +135,14 @@ in
         ProgramArguments = [
           "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
           "serve"
+          "--bg"
           "--https=8317"
           "http://127.0.0.1:8317"
         ];
         RunAtLoad = true;
-        KeepAlive = true;
-        ThrottleInterval = 30;
+        StartInterval = 300;
+        # アプリ内 CLI は TERM がないと GUI 起動と判定する
+        EnvironmentVariables.TERM = "dumb";
         StandardOutPath = "${stateDir}/serve.log";
         StandardErrorPath = "${stateDir}/serve.log";
       };
