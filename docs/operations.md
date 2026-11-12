@@ -268,7 +268,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
-ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。Mac は受信を一切公開しない (ALF blockall を維持し、`tailscale serve` / Funnel は使わない)。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
 
 Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。`local.env` は wrapper が `KEY=VALUE` 行としてだけ読む (`modules/programs/artex/load-env.sh`、shell 評価はしない。両端の quote は外す)。shell 構文の行があると起動前に fail する。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を起動する (drift の修復ログは `pg.log`)。停止時は launchd の SIGTERM を wrapper が SIGINT (fast shutdown) に変換し、`ExitTimeOut` 60s 内に checkpoint を終えて止まる。
 
@@ -285,7 +285,7 @@ psql "$ARTEX_PG_DSN"
 lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788) '   # 全て 127.0.0.1
 nc -z 127.0.0.1 5432; echo $?                          # 1 (Postgres は TCP を開けない)
 psql -h ~/.local/share/artex/run -U artex -d artex -c 'select 1'   # password を求められる
-tailscale serve status                                 # No serve config
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status # Mac Studio は :8317 のみ
 ```
 
 復旧 (password 紛失・pg_hba 切替失敗で ARTEX が DB に繋がらない):
@@ -296,12 +296,25 @@ tailscale serve status                                 # No serve config
 
 ### 3.8 CLIProxyAPI で LLM provider を束ねる (module: `modules/programs/cliproxyapi.nix`)
 
-Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture を使う。upstream と model の一覧は module が宣言し、秘密は `~/.local/share/cliproxyapi/secrets.env` (0600、`KEY=VALUE` 行) にだけ置く。
+Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture を使う。upstream と model の一覧は module が宣言し、秘密の正史は `~/.config/secrets/env.age`。起動時に Secure Enclave の identity で復号し、runtime config と `client-key` を 0600 で原子的に生成する。vault 未移行の端末だけ `~/.local/share/cliproxyapi/secrets.env` を読む。
 
 | キー                     | 用途                                                                                                                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `CLIPROXYAPI_CLIENT_KEY` | client 認証 key。Codex は `~/.codex/config.toml` の `model_providers.cliproxyapi.experimental_bearer_token`、opencode は `{file:~/.local/share/cliproxyapi/client-key}` で渡す |
 | `APARTURE_API_KEY`       | 省略可 (tailnet 内の Aparture は key 不要)                                                                                                                                     |
+
+Mac Studio は `homeConfigurations."hikae@mac-studio"` を適用する。`switch` と定期 sync はホスト名から自動選択する。ユーザー層だけを適用する場合:
+
+```bash
+cd ~/dotfiles
+nix run '.#homeConfigurations.hikae@mac-studio.activationPackage'
+```
+
+- ハブ URL: `https://mac-studio.tailc30b81.ts.net:8317/v1`。Tailscale Serve は tailnet 内限定で、Funnel は使用しない。クライアントは同じ tailnet と `CLIPROXYAPI_CLIENT_KEY` が必要。
+- `Strata/qwen3.8-flash-next-unsloth-ud-q6_k_xl` を `http://127.0.0.1:8080/v1` に転送する。`STRATA_API_KEY` を vault に登録し、Strata 側の API key と一致させる。
+- `dev.egahika.cliproxyapi-serve` が Serve を維持し、`dev.egahika.cliproxyapi-awake` が AC 電源時のシステムスリープを防ぐ。ログイン前の稼働は LaunchAgent の対象外。
+- management API は無効。Claude / Codex の追加は下記の OAuth CLI を使う。認証ファイルは `~/.local/share/cliproxyapi/auths` に保持し、共有・commit しない。
+- 自動起動時の復号用 identity は Secure Enclave に束縛し、対話認証なしで使用する。identity と runtime credential のファイル権限は 0600、格納ディレクトリは 0700。
 
 model 一覧は CPA 公式 catalog が upstream の新 model を欠くため、`dev.egahika.cliproxyapi-catalog-sync` (起動時 + 3h 毎) が ChatGPT の `/models` で補った `models-catalog.json` / `codex-catalog.json` を書き、Codex app の picker 用に `~/.codex/cliproxyapi-catalog.json` (`model_catalog_json` が参照) も書き出す。
 
@@ -311,6 +324,7 @@ ChatGPT アカウントの追加・再ログイン (Codex CLI 本体の `~/.code
 
 ```bash
 cliproxyapi -config ~/.local/share/cliproxyapi/config.yaml -codex-device-login
+cliproxyapi -config ~/.local/share/cliproxyapi/config.yaml -claude-login
 launchctl kickstart -k gui/$(id -u)/dev.egahika.cliproxyapi
 ```
 

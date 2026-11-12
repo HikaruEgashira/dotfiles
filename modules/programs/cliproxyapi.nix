@@ -9,7 +9,8 @@ let
   home = config.home.homeDirectory;
   stateDir = "${home}/.local/share/cliproxyapi";
   port = 8317;
-  yaml = pkgs.formats.yaml { };
+  hub = config.programs.cliproxyapi.hub.enable;
+  json = pkgs.formats.json { };
 
   compat = name: baseUrl: keyVar: models: {
     inherit name;
@@ -19,8 +20,8 @@ let
     models = map (m: if builtins.isString m then { name = m; } else m) models;
   };
 
-  # 秘密は @NAME@ のまま store に置き、起動時に secrets.env の値で置換した runtime copy を 0600 で書く
-  template = yaml.generate "cliproxyapi-config.yaml" {
+  # 秘密は @NAME@ のまま store に置き、起動時に vault の値を埋めた runtime copy を 0600 で書く
+  template = json.generate "cliproxyapi-config.json" {
     config-version = 8;
     server = {
       host = "127.0.0.1";
@@ -62,6 +63,11 @@ let
           alias = "accounts-fireworks-routers-glm-flash-latest";
         }
       ])
+    ]
+    ++ lib.optionals hub [
+      (compat "Strata" "http://127.0.0.1:8080/v1" "STRATA_API_KEY" [
+        "qwen3.8-flash-next-unsloth-ud-q6_k_xl"
+      ])
     ];
   };
 
@@ -71,17 +77,15 @@ let
 
   run = pkgs.writeShellScript "cliproxyapi-run" ''
     set -eu
-    . ${./artex/load-env.sh}
-    load_env_file ${stateDir}/secrets.env
-    : "''${APARTURE_API_KEY:=none}"
-    conf=$(<${template})
-    for k in CLIPROXYAPI_CLIENT_KEY APARTURE_API_KEY; do
-      v=''${!k:?$k is not set in ${stateDir}/secrets.env}
-      conf=''${conf//@$k@/$v}
-    done
     umask 077
     ${pkgs.coreutils}/bin/install -d -m 0700 ${stateDir}/auths
-    printf '%s\n' "$conf" >${stateDir}/config.yaml
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.age
+        pkgs.age-plugin-se
+      ]
+    }:$PATH
+    ${lib.getExe pkgs.python3} -I ${./cliproxyapi/render-config.py} ${template} ${stateDir} ${home}/.config/secrets
     # ChatGPT の access token は寿命 (~46h) が CPA の既定 refresh lead (96h) より短く、毎 tick refresh して token を rotate し続けるため間隔を固定する
     for f in ${stateDir}/auths/codex-*.json; do
       [ -e "$f" ] || continue
@@ -93,32 +97,66 @@ let
   '';
 in
 {
-  launchd.agents.cliproxyapi = {
-    enable = true;
-    config = {
-      Label = "dev.egahika.cliproxyapi";
-      ProgramArguments = [ "${run}" ];
-      RunAtLoad = true;
-      KeepAlive = true;
-      WorkingDirectory = stateDir;
-      StandardOutPath = "${stateDir}/service.log";
-      StandardErrorPath = "${stateDir}/service.log";
-    };
-  };
+  options.programs.cliproxyapi.hub.enable = lib.mkEnableOption "Mac Studio Strata and Tailscale hub";
 
-  # 起動時の sync は proxy 起動前なので Codex 向け catalog の書き出しはこちらが担う
-  launchd.agents.cliproxyapi-catalog-sync = {
-    enable = true;
-    config = {
-      Label = "dev.egahika.cliproxyapi-catalog-sync";
-      ProgramArguments = [
-        "${catalogSync}"
-        "${home}/.codex/cliproxyapi-catalog.json"
-      ];
-      RunAtLoad = true;
-      StartInterval = 3 * 60 * 60;
-      StandardOutPath = "${stateDir}/catalog-sync.log";
-      StandardErrorPath = "${stateDir}/catalog-sync.log";
+  config.launchd.agents = {
+    cliproxyapi = {
+      enable = true;
+      config = {
+        Label = "dev.egahika.cliproxyapi";
+        ProgramArguments = [ "${run}" ];
+        RunAtLoad = true;
+        KeepAlive = true;
+        WorkingDirectory = stateDir;
+        StandardOutPath = "${stateDir}/service.log";
+        StandardErrorPath = "${stateDir}/service.log";
+      };
+    };
+
+    # 起動時の sync は proxy 起動前なので Codex 向け catalog の書き出しはこちらが担う
+    cliproxyapi-catalog-sync = {
+      enable = true;
+      config = {
+        Label = "dev.egahika.cliproxyapi-catalog-sync";
+        ProgramArguments = [
+          "${catalogSync}"
+          "${home}/.codex/cliproxyapi-catalog.json"
+        ];
+        RunAtLoad = true;
+        StartInterval = 3 * 60 * 60;
+        StandardOutPath = "${stateDir}/catalog-sync.log";
+        StandardErrorPath = "${stateDir}/catalog-sync.log";
+      };
+    };
+    cliproxyapi-serve = lib.mkIf hub {
+      enable = true;
+      config = {
+        Label = "dev.egahika.cliproxyapi-serve";
+        ProgramArguments = [
+          "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+          "serve"
+          "--https=8317"
+          "http://127.0.0.1:8317"
+        ];
+        RunAtLoad = true;
+        KeepAlive = true;
+        ThrottleInterval = 30;
+        StandardOutPath = "${stateDir}/serve.log";
+        StandardErrorPath = "${stateDir}/serve.log";
+      };
+    };
+
+    cliproxyapi-awake = lib.mkIf hub {
+      enable = true;
+      config = {
+        Label = "dev.egahika.cliproxyapi-awake";
+        ProgramArguments = [
+          "/usr/bin/caffeinate"
+          "-s"
+        ];
+        RunAtLoad = true;
+        KeepAlive = true;
+      };
     };
   };
 }

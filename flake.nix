@@ -513,14 +513,14 @@
             set -eu
             root="''${PRJ_ROOT:-$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/dotfiles")}"
             case "$(/usr/sbin/scutil --get LocalHostName 2>/dev/null)" in
-              Mac-Studio) host=mac-studio ;;
-              *) host=hikae ;;
+              Mac-Studio) host=mac-studio; homeHost=hikae@mac-studio ;;
+              *) host=hikae; homeHost=hikae ;;
             esac
             system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.$host.system")
             if [ "$(readlink /run/current-system)" != "$system" ]; then
               /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
             fi
-            home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.hikae.activationPackage")
+            home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.$homeHost.activationPackage")
             exec "$home/activate"
           '';
         in
@@ -631,10 +631,14 @@
       nixosConfigurations.ms-a2 = msA2;
       packages.x86_64-linux.ms-a2-installer-iso = msA2Installer.config.system.build.isoImage;
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
-      homeConfigurations.hikae = mkHome "aarch64-darwin";
-      # WSL2 (NixOS-WSL) 用: ホームを Linux パスにし、macOS 専用の有効化手順を外す
-      homeConfigurations."hikae@wsl" = (mkHome "x86_64-linux").extendModules {
-        modules = [ ./hosts/wsl/home.nix ];
+      homeConfigurations = {
+        hikae = mkHome "aarch64-darwin";
+        "hikae@mac-studio" = (mkHome "aarch64-darwin").extendModules {
+          modules = [ { programs.cliproxyapi.hub.enable = true; } ];
+        };
+        "hikae@wsl" = (mkHome "x86_64-linux").extendModules {
+          modules = [ ./hosts/wsl/home.nix ];
+        };
       };
 
       formatter = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (

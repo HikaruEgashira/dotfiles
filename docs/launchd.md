@@ -34,6 +34,8 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `com.claude.caffeinate`               | home-manager (`modules/programs/claude.nix`)           | 常駐          | claude 実行中だけ sleep 抑止                                                  |
 | `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)                 | 12 分間隔     | OAuth refresh + upgrade check                                                 |
 | `dev.egahika.cliproxyapi`             | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐          | LLM provider proxy、`127.0.0.1:8317` のみ                                     |
+| `dev.egahika.cliproxyapi-serve`       | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐          | Mac Studio: tailnet HTTPS :8317                                               |
+| `dev.egahika.cliproxyapi-awake`       | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐          | Mac Studio: AC 電源時のスリープ防止                                           |
 | `dev.egahika.artex`                   | home-manager (`modules/programs/artex.nix`)            | 常駐          | `127.0.0.1:8787`、受信は非公開                                                |
 | `dev.egahika.artex-postgres`          | home-manager (`modules/programs/artex.nix`)            | 常駐          | ARTEX 用 Postgres、unix socket `~/.local/share/artex/run` のみ、scram-sha-256 |
 | `com.google.GoogleUpdater.wake`       | vendor (GoogleUpdater.app)                             | 1 時間間隔    | Chrome/Google app 更新                                                        |
