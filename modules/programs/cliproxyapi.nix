@@ -133,7 +133,7 @@ in
       config = {
         Label = "dev.egahika.cliproxyapi-serve";
         ProgramArguments = [
-          "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+          "${pkgs.tailscale}/bin/tailscale"
           "serve"
           "--bg"
           "--https=8317"
@@ -141,11 +141,6 @@ in
         ];
         RunAtLoad = true;
         StartInterval = 300;
-        # アプリ内 CLI は TERM がないと GUI 起動と判定する
-        EnvironmentVariables = {
-          TERM = "dumb";
-          HOME = home;
-        };
         StandardOutPath = "${stateDir}/serve.log";
         StandardErrorPath = "${stateDir}/serve.log";
       };

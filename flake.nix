@@ -61,6 +61,10 @@
           ];
         };
 
+      mkStudioHome = (mkHome "aarch64-darwin").extendModules {
+        modules = [ { programs.cliproxyapi.hub.enable = true; } ];
+      };
+
       mkDarwin = system: mkDarwinHost system ./hosts/macbook-air/default.nix;
 
       mkDarwinHost =
@@ -228,7 +232,9 @@
         let
           lib = (pkgsFor system).lib;
           hmLabels = lib.mapAttrsToList (_: a: a.config.Label) (
-            lib.filterAttrs (_: a: a.enable) (xdgConfigFor system).launchdAgents
+            lib.filterAttrs (_: a: a.enable) (
+              (xdgConfigFor system).launchdAgents // mkStudioHome.config.launchd.agents
+            )
           );
         in
         hmLabels
@@ -633,9 +639,7 @@
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations = {
         hikae = mkHome "aarch64-darwin";
-        "hikae@mac-studio" = (mkHome "aarch64-darwin").extendModules {
-          modules = [ { programs.cliproxyapi.hub.enable = true; } ];
-        };
+        "hikae@mac-studio" = mkStudioHome;
         "hikae@wsl" = (mkHome "x86_64-linux").extendModules {
           modules = [ ./hosts/wsl/home.nix ];
         };

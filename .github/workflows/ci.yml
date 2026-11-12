@@ -80,6 +80,7 @@ jobs:
         timeout-minutes: 10
         run: |
           nix eval --raw '.#checks.x86_64-linux.build.drvPath'
+          nix eval --raw '.#homeConfigurations.hikae@mac-studio.activationPackage.drvPath'
           echo
           echo "evaluated successfully"
       - name: Eval determinism gate
