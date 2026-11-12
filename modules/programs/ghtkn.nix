@@ -21,7 +21,7 @@
       - name: HikaruEgashira/ghtkn-hikae
         client_id: Iv23li4HDmrucWZqsdP4
       # App: ghtkn-potato (account: jarman-potato, gh-intel-e2e / BinaryBaconLabs に install)
-      - name: jarman-potato/ghtkn-potato
+      - name: jarman-potato
         client_id: Iv23lifOlYpSnmUdsUuA
     backend:
       type: agent
