@@ -1,4 +1,4 @@
-# Windows 側で左 Ctrl 単押しによる IME 切替を有効にする。OS 標準に単押し hotkey が無いため AutoHotkey v2 で実現する。
+# Windows 側で右 Ctrl 単押しによる IME 切替を有効にする。OS 標準に単押し hotkey が無いため AutoHotkey v2 で実現する。左 Ctrl 単押しは既存のウィンドウ切替と衝突するため使わない。
 # スクリプトは Startup フォルダへ実ファイルとして複製し、ログオン時に自動起動させる。
 {
   lib,
