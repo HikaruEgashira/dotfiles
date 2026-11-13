@@ -22,12 +22,21 @@
     cpu.amd.updateMicrocode = true;
     enableRedistributableFirmware = true;
     graphics.enable = true;
+    # NuPhy 等の BT キーボード用。bluetoothctl は bluez に同梱
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
   };
 
   networking = {
     hostName = "ms-a2";
     networkmanager.enable = true;
-    firewall.enable = true;
+    firewall = {
+      enable = true;
+      # Tailscale SSH (tailscale0:22) を通す。物理 NIC 側は閉じたまま
+      trustedInterfaces = [ "tailscale0" ];
+    };
   };
 
   time.timeZone = "Asia/Tokyo";
@@ -56,7 +65,11 @@
       enable = true;
       pulse.enable = true;
     };
-    tailscale.enable = true;
+    # Tailscale SSH: tailnet 内からのみ受け付け、openssh/port 22 を公開しない
+    tailscale = {
+      enable = true;
+      extraUpFlags = [ "--ssh" ];
+    };
     fwupd.enable = true;
     fstrim.enable = true;
   };
