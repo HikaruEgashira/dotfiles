@@ -10,6 +10,8 @@
 
 let
   home = config.home.homeDirectory;
+  # gh の実体は store path で固定する。profile のレイアウト (~/.nix-profile か per-user か) は OS / install 方式で変わる
+  registry = import ../../../lib/package-registry.nix { inherit pkgs lib; };
 
   # aqua-proxy は aqua 本体と global config / policy が無いと local registry の package を解決できない
   aquaEnv = lib.concatStringsSep "\n" (
@@ -164,7 +166,7 @@ let
   # token 発行に失敗したとき・明示 GH_TOKEN があるときは個人認証のまま通す。
   ghWrapper = pkgs.writeShellScript "gh-hikaevi" ''
     set -eu
-    real=${lib.escapeShellArg "${home}/.nix-profile/bin/gh"}
+    real=${lib.escapeShellArg "${registry.ghWithGhtkn}/bin/gh"}
     minter=${lib.escapeShellArg "${home}/ghq/github.com/HikaruEgashira/hikaevi/scripts/local-token.mjs"}
     if [ -z "''${GH_TOKEN:-}" ] && [ -f "$minter" ]; then
       owner=""
