@@ -18,12 +18,17 @@ A_MenuMaskKey := "vkE8"
         SetIME(1)
 }
 
+; IME を開くだけでは変換モードが半角英数のまま残り変換されないため、
+; IME 自身が解釈する VK_IME_ON/OFF を送り、旧 IME 向けにひらがな(ローマ字)モードも明示する
 SetIME(open) {
+    Send(open ? "{vk16}" : "{vk1A}")
     hwnd := WinExist("A")
     try hwnd := ControlGetFocus("A") || hwnd
     ime := DllCall("imm32\ImmGetDefaultIMEWnd", "Ptr", hwnd, "Ptr")
     if !ime
         return
-    ; WM_IME_CONTROL 0x6 = IMC_SETOPENSTATUS
+    ; WM_IME_CONTROL: 0x6 = IMC_SETOPENSTATUS, 0x2 = IMC_SETCONVERSIONMODE
     SendMessage(0x283, 0x6, open, ime)
+    if open
+        SendMessage(0x283, 0x2, 0x19, ime) ; NATIVE | FULLSHAPE | ROMAN
 }
