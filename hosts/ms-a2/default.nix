@@ -43,6 +43,14 @@
       type = "fcitx5";
       fcitx5.waylandFrontend = true;
       fcitx5.addons = [ pkgs.fcitx5-mozc ];
+      # Mac の英数/かな相当: 左 Super(Cmd) 単押しで keyboard-us、右 Super(Cmd) 単押しで mozc。
+      # 修飾キー単体の hotkey は release 時に判定されるため Super+<key> の niri bind とは衝突しない。
+      # 左 Ctrl 単押しは niri 側の操作と衝突するので割り当てない
+      fcitx5.settings.globalOptions = {
+        "Hotkey/TriggerKeys"."0" = "Control+space";
+        "Hotkey/DeactivateKeys"."0" = "Super+Super_L";
+        "Hotkey/ActivateKeys"."0" = "Super+Super_R";
+      };
     };
   };
 
