@@ -32,11 +32,7 @@
   networking = {
     hostName = "ms-a2";
     networkmanager.enable = true;
-    firewall = {
-      enable = true;
-      # Tailscale SSH (tailscale0:22) を通す。物理 NIC 側は閉じたまま
-      trustedInterfaces = [ "tailscale0" ];
-    };
+    firewall.enable = true;
   };
 
   time.timeZone = "Asia/Tokyo";
@@ -65,11 +61,7 @@
       enable = true;
       pulse.enable = true;
     };
-    # Tailscale SSH: tailnet 内からのみ受け付け、openssh/port 22 を公開しない
-    tailscale = {
-      enable = true;
-      extraUpFlags = [ "--ssh" ];
-    };
+    tailscale.enable = true;
     fwupd.enable = true;
     fstrim.enable = true;
   };
