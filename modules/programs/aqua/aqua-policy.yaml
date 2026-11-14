@@ -21,3 +21,5 @@ packages:
     registry: local
   - name: HikaruEgashira/nuphy-air60-v2-tools
     registry: local
+  - name: sisaku-security/gh-intel
+    registry: local

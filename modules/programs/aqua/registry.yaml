@@ -152,3 +152,19 @@ packages:
         src: bin/ble-scan
       - name: snap
         src: bin/snap
+  - type: github_release
+    repo_owner: sisaku-security
+    repo_name: gh-intel
+    version_prefix: gypxy/
+    asset: gypxy_{{.SemVer}}_{{.OS}}_{{.Arch}}.tar.gz
+    format: tar.gz
+    files:
+      - name: gypxy
+        src: gypxy_{{.SemVer}}_{{.OS}}_{{.Arch}}/gypxy
+    supported_envs:
+      - darwin
+      - linux
+    checksum:
+      type: github_release
+      asset: checksums.txt
+      algorithm: sha256
