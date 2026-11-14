@@ -100,10 +100,13 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               extraSpecialArgs.dotfilesPath = self;
-              users.hikae.imports = [
-                ./home.nix
-                ./hosts/linux/home.nix
-              ];
+              users.hikae = {
+                imports = [
+                  ./home.nix
+                  ./hosts/linux/home.nix
+                ];
+                programs.gypxy.hub.enable = true;
+              };
             };
           }
         ];

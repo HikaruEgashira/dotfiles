@@ -5,6 +5,7 @@
     ./disko.nix
     ./gh-runner.nix
     ./deck-cast.nix
+    ./gypxy.nix
   ];
 
   boot = {
