@@ -9,7 +9,8 @@ const NS = {
   conn: "urn:x-cast:com.google.cast.tp.connection",
   beat: "urn:x-cast:com.google.cast.tp.heartbeat",
   recv: "urn:x-cast:com.google.cast.receiver",
-  dash: "urn:x-cast:es.offd.dashcast",
+  // receiver の版で es.offd / com.madmod が分かれるので、起動した app の申告から選ぶ
+  dash: /dashcast$/,
 };
 
 const varint = (n) => {
@@ -146,7 +147,10 @@ async function tick() {
     );
     if (!dash) return "launch-failed";
     s.send(dash.transportId, NS.conn, { type: "CONNECT" });
-    s.send(dash.transportId, NS.dash, {
+    const ns = dash.namespaces?.find((n) => NS.dash.test(n.name))?.name;
+    if (!ns) return "no-dashcast-namespace";
+    await new Promise((r) => setTimeout(r, 500));
+    s.send(dash.transportId, ns, {
       url,
       force: true,
       reload: false,
