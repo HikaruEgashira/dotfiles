@@ -11,6 +11,7 @@ let
     "com.apple.homed" # Home 未使用
     "com.apple.gamed" # Game Center 未使用
     "com.apple.newsd" # News 未使用
+    "com.apple.itunescloudd" # Music / TV の iCloud 同期を使わない
   ];
 in
 lib.mkIf pkgs.stdenv.isDarwin {
