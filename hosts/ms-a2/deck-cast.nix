@@ -40,6 +40,7 @@ in
     environment = {
       DECK_CAST_DEVICE = chromecast;
       DECK_CAST_URL = "http://${lanAddr}:${toString port}/";
+      DECK_CAST_HEALTH = "http://127.0.0.1:${toString port}/healthz";
     };
     serviceConfig = common // {
       ExecStart = "${pkgs.nodejs}/bin/node ${./deck-cast}/caster.mjs";

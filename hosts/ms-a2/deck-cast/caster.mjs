@@ -5,6 +5,9 @@ const device = process.env.DECK_CAST_DEVICE;
 const url = process.env.DECK_CAST_URL;
 const intervalMs = Number(process.env.DECK_CAST_INTERVAL_S ?? 30) * 1000;
 const DASHCAST = "84912283";
+const health = process.env.DECK_CAST_HEALTH;
+// force 遷移で receiver の JS は消えるので、表示が止まったら app ごと止めて次の tick で起動し直す
+const staleS = Number(process.env.DECK_CAST_STALE_S ?? 60);
 const NS = {
   conn: "urn:x-cast:com.google.cast.tp.connection",
   beat: "urn:x-cast:com.google.cast.tp.heartbeat",
@@ -136,7 +139,18 @@ async function tick() {
       type: "GET_STATUS",
     });
     const app = status.status?.applications?.[0];
-    if (app?.appId === DASHCAST) return "showing";
+    if (app?.appId === DASHCAST) {
+      if (!health) return "showing";
+      const h = await fetch(health)
+        .then((r) => r.json())
+        .catch(() => null);
+      if (h?.tvAgeS == null || h.tvAgeS < staleS) return "showing";
+      await s.request("receiver-0", NS.recv, {
+        type: "STOP",
+        sessionId: app.sessionId,
+      });
+      return "restarted-stale";
+    }
     if (app && !app.isIdleScreen) return `busy:${app.displayName}`;
     const launched = await s.request("receiver-0", NS.recv, {
       type: "LAUNCH",
