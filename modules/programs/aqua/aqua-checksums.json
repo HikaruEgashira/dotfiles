@@ -91,23 +91,23 @@
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.0-darwin-arm64.tgz",
-      "checksum": "6989512A93D5FC74CB221DD348C972BF3CD83592E471BFD9557BCCB45EB6FFFC",
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.1-darwin-arm64.tgz",
+      "checksum": "402F0E6678EEF2842CE669DA71F54C44ED4743F659527BEB18185EF17306B154",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.0-linux-x64.tgz",
-      "checksum": "2DC9AA871ABB513C3539D20D025F701FAF1974C46EE906BDA3A1E1F5026D4434",
+      "id": "http/registry.npmjs.org/@openai/codex/-/codex-0.167.1-linux-x64.tgz",
+      "checksum": "944CBABE58A2C599A30141BC0220C31963205C33E69B43B414DD5DA6ADAF957F",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.6.tgz",
-      "checksum": "613EBB74DD8EFF767BB9D442A37B40C4D9946BA27F1538985068A1B9678137A3",
+      "id": "http/registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.7.tgz",
+      "checksum": "8D4F90C5B23FAA724BA1C877D8358072BBB6565C33B8D8B5DCA7C7644C4DE0BF",
       "algorithm": "sha256"
     },
     {
-      "id": "http/registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.6.tgz",
-      "checksum": "DFCD69F1D511AE10ED626768B41D84B8100CC4AA64CECB69DA38BA7A29D33551",
+      "id": "http/registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.7.tgz",
+      "checksum": "D65935464F93F07913633F977CB99723AF64EEFF6AE7A822722CE89BEDABDD45",
       "algorithm": "sha256"
     }
   ]

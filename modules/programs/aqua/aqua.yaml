@@ -21,9 +21,9 @@ packages:
     registry: local
   - name: bitwarden/clients@cli-v2026.10.1
     registry: local
-  - name: openai/codex@0.167.0
+  - name: openai/codex@0.167.1
     registry: local
-  - name: anomalyco/opencode@2.2.6
+  - name: anomalyco/opencode@2.2.7
     registry: local
   - name: HikaruEgashira/nuphy-air60-v2-tools@v0.9.0
     registry: local
