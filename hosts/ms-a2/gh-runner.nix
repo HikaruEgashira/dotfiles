@@ -2,7 +2,8 @@
 # ジョブごとの使い捨て環境 (systemd-nspawn + overlayfs + 専用 netns + 専用 dockerd) の仕組み自体は
 # iac-aws/projects/local-runners/linux にあり、gh-runner-sync.timer が iac-aws main を /opt/gh-runner へ反映する。
 # ここでは WSL 時代に install.sh が apt / systemd unit で入れていたホスト側の前提だけを宣言する。
-# 初回だけ: iac-aws の linux/install.sh を root で実行 → ghtkn agent unlock / ghtkn auth → dispatcher 起動 (README 参照)
+# 初回だけ: iac-aws の linux/install.sh を root で実行し、README「ホスト証明書」の手順で TPM 鍵と証明書を作る。
+# ホストは GitHub のトークンを持たない。GitHub への操作は TPM 鍵 + IAM Roles Anywhere で AWS の local-broker 経由 (iac-aws local-broker.tf)
 { pkgs, ... }:
 let
   # スクリプト群 (slot.sh / sync.sh / build-base-*.sh / jobnet.sh など) が呼ぶコマンド
@@ -28,13 +29,8 @@ let
     systemd
     debootstrap
     docker
-    ghtkn
+    aws-signing-helper
   ];
-  ghtknEnv = {
-    HOME = "/root";
-    GHTKN_BACKEND = "agent";
-    GHTKN_AGENT_SOCKET = "/root/.cache/ghtkn/agent.sock";
-  };
   # ジョブの PATH 先頭 (/nix/var/nix/profiles/default/bin) と slot-test が参照する nix
   jobNix = pkgs.buildEnv {
     name = "gh-runner-job-nix";
@@ -86,9 +82,20 @@ in
     requires = [ "gh-runner-netns.service" ];
   };
 
+  # broker の接続先と Roles Anywhere の ARN (秘密ではない)。値は iac-aws projects/github-runners の terraform output local_broker
+  environment.etc."gh-runner/broker.conf".text = ''
+    AWS_REGION="ap-northeast-1"
+    BROKER_URL="https://ko6jpcgsic57fowjgj3hceeg340zulxw.lambda-url.ap-northeast-1.on.aws/"
+    QUEUE_URL="https://sqs.ap-northeast-1.amazonaws.com/951872725222/hikae-runners-local-queued"
+    RA_TRUST_ANCHOR_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:trust-anchor/a4730e6c-c246-4e3e-ac33-3ad4d2c0c50f"
+    RA_PROFILE_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:profile/046c5d13-7bde-4e26-89ff-4edff541c6a4"
+    RA_ROLE_ARN="arn:aws:iam::951872725222:role/hikae-runners-local-host"
+    RA_CERTIFICATE="/etc/gh-runner/host.crt"
+    RA_PRIVATE_KEY="/etc/gh-runner/host.tpm.key"
+  '';
+
   systemd.tmpfiles.rules = [
     "d /etc/gh-runner 0755 root root -"
-    "d /etc/gh-runner/secrets 0700 root root -"
     "d /opt/gh-runner 0755 root root -"
     "d /var/lib/gh-runner 0755 root root -"
     "d /var/lib/gh-runner/work 0755 root root -"
@@ -150,33 +157,18 @@ in
       '';
     };
 
-    ghtkn-agent = {
-      description = "ghtkn agent";
-      wantedBy = [ "multi-user.target" ];
-      environment = {
-        inherit (ghtknEnv) HOME GHTKN_AGENT_SOCKET;
-      };
-      serviceConfig = {
-        ExecStart = "${pkgs.ghtkn}/bin/ghtkn agent start";
-        Restart = "on-failure";
-      };
-    };
-
     gh-runner-dispatcher = {
       description = "GitHub runner on-demand dispatcher (all repos)";
       after = [
         "network-online.target"
-        "ghtkn-agent.service"
         "gh-runner-host.service"
         "gh-runner-netns.service"
       ];
       wants = [
         "network-online.target"
-        "ghtkn-agent.service"
       ];
       wantedBy = [ "multi-user.target" ];
       path = tools;
-      environment = ghtknEnv;
       unitConfig.ConditionPathExists = "/opt/gh-runner/dispatcher.py";
       serviceConfig = {
         ExecStart = "${pkgs.python3}/bin/python3 -u /opt/gh-runner/dispatcher.py";
@@ -190,11 +182,9 @@ in
       description = "Apply iac-aws main to the GitHub runner host (gated by slot-test)";
       after = [
         "network-online.target"
-        "ghtkn-agent.service"
       ];
       wants = [ "network-online.target" ];
       path = tools;
-      environment = ghtknEnv;
       unitConfig.ConditionPathExists = "/opt/gh-runner/sync.sh";
       serviceConfig = {
         Type = "oneshot";
@@ -205,7 +195,6 @@ in
     gh-runner-update = {
       description = "Rebuild GitHub runner base rootfs";
       path = tools;
-      environment = ghtknEnv;
       unitConfig.ConditionPathExists = "/opt/gh-runner/update.sh";
       serviceConfig = {
         Type = "oneshot";
