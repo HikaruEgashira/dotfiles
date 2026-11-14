@@ -28,9 +28,11 @@ install_pkg() {
   verify_app "/Applications/$name.app" "$bundle" "$team"
 }
 
-install_pkg Tailscale io.tailscale.ipn.macsys W5364U7YZB \
-  https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg \
-  f1a2afb589dc16487cff9f23c59d0021a1a4dcf8476d2637ab493c628422b810
+if [ "${TAILSCALE_GUI:-1}" = 1 ]; then
+  install_pkg Tailscale io.tailscale.ipn.macsys W5364U7YZB \
+    https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg \
+    f1a2afb589dc16487cff9f23c59d0021a1a4dcf8476d2637ab493c628422b810
+fi
 
 if [ ! -d /Applications/Xcode.app ]; then
   /usr/bin/sudo -u hikae -H "$MAS" install 497799835

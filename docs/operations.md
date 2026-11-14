@@ -48,7 +48,7 @@ Claude は Nix / Aqua の管理外で、公式 installer (`curl -fsSL https://cl
 | ----------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
 | Nix binary cache  | `arm-none-eabi-gcc`, `iverilog`, Ghostty                                     | `cache.nixos.org` の output                     |
 | Aqua              | `gws`, `gt`, `higgsfield`, `sisakulint`, `bw`, `codex`, `opencode`, `claude` | pin した release asset と `aqua-checksums.json` |
-| system activation | Tailscale, Xcode, Bitwarden                                                  | pkg/MAS と app の署名                           |
+| system activation | Tailscale (Mac Studio), Xcode, Bitwarden                                     | pkg/MAS と app の署名                           |
 
 Aqua は `~/.local/share/aquaproj-aqua/bin` に proxy だけを作り、初回実行時に asset を取得する。`AQUA_ENFORCE_CHECKSUM` と `AQUA_ENFORCE_REQUIRE_CHECKSUM` は常に有効。system app は存在しない時だけ固定 installer から導入し、既存 app の更新や downgrade はしない。
 
@@ -268,7 +268,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
-ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
 
 Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。`local.env` は wrapper が `KEY=VALUE` 行としてだけ読む (`modules/programs/artex/load-env.sh`、shell 評価はしない。両端の quote は外す)。shell 構文の行があると起動前に fail する。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を起動する (drift の修復ログは `pg.log`)。停止時は launchd の SIGTERM を wrapper が SIGINT (fast shutdown) に変換し、`ExitTimeOut` 60s 内に checkpoint を終えて止まる。
 
