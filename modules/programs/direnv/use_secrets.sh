@@ -30,6 +30,9 @@ use_secrets() {
       ;;
     esac
   done
-  [ -n "${FLATT_GUARD_TOKEN-}" ] && export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
+  if [ -n "${FLATT_GUARD_TOKEN-}" ]; then
+    export UV_INDEX_URL="https://token:$FLATT_GUARD_TOKEN@pypi.flatt.tech/simple/"
+    export NPM_CONFIG_REGISTRY="https://npm.flatt.tech/"
+  fi
   return "$missing"
 }

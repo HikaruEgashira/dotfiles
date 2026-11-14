@@ -121,7 +121,7 @@ npm / pypi にしか無い CLI は `writeShellApplication` で `npx --yes pkg@ve
 
 ### 2.6 repo に secret を渡す (module: `modules/programs/direnv.nix`)
 
-secret は `~/.config/secrets/env.age` にだけ置き、必要な repo の `.envrc` に `use secrets` で宣言する。direnv の stdlib 拡張 (`modules/programs/direnv/use_secrets.sh`) が env.age を復号し、引数のキーだけを export する。引数を省くと全キーを export するので、原則キー名を書く。`FLATT_GUARD_TOKEN` を渡すと `UV_INDEX_URL` も派生する。
+secret は `~/.config/secrets/env.age` にだけ置き、必要な repo の `.envrc` に `use secrets` で宣言する。direnv の stdlib 拡張 (`modules/programs/direnv/use_secrets.sh`) が env.age を復号し、引数のキーだけを export する。引数を省くと全キーを export するので、原則キー名を書く。`FLATT_GUARD_TOKEN` を渡すと `UV_INDEX_URL` と `NPM_CONFIG_REGISTRY` も派生し、uv と npm がその配下でだけ Takumi Guard を経由する。それ以外の場所では公開 registry を使う。
 
 ```bash
 cd <repo>

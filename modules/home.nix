@@ -14,7 +14,6 @@
     file.".npmrc" = {
       text = ''
         @NAMESPACE:registry=https://npm.pkg.github.com
-        registry=https://npm.flatt.tech/
         //npm.flatt.tech/:_authToken=''${FLATT_GUARD_TOKEN}
         cache=~/.cache/npm
         allow-git=none

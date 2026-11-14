@@ -31,7 +31,7 @@ log_error() { printf '%s\n' "$*" >&2; }
 shift
 use_secrets "$@"
 status=$?
-env | grep -E '^(ALPHA|BETA|FLATT_GUARD_TOKEN|UV_INDEX_URL)=' | sort
+env | grep -E '^(ALPHA|BETA|FLATT_GUARD_TOKEN|NPM_CONFIG_REGISTRY|UV_INDEX_URL)=' | sort
 exit "$status"
 HARNESS
 
@@ -57,6 +57,7 @@ run_case "no args exports every key" 0 "$(
 ALPHA=a
 BETA=b=c
 FLATT_GUARD_TOKEN=tok
+NPM_CONFIG_REGISTRY=https://npm.flatt.tech/
 UV_INDEX_URL=https://token:tok@pypi.flatt.tech/simple/
 EOF
 )"
@@ -65,9 +66,10 @@ run_case "selected key only" 0 "ALPHA=a" ALPHA
 
 run_case "value may contain =" 0 "BETA=b=c" BETA
 
-run_case "FLATT_GUARD_TOKEN derives UV_INDEX_URL" 0 "$(
+run_case "FLATT_GUARD_TOKEN derives Guard registries" 0 "$(
   cat <<'EOF'
 FLATT_GUARD_TOKEN=tok
+NPM_CONFIG_REGISTRY=https://npm.flatt.tech/
 UV_INDEX_URL=https://token:tok@pypi.flatt.tech/simple/
 EOF
 )" FLATT_GUARD_TOKEN
