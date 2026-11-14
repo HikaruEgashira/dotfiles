@@ -1,24 +1,23 @@
-// ccdeck は Host が loopback の要求しか通さないので、Chromecast からの閲覧だけを読み取り専用で中継する
+// Chromecast には deck を描画した画像だけを渡す。deck の API は LAN に一切出さない
 import http from "node:http";
+import { startSnapshots, tvPage } from "./snapshot.mjs";
 
 const listenPort = Number(process.env.DECK_CAST_PORT ?? 14318);
 const upstreamPort = Number(process.env.DECK_UPSTREAM_PORT ?? 4317);
+const intervalMs = Number(process.env.DECK_CAST_REFRESH_S ?? 5) * 1000;
 const allowed = new Set(
   (process.env.DECK_CAST_ALLOW ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
 );
-// 共有アカウントの email・招待トークン・設定は表示に不要で、LAN に出すと鍵になる
-const denied = [
-  /^\/api\/lan(\/|$)/,
-  /^\/api\/prefs(\/|$)/,
-  /^\/api\/claude-accounts(\/|$)/,
-  /^\/api\/claude-settings(\/|$)/,
-  /^\/api\/tool-audit(\/|$)/,
-  /^\/api\/system\/traffic-radar(\/|$)/,
-  /(secret|token|invite|login|share|export|backup|credential)/i,
-];
+
+const latest = startSnapshots({
+  chromium: process.env.DECK_CAST_CHROMIUM ?? "chromium",
+  url: `http://127.0.0.1:${upstreamPort}/`,
+  intervalMs,
+});
+const page = tvPage(intervalMs);
 
 const peer = (req) => (req.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
 
@@ -27,37 +26,28 @@ const server = http.createServer((req, res) => {
   const path = (req.url ?? "/").split("?")[0];
   if (!allowed.has(from) && from !== "127.0.0.1") return end(res, 403);
   if (req.method !== "GET" && req.method !== "HEAD") return end(res, 405);
-  if (denied.some((re) => re.test(path))) return end(res, 404);
-
-  const headers = {
-    accept: req.headers.accept ?? "*/*",
-    "accept-language": req.headers["accept-language"] ?? "ja",
-    "user-agent": req.headers["user-agent"] ?? "deck-cast",
-    host: `127.0.0.1:${upstreamPort}`,
-    referer: `http://127.0.0.1:${upstreamPort}/`,
-    "sec-fetch-site": "same-origin",
-  };
-  if (req.headers["last-event-id"])
-    headers["last-event-id"] = req.headers["last-event-id"];
-
-  const up = http.request(
-    {
-      host: "127.0.0.1",
-      port: upstreamPort,
-      method: req.method,
-      path: req.url,
-      headers,
-    },
-    (upstream) => {
-      const out = { ...upstream.headers };
-      delete out["set-cookie"];
-      res.writeHead(upstream.statusCode ?? 502, out);
-      upstream.pipe(res);
-    },
-  );
-  up.on("error", () => end(res, 502));
-  res.on("close", () => up.destroy());
-  up.end();
+  if (path === "/") {
+    res.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    });
+    return res.end(page);
+  }
+  if (path === "/tv.jpg") {
+    const img = latest();
+    if (!img) return end(res, 503);
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "cache-control": "no-store",
+      "content-length": img.length,
+    });
+    return res.end(img);
+  }
+  if (path === "/healthz") {
+    res.writeHead(latest() ? 200 : 503, { "content-type": "text/plain" });
+    return res.end(latest() ? "ok" : "warming");
+  }
+  return end(res, 404);
 });
 
 function end(res, code) {
@@ -67,6 +57,6 @@ function end(res, code) {
 
 server.listen(listenPort, "0.0.0.0", () =>
   console.log(
-    `deck-cast proxy :${listenPort} -> 127.0.0.1:${upstreamPort}, allow ${[...allowed].join(",")}`,
+    `deck-cast: :${listenPort} serves snapshots of 127.0.0.1:${upstreamPort}, allow ${[...allowed].join(",")}`,
   ),
 );
