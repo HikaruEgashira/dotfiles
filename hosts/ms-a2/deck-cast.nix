@@ -29,7 +29,7 @@ in
       HOME = "/tmp";
     };
     serviceConfig = common // {
-      ExecStart = "${pkgs.nodejs}/bin/node ${./deck-cast/proxy.mjs}";
+      ExecStart = "${pkgs.nodejs}/bin/node ${./deck-cast}/proxy.mjs";
     };
   };
 
@@ -42,7 +42,7 @@ in
       DECK_CAST_URL = "http://${lanAddr}:${toString port}/";
     };
     serviceConfig = common // {
-      ExecStart = "${pkgs.nodejs}/bin/node ${./deck-cast/caster.mjs}";
+      ExecStart = "${pkgs.nodejs}/bin/node ${./deck-cast}/caster.mjs";
     };
   };
 
