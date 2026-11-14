@@ -78,10 +78,30 @@ export function startSnapshots({
       deviceScaleFactor: 1,
       mobile: false,
     });
+    // 毎回新しい profile なので、初回ツアーの既読を localStorage に入れてから開く
+    await call("Page.addScriptToEvaluateOnNewDocument", {
+      source: 'try{localStorage.setItem("agent-dag.tourSeen","1")}catch(e){}',
+    });
     await call("Page.navigate", { url });
     for (;;) {
       await sleep(intervalMs);
       try {
+        // TV では操作できないので、初回ツアー等のモーダルは開くたびに閉じる
+        const { result } = await call("Runtime.evaluate", {
+          expression:
+            '!!document.querySelector("[role=dialog],[aria-modal=true]")',
+          returnByValue: true,
+        });
+        if (result?.value) {
+          for (const type of ["keyDown", "keyUp"])
+            await call("Input.dispatchKeyEvent", {
+              type,
+              key: "Escape",
+              code: "Escape",
+              windowsVirtualKeyCode: 27,
+            });
+          await sleep(300);
+        }
         const { data } = await call("Page.captureScreenshot", {
           format: "jpeg",
           quality: 80,
