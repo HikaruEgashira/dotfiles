@@ -137,7 +137,8 @@ in
         mkdir -p /opt/actions-runner
         mountpoint -q /opt/actions-runner || mount --bind -o ro "$(readlink -f /var/lib/gh-runner/base-cli)/opt/actions-runner" /opt/actions-runner
         # 共有キャッシュの各ディレクトリを用意 (ツールが存在を前提にすることがある)
-        grep -o "=/var/lib/gh-runner/cache/[^ ]*" /etc/gh-runner/cache.env | cut -c2- | xargs mkdir -p
+        # ジョブは runner (uid 1001) で書き込む
+        grep -o "=/var/lib/gh-runner/cache/[^ ]*" /etc/gh-runner/cache.env | cut -c2- | xargs sh -c 'mkdir -p "$@" && chown 1001:1001 "$@"' _
         # 前回の異常終了で残った作業領域を掃除
         systemctl list-units "gh-job-*" --no-legend | grep -q . && exit 0
         for d in /var/lib/gh-runner/slots/*; do
