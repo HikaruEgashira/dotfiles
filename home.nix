@@ -32,7 +32,7 @@
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
     ./modules/programs/nuphy-kvm.nix
-    ./modules/programs/rcd.nix
+    ./modules/programs/apple-agents.nix
   ];
 
   programs.home-manager.enable = true;
