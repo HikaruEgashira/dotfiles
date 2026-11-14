@@ -1,7 +1,10 @@
 # Minisforum MS-A2 (Ryzen 9 9955HX / Radeon iGPU) の bare-metal NixOS。Wayland は niri のみ
 { pkgs, ... }:
 {
-  imports = [ ./disko.nix ];
+  imports = [
+    ./disko.nix
+    ./gh-runner.nix
+  ];
 
   boot = {
     loader.systemd-boot.enable = true;
