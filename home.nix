@@ -32,6 +32,7 @@
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
     ./modules/programs/nuphy-kvm.nix
+    ./modules/programs/rcd.nix
   ];
 
   programs.home-manager.enable = true;
