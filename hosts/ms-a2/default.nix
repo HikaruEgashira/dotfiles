@@ -64,7 +64,11 @@
       enable = true;
       pulse.enable = true;
     };
-    tailscale.enable = true;
+    tailscale = {
+      enable = true;
+      # 鍵配布なしで tailnet ACL の ssh rule により認可する
+      extraSetFlags = [ "--ssh" ];
+    };
     fwupd.enable = true;
     fstrim.enable = true;
   };
