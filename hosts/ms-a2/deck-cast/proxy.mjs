@@ -18,6 +18,7 @@ const latest = startSnapshots({
   intervalMs,
 });
 const page = tvPage(intervalMs);
+let lastTvFetch = 0;
 
 const peer = (req) => (req.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
 
@@ -36,6 +37,7 @@ const server = http.createServer((req, res) => {
   if (path === "/tv.jpg") {
     const img = latest();
     if (!img) return end(res, 503);
+    if (from !== "127.0.0.1") lastTvFetch = Date.now();
     res.writeHead(200, {
       "content-type": "image/jpeg",
       "cache-control": "no-store",
@@ -44,8 +46,15 @@ const server = http.createServer((req, res) => {
     return res.end(img);
   }
   if (path === "/healthz") {
-    res.writeHead(latest() ? 200 : 503, { "content-type": "text/plain" });
-    return res.end(latest() ? "ok" : "warming");
+    res.writeHead(latest() ? 200 : 503, { "content-type": "application/json" });
+    return res.end(
+      JSON.stringify({
+        ready: !!latest(),
+        tvAgeS: lastTvFetch
+          ? Math.round((Date.now() - lastTvFetch) / 1000)
+          : null,
+      }),
+    );
   }
   return end(res, 404);
 });
