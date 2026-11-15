@@ -68,8 +68,8 @@ in
     hub.enable = lib.mkEnableOption "gypxy hub that serves the tailnet";
     client.enable = lib.mkOption {
       type = lib.types.bool;
-      # hub が未適用の間に有効にすると対象 owner の git が全端末で失敗する
-      default = false;
+      # hub が止まると対象 owner の git が全端末で失敗する。その間は false にして適用し直す
+      default = true;
       description = "Route git traffic for the listed owners through the hub.";
     };
     url = lib.mkOption {
