@@ -84,6 +84,11 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.client.enable {
+      # gh wrapper (lib/package-registry.nix) が対象 owner のときだけ GH_HOST に hub を入れる
+      home.sessionVariables = {
+        GYPXY_GH_HOST = lib.removePrefix "https://" cfg.url;
+        GYPXY_OWNERS = lib.concatStringsSep " " cfg.owners;
+      };
       programs.git.settings = {
         credential."${cfg.url}".helper = [
           ""
