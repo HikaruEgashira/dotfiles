@@ -46,8 +46,29 @@ let
             echo '  mkdir -p "$GH_CONFIG_DIR"'
             echo '  cp "$HOME/.config/gh/config.yml" "$GH_CONFIG_DIR/config.yml" 2>/dev/null || true'
             echo 'fi'
-            echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then exec ${pkgs.gh}/bin/gh "$@"; fi'
-            echo 'exec ${pkgs.ghtkn}/bin/ghtkn exec -e GH_TOKEN -- ${pkgs.gh}/bin/gh "$@"'
+            # gypxy の対象 owner は hub に向ける。git の insteadOf で remote が hub になるので gh も揃えないと host を解決できない
+            echo 'if [ -z "''${GH_HOST:-}" ] && [ -n "''${GYPXY_GH_HOST:-}" ]; then'
+            echo '  owner="" prev=""'
+            echo '  for a in "$@"; do'
+            echo '    case "$prev" in -R|--repo) owner=''${a%%/*} ;; esac'
+            echo '    case "$a" in --repo=*) r=''${a#--repo=}; owner=''${r%%/*} ;; esac'
+            echo '    prev=$a'
+            echo '  done'
+            echo '  if [ -z "$owner" ]; then'
+            echo '    url=$(git remote get-url origin 2>/dev/null || true)'
+            echo '    case "$url" in *"$GYPXY_GH_HOST"/*) export GH_HOST="$GYPXY_GH_HOST" ;; esac'
+            echo '  else'
+            echo '    case " $GYPXY_OWNERS " in *" $owner "*) export GH_HOST="$GYPXY_GH_HOST" ;; esac'
+            echo '  fi'
+            echo 'fi'
+            # GH_HOST が github.com 以外 (gypxy hub) なら gh は GHES として扱い GH_ENTERPRISE_TOKEN を読む
+            echo 'var=GH_TOKEN'
+            echo 'case "''${GH_HOST:-github.com}" in github.com) ;; *) var=GH_ENTERPRISE_TOKEN ;; esac'
+            echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then'
+            echo '  [ "$var" = GH_TOKEN ] || export GH_ENTERPRISE_TOKEN="''${GH_TOKEN:-$GITHUB_TOKEN}"'
+            echo '  exec ${pkgs.gh}/bin/gh "$@"'
+            echo 'fi'
+            echo 'exec ${pkgs.ghtkn}/bin/ghtkn exec -e "$var" -- ${pkgs.gh}/bin/gh "$@"'
           } > "$out/bin/gh"
           chmod +x "$out/bin/gh"
         '';
