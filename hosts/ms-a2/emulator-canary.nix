@@ -53,72 +53,77 @@ let
   '';
 in
 lib.mkIf enabled {
-  systemd.tmpfiles.rules = [ "d ${stateDir} 0750 hikae users -" ];
+  systemd = {
+    tmpfiles.rules = [ "d ${stateDir} 0750 hikae users -" ];
 
-  systemd.services.emulator-canary-deploy = {
-    description = "Build github-emulator main from the gypxy mirror";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      User = "hikae";
-      Environment = "HOME=/home/hikae";
-      ExecStart = deploy;
-      Nice = 10;
+    timers.emulator-canary-deploy = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2m";
+        OnUnitInactiveSec = "5m";
+      };
     };
-  };
-  systemd.timers.emulator-canary-deploy = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "2m";
-      OnUnitInactiveSec = "5m";
-    };
-  };
-  # 新しいバイナリが置かれたら再起動する
-  systemd.paths.emulator-canary-restart = {
-    wantedBy = [ "multi-user.target" ];
-    pathConfig.PathChanged = "${stateDir}/deployed";
-  };
-  systemd.services.emulator-canary-restart = {
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.systemd}/bin/systemctl restart emulator-canary.service";
-    };
-  };
 
-  systemd.services.emulator-canary = {
-    description = "github-emulator canary (emulator.canary.gh-intel.com origin)";
-    after = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    unitConfig.ConditionPathExists = "${stateDir}/github-emulator";
-    environment = {
-      EMULATOR_ACCESS_TEAM_DOMAIN = teamDomain;
-      EMULATOR_ACCESS_AUD = accessAud;
+    # 新しいバイナリが置かれたら再起動する
+    paths.emulator-canary-restart = {
+      wantedBy = [ "multi-user.target" ];
+      pathConfig.PathChanged = "${stateDir}/deployed";
     };
-    serviceConfig = {
-      User = "hikae";
-      ExecStart = run;
-      Restart = "always";
-      RestartSec = 5;
-    };
-  };
 
-  systemd.services.emulator-canary-funnel = {
-    description = "Expose the github-emulator canary to the Cloudflare Worker over Tailscale Funnel";
-    after = [
-      "tailscaled.service"
-      "emulator-canary.service"
-    ];
-    requires = [ "emulator-canary.service" ];
-    wants = [ "tailscaled.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${lib.getExe config.services.tailscale.package} funnel --bg --https=8443 http://127.0.0.1:${toString port}";
-      ExecStop = "${lib.getExe config.services.tailscale.package} funnel --https=8443 off";
-      Restart = "on-failure";
-      RestartSec = 30;
+    services = {
+      emulator-canary-deploy = {
+        description = "Build github-emulator main from the gypxy mirror";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "hikae";
+          Environment = "HOME=/home/hikae";
+          ExecStart = deploy;
+          Nice = 10;
+        };
+      };
+
+      emulator-canary-restart.serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.systemd}/bin/systemctl restart emulator-canary.service";
+      };
+
+      emulator-canary = {
+        description = "github-emulator canary (emulator.canary.gh-intel.com origin)";
+        after = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.ConditionPathExists = "${stateDir}/github-emulator";
+        environment = {
+          EMULATOR_ACCESS_TEAM_DOMAIN = teamDomain;
+          EMULATOR_ACCESS_AUD = accessAud;
+        };
+        serviceConfig = {
+          User = "hikae";
+          ExecStart = run;
+          Restart = "always";
+          RestartSec = 5;
+        };
+      };
+
+      emulator-canary-funnel = {
+        description = "Expose the github-emulator canary to the Cloudflare Worker over Tailscale Funnel";
+        after = [
+          "tailscaled.service"
+          "emulator-canary.service"
+        ];
+        requires = [ "emulator-canary.service" ];
+        wants = [ "tailscaled.service" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${lib.getExe config.services.tailscale.package} funnel --bg --https=8443 http://127.0.0.1:${toString port}";
+          ExecStop = "${lib.getExe config.services.tailscale.package} funnel --https=8443 off";
+          Restart = "on-failure";
+          RestartSec = 30;
+        };
+      };
     };
   };
 }
