@@ -11,7 +11,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | システム層 (nix.conf, firewall, sudo, signed pkg) | `modules/darwin/*.nix` |
 | upstream binary の CLI | `modules/programs/aqua/` の local registry + checksum |
 | nixpkgs cache に無い GUI | 上流署名済み installer。root installer は `modules/darwin/native-apps/` |
-| AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない |
+| AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない。Claude Code に強制する設定は `modules/darwin/claude-code.nix` の managed settings |
 | repo が使う secret | 正史は `~/.config/secrets/env.age`。repo の `.envrc` に `use secrets <KEY>` を書いて direnv で局所ロードする (`docs/operations.md` §2.6) |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |

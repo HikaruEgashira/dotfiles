@@ -17,23 +17,6 @@
   }
 ]
 // {
-  home.sessionVariables.CLAUDE_CODE_EXPERIMENTAL_CODE_MODE = "1";
-
-  # GUI から起動される claude (T3 Code / desktop app) はシェルの環境変数を継承しないため launchd domain に流す
-  launchd.agents.claude-env = {
-    enable = true;
-    config = {
-      Label = "com.claude.env";
-      ProgramArguments = [
-        "/bin/launchctl"
-        "setenv"
-        "CLAUDE_CODE_EXPERIMENTAL_CODE_MODE"
-        "1"
-      ];
-      RunAtLoad = true;
-    };
-  };
-
   launchd.agents.claude-caffeinate = {
     enable = true;
     config = {
