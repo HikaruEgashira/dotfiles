@@ -54,8 +54,7 @@ in
   };
 
   nix.settings = {
-    # GitHub-hosted の install-nix-action (set_as_trusted_user) と揃える
-    trusted-users = [ "runner" ];
+    # runner は trusted にしない。ジョブは user namespace の中で動き、nix の daemon を信頼された利用者として使わない (iac-aws #910)
     min-free = 10737418240;
     max-free = 32212254720;
   };
