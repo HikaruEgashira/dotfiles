@@ -209,7 +209,9 @@ in
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnBootSec = "5min";
-          OnUnitActiveSec = "10min";
+          # 変わっていない回の sync は約 1.5 秒 (broker の source の取得だけ)。10 分だと merge から反映まで
+          # 最大 10 分待つので 1 分にする (HikaruEgashira/iac-aws #929、AGENTS.md の「60 秒以内」)
+          OnUnitActiveSec = "1min";
         };
       };
       gh-runner-update = {
