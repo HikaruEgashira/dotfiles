@@ -67,6 +67,9 @@ persistence=(
   .config/opencode/opencode.json
   .config/ai-sandbox
   .config/claude/sandbox.json
+  .aws
+  .local/bin
+  .local/share/claude
 )
 for path in "${persistence[@]}"; do
   assert_list_has persistence "$path"
@@ -79,8 +82,11 @@ done
 
 # codex は ~/.aws を組み込み deny するため read で上書きし、token cache は secrets の子 path deny に任せる
 # shellcheck disable=SC2016 # Match the literal Nix home interpolation.
-grep -Fq '"${home}/.aws" = "read";' "$source_nix"
-grep -Fq 'codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;' "$source_nix"
+for path in .aws .local/bin .local/share/claude; do
+  assert_list_has codexReadOnly "$path"
+done
+grep -Fq '// lib.genAttrs codexReadOnly (_: "read")' "$source_nix"
+grep -Fq '!builtins.elem p codexReadable && !builtins.elem p codexReadOnly' "$source_nix"
 grep -Fq '// lib.genAttrs secrets (_: "deny")' "$source_nix"
 grep -Fq '// lib.genAttrs codexPersistence (_: "deny")' "$source_nix"
 

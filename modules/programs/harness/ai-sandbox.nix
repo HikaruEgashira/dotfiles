@@ -106,6 +106,11 @@ let
     "${home}/.config/opencode/opencode.json"
     "${home}/.config/ai-sandbox"
     "${home}/.config/claude/sandbox.json"
+    # host 側 (aws-cred-agent / 通常 terminal / claude-sandbox wrapper) が sandbox 外で読む・実行するもの。
+    # ~/.aws/config の credential_process や置換された binary が host で実行されるのを防ぐ
+    "${home}/.aws"
+    "${home}/.local/bin"
+    "${home}/.local/share/claude"
   ];
 
   # codex は 1 path 1 verdict なので、自分が読む設定は write だけ deny できない
@@ -114,7 +119,15 @@ let
     "${home}/.codex/config.toml"
     "${home}/.config/ai-sandbox"
   ];
-  codexPersistence = lib.filter (p: !builtins.elem p codexReadable) persistence;
+  # codex は deny で read も塞がるため、読み実行が要る persistence は read に落とす
+  codexReadOnly = [
+    "${home}/.aws"
+    "${home}/.local/bin"
+    "${home}/.local/share/claude"
+  ];
+  codexPersistence = lib.filter (
+    p: !builtins.elem p codexReadable && !builtins.elem p codexReadOnly
+  ) persistence;
 
   claudeSettings = {
     autoMode = builtins.fromJSON (builtins.readFile ./claude/auto-mode.json);
@@ -141,9 +154,9 @@ let
   # codex は credential dir を path 非依存で組み込み deny するため、~/.aws/config だけ read で上書きし、secrets の子 path deny を優先させる
   codexFilesystem = {
     "/" = "read";
-    "${home}/.aws" = "read";
   }
   // lib.genAttrs writable (_: "write")
+  // lib.genAttrs codexReadOnly (_: "read")
   // lib.genAttrs secrets (_: "deny")
   // lib.genAttrs codexPersistence (_: "deny");
   filesystemToml = "{${
