@@ -61,23 +61,23 @@
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.1/gypxy_v0.1.1_darwin_amd64.tar.gz",
-      "checksum": "C7CB69C5721965C07252B27EDA12A1878EAFEA7E9DE9326569B5B049264253A3",
+      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.2/gypxy_v0.1.2_darwin_amd64.tar.gz",
+      "checksum": "E5DB33E887B3D5AA3C71D47CD9BBCCDD0B1DB823537F92F2FAE79E74F45F3306",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.1/gypxy_v0.1.1_darwin_arm64.tar.gz",
-      "checksum": "354B34F002E5BB730CAD1A0FD77CEC0D468B9879DDDD1726BC4EE9F219E0E17B",
+      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.2/gypxy_v0.1.2_darwin_arm64.tar.gz",
+      "checksum": "24405F605477BE3CA347B2EBC256CFCE6747FAF388EF6D571499427F1EFFD019",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.1/gypxy_v0.1.1_linux_amd64.tar.gz",
-      "checksum": "F05FBF86E02A875FEA41507E62406126C0F5F695974F8298F84B5801BD206620",
+      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.2/gypxy_v0.1.2_linux_amd64.tar.gz",
+      "checksum": "CE98F92766DC9448C0A36AD00CB694BA8719B37C71A5C7EA6E1EDFE3319FE03B",
       "algorithm": "sha256"
     },
     {
-      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.1/gypxy_v0.1.1_linux_arm64.tar.gz",
-      "checksum": "A7A40863A284EE5A174303F0CAAAD7BDCADFDD8C8C27FA67E4755AD4C2CEE70C",
+      "id": "github_release/github.com/sisaku-security/gh-intel/gypxy/v0.1.2/gypxy_v0.1.2_linux_arm64.tar.gz",
+      "checksum": "468B8C32E93991280CA47D64F925CC40E6E9053F26830B2F385FFDF55CD9DF9B",
       "algorithm": "sha256"
     },
     {
