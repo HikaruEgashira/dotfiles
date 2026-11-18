@@ -1,7 +1,7 @@
 name: "aqua-update"
 on:
   schedule:
-    - cron: "0 3 * * *" # 毎日 03:00 UTC (= 12:00 JST)
+    - cron: "0 3 * * 1" # 毎週月曜 03:00 UTC (= 月曜 12:00 JST)
   workflow_dispatch:
     inputs:
       dry_run:
@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 jobs:
   update:
@@ -36,10 +37,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
-      - name: Commit and push if pins changed
+      - name: Open PR if pins changed
         id: push
         if: ${{ !inputs.dry_run }}
         timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: bot/aqua-update
         run: |
           set -euo pipefail
           if git diff --quiet modules/programs/aqua; then
@@ -49,15 +53,20 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
           git add modules/programs/aqua
           git commit -m "chore(aqua): bump AI CLI pins"
-          git push origin main
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "$BRANCH" --base main --title "chore(aqua): bump AI CLI pins" \
+              --body "scripts/aqua-bump.sh による週次 bump。scripts/aqua-provenance.sh は通過済みで、CI の来歴検証が merge gate になる。"
+          fi
           echo "pushed=true" >>"$GITHUB_OUTPUT"
-      - name: Run CI for the pushed commit
-        # GITHUB_TOKEN の push は workflow を起動しないので、dispatch で明示的に回す
+      - name: Run CI for the pushed branch
+        # GITHUB_TOKEN の push / PR は workflow を起動しないので、dispatch で PR head の check を作る
         if: steps.push.outputs.pushed == 'true'
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run ci.yml --ref main
+          gh workflow run ci.yml --ref bot/aqua-update

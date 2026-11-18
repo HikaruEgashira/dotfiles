@@ -34,7 +34,7 @@ pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と li
 
 Aqua 自体は npm provenance を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
-更新は `.github/workflows/aqua-update.yml` が毎日行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ main に push する。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
+更新は `.github/workflows/aqua-update.yml` が週次 (月曜) で行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ `bot/aqua-update` branch から PR を作る。PR には CI を dispatch し、CI の来歴検証が merge gate になる。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
 
 ```bash
 nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
