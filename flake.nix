@@ -525,12 +525,18 @@
               Mac-Studio) host=mac-studio; homeHost=hikae@mac-studio ;;
               *) host=hikae; homeHost=hikae ;;
             esac
+            # ユーザー層を先に activate し、OS 層の sudo 失敗で取り残さない
+            home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.$homeHost.activationPackage")
+            "$home/activate"
             system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.$host.system")
             if [ "$(readlink /run/current-system)" != "$system" ]; then
-              /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              # 非対話で sudo できない場合は pending として報告し、ユーザー層の適用結果を保つ
+              if [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
+                /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              else
+                echo "switch: OS layer pending (non-interactive sudo unavailable); user layer applied" >&2
+              fi
             fi
-            home=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#homeConfigurations.$homeHost.activationPackage")
-            exec "$home/activate"
           '';
         in
         {
