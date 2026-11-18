@@ -55,6 +55,8 @@ GUI アプリが登録する background item は次のとおり（app 側が管�
 | `io.tailscale.ipn.macsys.login-item-helper`       | Tailscale vendor pkg   |
 | `com.openai.codex-sparkle-{progress,updater}`     | Codex native updater   |
 | `jp.kiok.nani.ShipIt`                             | Nani                   |
+| `com.t3tools.t3code.ShipIt`                       | T3 Code updater        |
+| `now.typeless.desktop.ShipIt`                     | Typeless updater       |
 
 ## system domain (`/Library/LaunchDaemons`)
 

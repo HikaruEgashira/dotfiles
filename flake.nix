@@ -250,6 +250,8 @@
           "io.tailscale.ipn.macsys.login-item-helper"
           "jp.kiok.nani.ShipIt"
           "com.anthropic.claudefordesktop.ShipIt"
+          "com.t3tools.t3code.ShipIt"
+          "now.typeless.desktop.ShipIt"
           "us.zoom.updater"
           "us.zoom.updater.login.check"
         ];
