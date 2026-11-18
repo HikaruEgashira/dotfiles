@@ -6,6 +6,7 @@
     ./gh-runner.nix
     ./deck-cast.nix
     ./gypxy.nix
+    ./claude-runner.nix
   ];
 
   boot = {
