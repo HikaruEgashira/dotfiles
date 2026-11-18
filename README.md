@@ -29,6 +29,24 @@ See [playbooks](docs/playbooks.md) for the procedure index and [operations](docs
 A launchd agent (`modules/programs/dotfiles-sync.nix`) pulls `origin/main` daily at 09:00 when the working tree is clean, activates the user layer, and builds the darwin system. The OS layer needs root, so it records `pending=yes` in `~/.cache/dotfiles-sync/metrics.jsonl` instead of switching it; apply with `nix run .#switch`.
 A weekly GitHub Actions job (`flake-update.yml`) runs the substitutable gate on the bumped lock, commits and pushes `flake.lock` changes directly to `main`, then dispatches `ci.yml` (a `GITHUB_TOKEN` push starts no workflow on its own). The real `aarch64-darwin` build is verified locally by `dotfiles-sync` and `nix run .#switch`.
 
+### gypxy hub on ms-a2
+
+The hub (`modules/programs/gypxy.nix`) runs a store copy of the gypxy release pinned by `modules/programs/aqua/aqua.yaml` and hashed by `aqua-checksums.json`; it never fetches at start. The release is private, so neither nix nor the non-interactive service can download it. To bump the version:
+
+```bash
+# 1. on the Mac: bump the pin, refresh checksums, open a PR (tests/gypxy-hub.sh checks pin and hash agree)
+sed -i '' 's|gh-intel@gypxy/v.*|gh-intel@gypxy/vX.Y.Z|' modules/programs/aqua/aqua.yaml
+aqua update-checksum -a --prune
+# 2. on the Mac: verify the cosign bundle and sha256, then add the asset to the ms-a2 store
+scripts/gypxy-seed.sh ms-a2
+# 3. after merge, on ms-a2: build and activate the user layer (no sudo)
+hm=$(nix build --no-link --print-out-paths --refresh \
+  "github:HikaruEgashira/dotfiles/main#nixosConfigurations.ms-a2.config.home-manager.users.hikae.home.activationPackage")
+"$hm/activate"
+```
+
+If step 2 was skipped, the build in step 3 fails and the running hub keeps serving the previous version. Activation restarts the unit only when the store path changes; the restart closes the listener until the new process binds, so the gap is the shutdown of in-flight requests plus start-up.
+
 ## Layout
 
 ```

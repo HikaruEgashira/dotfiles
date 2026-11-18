@@ -8,7 +8,6 @@
 let
   cfg = config.programs.gypxy;
   stateDir = "${config.xdg.stateHome}/gypxy";
-  aquaRoot = "${config.xdg.dataHome}/aquaproj-aqua";
   port = 9300;
   adminPort = 9301;
 
@@ -57,15 +56,18 @@ let
     ${pkgs.coreutils}/bin/install -d -m 0700 ${stateDir}
     [ -s ${stateDir}/admin-token ] || ${pkgs.openssl}/bin/openssl rand -hex 32 >${stateDir}/admin-token
     export PATH=${lib.makeBinPath [ pkgs.git ]}:$PATH
-    export AQUA_GLOBAL_CONFIG=${config.xdg.configHome}/aqua/aqua.yaml
-    export AQUA_POLICY_CONFIG=${config.xdg.configHome}/aqua/aqua-policy.yaml
-    export AQUA_ROOT_DIR=${aquaRoot}
-    exec ${aquaRoot}/bin/gypxy -config ${hubConfig}
+    exec ${lib.getExe cfg.package} -config ${hubConfig}
   '';
 in
 {
   options.programs.gypxy = {
     hub.enable = lib.mkEnableOption "gypxy hub that serves the tailnet";
+    # 起動時に取得しない。store の固定 hash の asset を使い、版を上げると activation が unit を再起動する
+    package = lib.mkOption {
+      type = lib.types.package;
+      readOnly = true;
+      default = pkgs.callPackage ./gypxy-package.nix { };
+    };
     client.enable = lib.mkOption {
       type = lib.types.bool;
       # hub が止まると対象 owner の git が全端末で失敗する。その間は false にして適用し直す
