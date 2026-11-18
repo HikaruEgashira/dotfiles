@@ -21,9 +21,15 @@ if ! ghtkn info 2>/dev/null | jq -e '.agent.running' >/dev/null; then
   done
 fi
 
-# refresh token は unlock 時にしか有効化できないので常に --enable-refresh を付ける
+# refresh token は unlock 時にしか有効化できないので darwin では --enable-refresh を付ける。
+# linux (WSL) は passwordless sudo と Windows 側の `wsl.exe -u root` で root が容易に取れるため、
+# ghtkn の refresh-token docs に従い有効化しない (8h 毎に device flow をやり直す)
 if ghtkn info 2>/dev/null | jq -e '.agent.locked' >/dev/null; then
-  ghtkn agent unlock --enable-refresh
+  if command -v launchctl >/dev/null; then
+    ghtkn agent unlock --enable-refresh
+  else
+    ghtkn agent unlock
+  fi
 fi
 
 # backend から消すには agent が unlocked である必要がある

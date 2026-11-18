@@ -6,6 +6,7 @@
 # refresh token は agent backend でしか使えないため、8h 毎の device flow を避けて
 # 自動更新するには agent を launchd で常駐させ、login 後に 1 回 unlock する。
 # unlock は passphrase を永続化しない設計なので `ghtkn agent unlock --enable-refresh` を手で実行する。
+# linux (WSL) は root が容易に取れる環境なので refresh token を有効化しない (ghauth.sh)。
 {
   config,
   lib,
