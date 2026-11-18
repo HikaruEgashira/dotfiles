@@ -41,16 +41,16 @@ let
   };
 in
 {
-  environment.systemPackages = tools;
-
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   # ジョブは GitHub-hosted と同じ runner (uid 1001) で動く。nix-daemon は接続元を uid で識別するため同じ uid を用意する
-  users.groups.runner.gid = 1001;
-  users.users.runner = {
-    isSystemUser = true;
-    uid = 1001;
-    group = "runner";
+  users = {
+    groups.runner.gid = 1001;
+    users.runner = {
+      isSystemUser = true;
+      uid = 1001;
+      group = "runner";
+    };
   };
 
   nix.settings = {
@@ -60,34 +60,40 @@ in
   };
 
   # Docker Hub プルスルーキャッシュ。ジョブ内の dockerd が registry-mirrors で 10.201.0.1:5000 を見る
-  virtualisation.docker = {
-    enable = true;
-    daemon.settings.log-driver = "local";
-  };
-  virtualisation.oci-containers = {
-    backend = "docker";
-    containers.hub-mirror = {
-      image = "public.ecr.aws/docker/library/registry:2";
-      ports = [ "10.201.0.1:5000:5000" ];
-      environment = {
-        REGISTRY_PROXY_REMOTEURL = "https://registry-1.docker.io";
-        REGISTRY_STORAGE_DELETE_ENABLED = "true";
+  virtualisation = {
+    docker = {
+      enable = true;
+      daemon.settings.log-driver = "local";
+    };
+    oci-containers = {
+      backend = "docker";
+      containers.hub-mirror = {
+        image = "public.ecr.aws/docker/library/registry:2";
+        ports = [ "10.201.0.1:5000:5000" ];
+        environment = {
+          REGISTRY_PROXY_REMOTEURL = "https://registry-1.docker.io";
+          REGISTRY_STORAGE_DELETE_ENABLED = "true";
+        };
+        volumes = [ "/var/lib/gh-runner/hub-mirror:/var/lib/registry" ];
       };
-      volumes = [ "/var/lib/gh-runner/hub-mirror:/var/lib/registry" ];
     };
   };
 
-  # broker の接続先と Roles Anywhere の ARN (秘密ではない)。値は iac-aws projects/github-runners の terraform output local_broker
-  environment.etc."gh-runner/broker.conf".text = ''
-    AWS_REGION="ap-northeast-1"
-    BROKER_URL="https://ko6jpcgsic57fowjgj3hceeg340zulxw.lambda-url.ap-northeast-1.on.aws/"
-    QUEUE_URL="https://sqs.ap-northeast-1.amazonaws.com/951872725222/hikae-runners-local-queued"
-    RA_TRUST_ANCHOR_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:trust-anchor/a4730e6c-c246-4e3e-ac33-3ad4d2c0c50f"
-    RA_PROFILE_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:profile/046c5d13-7bde-4e26-89ff-4edff541c6a4"
-    RA_ROLE_ARN="arn:aws:iam::951872725222:role/hikae-runners-local-host"
-    RA_CERTIFICATE="/etc/gh-runner/host.crt"
-    RA_PRIVATE_KEY="/etc/gh-runner/host.tpm.key"
-  '';
+  environment = {
+    systemPackages = tools;
+
+    # broker の接続先と Roles Anywhere の ARN (秘密ではない)。値は iac-aws projects/github-runners の terraform output local_broker
+    etc."gh-runner/broker.conf".text = ''
+      AWS_REGION="ap-northeast-1"
+      BROKER_URL="https://ko6jpcgsic57fowjgj3hceeg340zulxw.lambda-url.ap-northeast-1.on.aws/"
+      QUEUE_URL="https://sqs.ap-northeast-1.amazonaws.com/951872725222/hikae-runners-local-queued"
+      RA_TRUST_ANCHOR_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:trust-anchor/a4730e6c-c246-4e3e-ac33-3ad4d2c0c50f"
+      RA_PROFILE_ARN="arn:aws:rolesanywhere:ap-northeast-1:951872725222:profile/046c5d13-7bde-4e26-89ff-4edff541c6a4"
+      RA_ROLE_ARN="arn:aws:iam::951872725222:role/hikae-runners-local-host"
+      RA_CERTIFICATE="/etc/gh-runner/host.crt"
+      RA_PRIVATE_KEY="/etc/gh-runner/host.tpm.key"
+    '';
+  };
 
   systemd = {
     tmpfiles.rules = [
