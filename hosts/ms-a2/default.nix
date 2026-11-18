@@ -48,6 +48,12 @@
       type = "fcitx5";
       fcitx5.waylandFrontend = true;
       fcitx5.addons = [ pkgs.fcitx5-mozc ];
+      # Mac の英数/かな相当。修飾キー単押しは release 時判定なので niri の Super+<key> bind と衝突しない
+      fcitx5.settings.globalOptions = {
+        "Hotkey/TriggerKeys"."0" = "Control+space";
+        "Hotkey/DeactivateKeys"."0" = "Super+Super_L";
+        "Hotkey/ActivateKeys"."0" = "Super+Super_R";
+      };
     };
   };
 
