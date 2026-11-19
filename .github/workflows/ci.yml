@@ -45,6 +45,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+      - name: Verify pi npm extension provenance
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#jq nixpkgs#curl --command bash scripts/pi-provenance.sh
       - name: Test CLIProxyAPI credential rendering
         run: python3 tests/cliproxyapi-config.py
       - name: Test encrypted Store unlock

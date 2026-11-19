@@ -10,16 +10,13 @@ let
   settingsPath = "${home}/.pi/agent/settings.json";
   npmRoot = "${home}/.pi/agent/npm";
 
-  # npm extension は settings.json でバージョン固定しないと起動時に更新通知が出る。
-  # pi の更新チェックは npm の min-release-age (~/.npmrc) を見ないため、冷却期間中の版があると
-  # 「Package Updates Available」が消えない。固定して通知対象から外し、固定先をこのジョブが進める。
+  # npm extension は pi-extensions.json の固定版だけを入れる (floating な @latest は使わない)。
+  # 各版の SLSA provenance は CI の scripts/pi-provenance.sh が検証する。版の更新は json を書き換える PR で行う。
+  # settings.json も同じ版へ固定し、pi 起動時の更新通知の対象から外す。
   # git extension (ponytail) は sha 固定で upstream の main HEAD を追させない。設定した ref への
   # reset を `pi update --extensions` が行うので、更新は sha を差し替える手動操作だけになる:
   #   git ls-remote https://github.com/DietrichGebert/ponytail HEAD
-  pinnedNpmExtensions = [
-    "@hikae/pi-prompt-enhancer"
-    "pi-subagents"
-  ];
+  pinnedNpmExtensions = builtins.fromJSON (builtins.readFile ./pi-extensions.json);
   extensionsUpdate = pkgs.writeShellScript "pi-extensions-update" ''
     set -eu
     export PATH=${
@@ -32,11 +29,12 @@ let
     # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions
 
-    # "latest" の解決は npm の min-release-age に従うので、冷却期間を終えた版だけが入る
-    npm install ${lib.concatMapStringsSep " " (pkg: "'${pkg}@latest'") pinnedNpmExtensions} \
-      --prefix "${npmRoot}" --legacy-peer-deps >/dev/null
+    npm install ${
+      lib.concatMapStringsSep " " (e: "'${e.name}@${e.version}'") pinnedNpmExtensions
+    } \
+      --prefix "${npmRoot}" --legacy-peer-deps --save-exact >/dev/null
 
-    for pkg in ${lib.concatMapStringsSep " " (pkg: "'${pkg}'") pinnedNpmExtensions}; do
+    for pkg in ${lib.concatMapStringsSep " " (e: "'${e.name}'") pinnedNpmExtensions}; do
       version=$(jq -r .version "${npmRoot}/node_modules/$pkg/package.json")
       tmp=$(mktemp)
       jq --arg src "npm:$pkg" --arg pin "npm:$pkg@$version" \

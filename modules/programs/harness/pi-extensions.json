@@ -1,0 +1,14 @@
+[
+  {
+    "name": "@hikae/pi-prompt-enhancer",
+    "version": "0.4.0",
+    "repo": "HikaruEgashira/pi-prompt-enhancer",
+    "workflow": "publish.yml"
+  },
+  {
+    "name": "pi-subagents",
+    "version": "0.88.1",
+    "repo": "nicobailon/pi-subagents",
+    "workflow": "release.yml"
+  }
+]
