@@ -80,8 +80,7 @@
       "networkmanager"
       "video"
     ];
-    # 初回ログイン後に passwd で変更する
-    initialPassword = "hikae";
+    # パスワードは repo に置かない。installer (install-ms-a2) が install 直後に対話的に設定する
   };
 
   environment.systemPackages = with pkgs; [
