@@ -34,6 +34,8 @@ let
     "$disko"
     # 失敗しても再起動せず、この行だけ再実行すれば RAM 上の store から入れ直せる
     nixos-install --system "$system" --no-root-passwd --no-channel-copy
+    echo "==> hikae のパスワードを設定"
+    until nixos-enter --root /mnt -c 'passwd hikae'; do :; done
     echo "完了。reboot してください"
   '';
 in
