@@ -34,6 +34,8 @@ pin する platform は `aqua.yaml` の `checksum.supported_envs` (darwin と li
 
 Aqua 自体は npm provenance を検証できない。そのため `scripts/aqua-provenance.sh` が来歴を検証し、検証済み artifact の sha256 と `aqua-checksums.json` の pin が一致することを CI で保証する。Aqua は install 時にその pin だけを照合する。
 
+`lib/package-registry.nix` の `fetchurl` も同じ考え方で扱う。pleno-dlp (`checksums.txt.sigstore.json`) と Node (`SHASUMS256.txt` の GPG 署名) は `scripts/fetchurl-provenance.sh` が CI で署名を検証し、pin の sha256 と照合する。上流が来歴を出していない oh-my-pi / herdr / say-hook / dagger は ledger の `provenance = "accepted: ..."` に受容理由を残す。`tests/fetchurl-provenance.py` は、すべての `fetchurl` が CI 検証か受容記録のどちらかを持つことを CI で確認する。
+
 更新は `.github/workflows/aqua-update.yml` が週次 (月曜) で行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ `bot/aqua-update` branch から PR を作る。PR には CI を dispatch し、CI の来歴検証が merge gate になる。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
 
 ```bash

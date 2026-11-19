@@ -45,6 +45,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+      - name: Verify fetchurl provenance in package registry
+        timeout-minutes: 10
+        run: |
+          python3 tests/fetchurl-provenance.py
+          nix shell --inputs-from . nixpkgs#cosign nixpkgs#gnupg nixpkgs#curl nixpkgs#coreutils nixpkgs#gawk --command bash scripts/fetchurl-provenance.sh
       - name: Test CLIProxyAPI credential rendering
         run: python3 tests/cliproxyapi-config.py
       - name: Test encrypted Store unlock

@@ -737,36 +737,42 @@ let
       purpose = "edit";
       source = "github:can1357/oh-my-pi";
       reason = "Oh My Pi coding agent CLI";
+      provenance = "accepted: 上流 release は raw binary のみで署名・attestation が無い。sha256 pin で受容";
     })
     (mkEntry {
       pkg = dsh;
       purpose = "edit";
       source = "npm:@deepseek-ai/dsh";
       reason = "DeepSeek Harness agent CLI (dsh)";
+      provenance = "ci: scripts/fetchurl-provenance.sh (nodejs.org SHASUMS256 の GPG 署名)";
     })
     (mkEntry {
       pkg = sayHook;
       purpose = "util";
       source = "github:HikaruEgashira/say-hook";
       reason = "herdr の読み上げ通知フック";
+      provenance = "accepted: 自作 repo の release で署名・attestation が無い。sha256 pin で受容";
     })
     (mkEntry {
       pkg = herdr;
       purpose = "edit";
       source = "github:ogulcancelik/herdr/releases";
       reason = "AI coding agent multiplexer (TUI)";
+      provenance = "accepted: 上流 release は raw binary のみで署名・attestation が無い。sha256 pin で受容";
     })
     (mkEntry {
       pkg = dagger;
       purpose = "build";
       source = "github:dagger/dagger";
       reason = "container pipeline CLI (engine は podman/docker 経由)";
+      provenance = "accepted: 上流は署名無しの checksums.txt のみ。sha256 pin で受容";
     })
     (mkEntry {
       pkg = plenoDlp;
       purpose = "ops";
       source = "github:plenoai/pleno-dlp";
       reason = "pre-commit の secret scan";
+      provenance = "ci: scripts/fetchurl-provenance.sh (checksums.txt.sigstore.json)";
     })
   ];
 in
