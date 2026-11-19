@@ -1,0 +1,7 @@
+# scripts/aqua-provenance.sh で来歴を検証できない Aqua pin の受容記録。
+# registry.yaml に checksum asset が無く、上流が署名・checksum を配布していない pin だけを載せる。
+# aqua-checksums.json の sha256 は初回取得時の TOFU で、来歴なしとして受容する。
+# package<TAB>理由
+withgraphite/homebrew-tap	来歴なし受容: gt は raw binary だけを配布し checksum asset も署名も無い
+bitwarden/clients	来歴なし受容: registry に checksum asset を定義しておらず、zip を TOFU の sha256 で pin している
+HikaruEgashira/nuphy-air60-v2-tools	来歴なし受容: 自作 tool の tarball で checksum asset を配布していない

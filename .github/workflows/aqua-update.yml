@@ -32,7 +32,7 @@ jobs:
       - name: Bump AI CLI pins
         timeout-minutes: 10
         run: nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
-      - name: Verify AI CLI provenance behind Aqua pins
+      - name: Verify provenance behind Aqua pins
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
