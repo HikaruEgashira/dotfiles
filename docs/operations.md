@@ -536,12 +536,14 @@ nix run nix-darwin/master -- switch --flake ~/dotfiles#hikae
 
 ### 6.1 NixOS-WSL (Windows PC)
 
-WSL は Home Manager 単体 (`homeConfigurations."hikae@wsl"`) で適用する。host 差分は `hosts/wsl/` に閉じ、同一 PC の Windows 側 git 設定も同じ activation が生成する (`hosts/wsl/windows.nix`)。
+WSL はシステム層を `nixosConfigurations.wsl` (`hosts/wsl/default.nix`、NixOS-WSL module ベース。linger / `wheelNeedsPassword = false` / nix-ld / `trusted-users`)、ユーザー層を Home Manager 単体 (`homeConfigurations."hikae@wsl"`) で適用する。host 差分は `hosts/wsl/` に閉じ、同一 PC の Windows 側 git 設定も同じ activation が生成する (`hosts/wsl/windows.nix`)。
 
 ```bash
 # 1) Windows: NixOS-WSL を導入し既定 distro にする (https://github.com/nix-community/NixOS-WSL)
 # 2) WSL: リポを取得して適用する (ghtkn が動く前なので一度だけ HTTPS 匿名 clone)
 git clone https://github.com/HikaruEgashira/dotfiles ~/dotfiles
+#    システム層を flake に切り替える (以後 /etc/nixos/configuration.nix は使わない)
+sudo nixos-rebuild switch --flake ~/dotfiles#wsl
 nix run home-manager/master -- switch --flake ~/dotfiles#hikae@wsl
 # 3) 端末専用の鍵を作り、署名鍵だけ GitHub に Signing Key として登録する (§3.4)
 ssh-keygen -t ed25519 -N "" -C "hikae@wsl-sign" -f ~/.ssh/id_ed25519_sign

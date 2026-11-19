@@ -24,6 +24,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,6 +41,7 @@
       nix-darwin,
       home-manager,
       disko,
+      nixos-wsl,
       treefmt-nix,
       ...
     }:
@@ -108,6 +113,21 @@
                 programs.gypxy.hub.enable = true;
               };
             };
+          }
+        ];
+      };
+
+      wsl = nixpkgs.lib.nixosSystem {
+        modules = [
+          nixos-wsl.nixosModules.default
+          ./hosts/wsl/default.nix
+          {
+            nixpkgs = {
+              hostPlatform = "x86_64-linux";
+              inherit overlays;
+              config.allowUnfree = true;
+            };
+            system.configurationRevision = self.rev or self.dirtyRev or null;
           }
         ];
       };
@@ -645,7 +665,10 @@
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
-      nixosConfigurations.ms-a2 = msA2;
+      nixosConfigurations = {
+        ms-a2 = msA2;
+        inherit wsl;
+      };
       packages.x86_64-linux.ms-a2-installer-iso = msA2Installer.config.system.build.isoImage;
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations = {
@@ -698,6 +721,9 @@
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
           ms-a2-eval = builtins.seq msA2.config.system.build.toplevel.drvPath (
             (pkgsFor "x86_64-linux").runCommand "ms-a2-eval" { } "touch $out"
+          );
+          wsl-eval = builtins.seq wsl.config.system.build.toplevel.drvPath (
+            (pkgsFor "x86_64-linux").runCommand "wsl-eval" { } "touch $out"
           );
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)
