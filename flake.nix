@@ -535,6 +535,10 @@
               # 非対話で sudo できない場合は pending として報告し、ユーザー層の適用結果を保つ
               if [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
                 /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              elif [ -n "''${SUDO_ASKPASS:-}" ]; then
+                /usr/bin/sudo -A ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              elif [ -p /dev/stdin ] || [ -f /dev/stdin ]; then
+                /usr/bin/sudo -S ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
               else
                 echo "switch: OS layer pending (non-interactive sudo unavailable); user layer applied" >&2
               fi
