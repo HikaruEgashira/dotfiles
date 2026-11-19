@@ -533,10 +533,16 @@
             system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.$host.system")
             if [ "$(readlink /run/current-system)" != "$system" ]; then
               # 非対話で sudo できない場合は pending として報告し、ユーザー層の適用結果を保つ
-              if [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
-                /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              # TTY の無い agent 向けに SUDO_ASKPASS (sudo -A) か SWITCH_SUDO_STDIN=1 (sudo -S) を受け付ける
+              rebuild="${darwin-rebuild}/bin/darwin-rebuild"
+              if [ -n "''${SUDO_ASKPASS:-}" ]; then
+                /usr/bin/sudo -A "$rebuild" switch --flake "$root#$host"
+              elif [ "''${SWITCH_SUDO_STDIN:-}" = 1 ]; then
+                /usr/bin/sudo -S -p "" "$rebuild" switch --flake "$root#$host"
+              elif [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
+                /usr/bin/sudo "$rebuild" switch --flake "$root#$host"
               else
-                echo "switch: OS layer pending (non-interactive sudo unavailable); user layer applied" >&2
+                echo "switch: OS layer pending (non-interactive sudo unavailable; set SUDO_ASKPASS or SWITCH_SUDO_STDIN=1); user layer applied" >&2
               fi
             fi
           '';
