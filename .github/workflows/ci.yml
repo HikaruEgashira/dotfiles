@@ -62,7 +62,7 @@ jobs:
         timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
-        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#yq-go nixpkgs#curl nixpkgs#coreutils nixpkgs#gawk --command bash scripts/aqua-provenance.sh
       - name: Guard fetchurl provenance ledger
         run: python3 tests/fetchurl-provenance.py
       - name: Test CLIProxyAPI credential rendering

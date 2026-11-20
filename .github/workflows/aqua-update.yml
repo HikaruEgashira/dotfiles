@@ -36,7 +36,7 @@ jobs:
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
-        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#yq-go nixpkgs#curl nixpkgs#coreutils nixpkgs#gawk --command bash scripts/aqua-provenance.sh
       - name: Open PR if pins changed
         id: push
         if: ${{ !inputs.dry_run }}

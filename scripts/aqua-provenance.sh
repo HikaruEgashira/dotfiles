@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# registry.yaml に checksum asset がある github_release package は上流 checksum と pin を照合し、それ以外は provenance-ledger.tsv に記録する (scripts/aqua-coverage.sh)。
 # aqua-checksums.json の pin が上流の署名・来歴に裏付けられた artifact を指すことを検証する。
 set -euo pipefail
 
@@ -39,3 +40,32 @@ for platform in "${platforms[@]}"; do
   verify_npm @openai/codex "$codex-$platform" openai/codex rust-release.yml "codex-$codex-$platform.tgz"
   verify_npm "@opencode/cli-$platform" "$opencode" anomalyco/opencode release.yml "cli-$platform-$opencode.tgz"
 done
+
+verify_checksum_asset() {
+  local owner=$1 repo=$2 template=$3 id version asset name sums upstream
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    asset=${id##*/}
+    version=${id#"github_release/github.com/$owner/$repo/"}
+    version=${version%/"$asset"}
+    name=${template//'{{.Asset}}'/$asset}
+    name=${name//'{{trimV .Version}}'/${version#v}}
+    name=${name//'{{.Version}}'/$version}
+    sums=$work/$owner-$repo-${name//\//_}
+    if [ ! -f "$sums" ]; then
+      curl -fsSL --retry 3 "https://github.com/$owner/$repo/releases/download/$version/$name" -o "$sums" ||
+        { echo "error: fetch $owner/$repo $version $name" >&2; exit 1; }
+    fi
+    upstream=$(awk -v a="$asset" '$2 == a || $2 == "*" a || NF == 1 { print tolower($1); exit }' "$sums")
+    if [ "$upstream" != "$(pinned_sha256 "$id")" ]; then
+      echo "error: $id pin does not match upstream $name" >&2
+      exit 1
+    fi
+    echo "ok: $owner/$repo $version $asset ($name)"
+  done < <(jq -r --arg p "github_release/github.com/$owner/$repo/" \
+    '.checksums[].id | select(startswith($p))' "$aqua/aqua-checksums.json")
+}
+
+while read -r owner repo template; do
+  verify_checksum_asset "$owner" "$repo" "$template"
+done < <(yq -r '.packages[] | select(.checksum) | .repo_owner + " " + .repo_name + " " + .checksum.asset' "$aqua/registry.yaml")

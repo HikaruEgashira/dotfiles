@@ -1,0 +1,4 @@
+package	status	reason
+withgraphite/homebrew-tap	来歴なし受容	上流 release に checksum asset も署名も無い
+bitwarden/clients	来歴なし受容	上流 release に checksum asset も署名も無い
+HikaruEgashira/nuphy-air60-v2-tools	来歴なし受容	自作 tool で上流 release に checksum asset が無い
