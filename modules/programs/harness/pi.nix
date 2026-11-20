@@ -17,10 +17,8 @@ let
   # reset を `pi update --extensions` が行うので、更新は sha を差し替える手動操作だけになる:
   #   git ls-remote https://github.com/DietrichGebert/ponytail HEAD
   # 版の更新はここを書き換える手動操作だけにし、activation で floating install しない
-  pinnedNpmExtensions = {
-    "@hikae/pi-prompt-enhancer" = "0.4.0";
-    "pi-subagents" = "0.88.1";
-  };
+  # pin の正本は CI が lockfile と npm audit signatures で検証する pi-npm/package.json
+  pinnedNpmExtensions = (lib.importJSON ./pi-npm/package.json).dependencies;
   npmPkgs = lib.attrNames pinnedNpmExtensions;
   extensionsUpdate = pkgs.writeShellScript "pi-extensions-update" ''
     set -eu
