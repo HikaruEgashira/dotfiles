@@ -559,6 +559,17 @@ systemctl --user restart ghtkn-agent                           # 再起動 (unlo
 journalctl --user -u ssh-sign-agent -n 20                      # ログ
 ```
 
+#### WSL VM 起動後の ghtkn unlock
+
+ghtkn-agent は locked で起動し、passphrase を永続化しない。`users.users.hikae.linger = true` で session 終了時の停止は防げるが、WSL VM 自体が idle で停止すると次の boot で agent が locked に戻り、`ghauth` を実行するまで Windows / WSL 両方の git push と `gh` が失敗する。
+
+`.wslconfig` の `vmIdleTimeout` や keep-alive で VM を止めない手もあるが、割り当てメモリ (40GB) を常時確保し続けるため採用しない。運用は「VM 起動後に `ghauth` を実行する」に固定する。
+
+```bash
+systemctl --user status ghtkn-agent   # VM 再起動後の agent 状態
+ghauth                                # unlock と必要なら device flow
+```
+
 ## 7. 容量
 
 ディスクは 229G の APFS コンテナ。2026-10-25 の棚卸しで 212G 使用 (空き 17G) だったものを、下記で空き 60G 超まで戻した。再び詰まったら ladder が `report_candidates` で候補を出す。
