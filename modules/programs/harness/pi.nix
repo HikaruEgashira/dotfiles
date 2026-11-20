@@ -16,10 +16,12 @@ let
   # git extension (ponytail) は sha 固定で upstream の main HEAD を追させない。設定した ref への
   # reset を `pi update --extensions` が行うので、更新は sha を差し替える手動操作だけになる:
   #   git ls-remote https://github.com/DietrichGebert/ponytail HEAD
-  pinnedNpmExtensions = [
-    "@hikae/pi-prompt-enhancer"
-    "pi-subagents"
-  ];
+  # 版の更新はここを書き換える手動操作だけにし、activation で floating install しない
+  pinnedNpmExtensions = {
+    "@hikae/pi-prompt-enhancer" = "0.4.0";
+    "pi-subagents" = "0.88.1";
+  };
+  npmPkgs = lib.attrNames pinnedNpmExtensions;
   extensionsUpdate = pkgs.writeShellScript "pi-extensions-update" ''
     set -eu
     export PATH=${
@@ -32,11 +34,12 @@ let
     # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions
 
-    # "latest" の解決は npm の min-release-age に従うので、冷却期間を終えた版だけが入る
-    npm install ${lib.concatMapStringsSep " " (pkg: "'${pkg}@latest'") pinnedNpmExtensions} \
-      --prefix "${npmRoot}" --legacy-peer-deps >/dev/null
+    npm install ${
+      lib.concatStringsSep " " (lib.mapAttrsToList (pkg: v: "'${pkg}@${v}'") pinnedNpmExtensions)
+    } \
+      --prefix "${npmRoot}" --save-exact --legacy-peer-deps >/dev/null
 
-    for pkg in ${lib.concatMapStringsSep " " (pkg: "'${pkg}'") pinnedNpmExtensions}; do
+    for pkg in ${lib.concatMapStringsSep " " (pkg: "'${pkg}'") npmPkgs}; do
       version=$(jq -r .version "${npmRoot}/node_modules/$pkg/package.json")
       tmp=$(mktemp)
       jq --arg src "npm:$pkg" --arg pin "npm:$pkg@$version" \
