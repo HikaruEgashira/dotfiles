@@ -29,6 +29,43 @@ verify_npm() {
   echo "ok: $pkg $version ($repo $workflow)"
 }
 
+render_checksum_asset() {
+  local template=$1 asset=$2 version=$3 semver=$4 out
+  out=${template//'{{.Asset}}'/$asset}
+  out=${out//'{{trimV .Version}}'/${version#v}}
+  out=${out//'{{.Version}}'/$version}
+  out=${out//'{{trimV .SemVer}}'/${semver#v}}
+  out=${out//'{{.SemVer}}'/$semver}
+  case $out in *'{{'*) echo "unsupported checksum asset template: $template" >&2; return 1 ;; esac
+  printf '%s\n' "$out"
+}
+
+verify_github_checksum() {
+  local owner=$1 repo=$2 template=$3 prefix=$4 version id asset sums file expected n=0
+  version=$(version_of "$owner/$repo")
+  [ -n "$version" ]
+  while IFS= read -r id; do
+    asset=${id#"github_release/github.com/$owner/$repo/$version/"}
+    sums=$(render_checksum_asset "$template" "$asset" "$version" "${version#"$prefix"}")
+    file=$work/$owner-$repo-${sums//\//_}
+    [ -f "$file" ] || curl -fsSL --retry 3 "https://github.com/$owner/$repo/releases/download/$version/$sums" -o "$file"
+    expected=$(awk -v a="$asset" '{ f = $2; sub(/^[*]/, "", f); sub(/^[.]\//, "", f) } f == a || (NF == 1 && NR == 1) { print tolower($1); exit }' "$file")
+    if [ "$expected" != "$(pinned_sha256 "$id")" ]; then
+      echo "FAIL: $id does not match upstream $sums" >&2
+      return 1
+    fi
+    n=$((n + 1))
+  done < <(jq -r --arg p "github_release/github.com/$owner/$repo/$version/" \
+    '.checksums[].id | select(startswith($p))' "$aqua/aqua-checksums.json")
+  [ "$n" -gt 0 ]
+  echo "ok: $owner/$repo $version ($n assets match upstream $template)"
+}
+
+# registry.yaml に checksum asset が定義された package だけを upstream と突き合わせる
+while IFS=$'\t' read -r owner repo template prefix; do
+  verify_github_checksum "$owner" "$repo" "$template" "$prefix"
+done < <(yq -r '.packages[] | select(.type == "github_release" and .checksum.type == "github_release" and .checksum.asset) | [.repo_owner, .repo_name, .checksum.asset, (.version_prefix // "")] | @tsv' "$aqua/registry.yaml")
+
 # aqua.yaml の checksum.supported_envs と対応させる (npm の platform 表記)
 platforms=(darwin-arm64 linux-x64)
 
