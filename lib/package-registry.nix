@@ -12,6 +12,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation rec {
         pname = "oh-my-pi";
+        passthru.provenance = "accepted: 上流が署名・attestation を公開していない単体 binary。hash pin のみで固定する";
         version = "18.6.1";
         src = pkgs.fetchurl {
           url = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-darwin-arm64";
@@ -83,6 +84,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation rec {
         pname = "node-darwin-arm64";
+        passthru.provenance = "ci: scripts/fetchurl-provenance.sh";
         version = "24.22.0";
         src = pkgs.fetchurl {
           url = "https://nodejs.org/dist/v${version}/node-v${version}-darwin-arm64.tar.gz";
@@ -115,6 +117,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "say-hook";
+        passthru.provenance = "accepted: 自作 repo の release。署名を出しておらず hash pin のみで固定する";
         version = "0.5.1";
         src = pkgs.fetchurl {
           url = "https://github.com/HikaruEgashira/say-hook/releases/download/v0.5.1/say-hook-v0.5.1-darwin-arm64.tar.gz";
@@ -133,6 +136,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "pleno-dlp";
+        passthru.provenance = "ci: scripts/fetchurl-provenance.sh";
         version = "0.67.3";
         src = pkgs.fetchurl {
           url = "https://github.com/plenoai/pleno-dlp/releases/download/v0.67.3/pleno-dlp_darwin_arm64.tar.gz";
@@ -152,6 +156,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "dagger";
+        passthru.provenance = "accepted: 上流 checksums.txt は無署名。hash pin のみで固定する";
         version = "0.21.11";
         src = pkgs.fetchurl {
           url = "https://github.com/dagger/dagger/releases/download/v0.21.11/dagger_v0.21.11_darwin_arm64.tar.gz";
@@ -171,6 +176,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "herdr";
+        passthru.provenance = "accepted: 上流 release は署名無しの raw binary。hash pin のみで固定する";
         version = "0.9.5";
         src = pkgs.fetchurl {
           url = "https://github.com/ogulcancelik/herdr/releases/download/v0.9.5/herdr-macos-aarch64";
