@@ -45,6 +45,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+      - name: Verify Pi npm extension signatures
+        timeout-minutes: 5
+        run: nix shell --inputs-from . nixpkgs#nodejs --command bash -c 'cd modules/programs/harness/pi-extensions && npm ci --ignore-scripts && npm audit signatures'
       - name: Test CLIProxyAPI credential rendering
         run: python3 tests/cliproxyapi-config.py
       - name: Test encrypted Store unlock

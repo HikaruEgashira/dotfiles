@@ -36,6 +36,19 @@ Aqua 自体は npm provenance を検証できない。そのため `scripts/aqua
 
 更新は `.github/workflows/aqua-update.yml` が週次 (月曜) で行う。`scripts/aqua-bump.sh` が npm 公開から 3 日以上経った最新安定版へ `aqua.yaml` を上げて checksum を更新し、`scripts/aqua-provenance.sh` が通った場合だけ `bot/aqua-update` branch から PR を作る。PR には CI を dispatch し、CI の来歴検証が merge gate になる。手元へは Home Manager の activationPackage で反映する。手動で上げる場合も同じ script を使う。
 
+Pi の npm extension (`modules/programs/harness/pi.nix`) は `modules/programs/harness/pi-extensions/package.json` で exact version に固定し、launchd job はその版だけを `--save-exact` で入れる。CI の validate ジョブが同じ `package-lock.json` で `npm ci --ignore-scripts && npm audit signatures` を実行し、registry 署名と provenance attestation を検証する。更新は package.json の版を上げて `npm install --package-lock-only --ignore-scripts` で lock を作り直す。
+
+| package                         | 来歴                                    |
+| ------------------------------- | --------------------------------------- |
+| `@hikae/pi-prompt-enhancer`     | npm provenance                          |
+| `pi-subagents`                  | npm provenance                          |
+| `undici`                        | npm provenance                          |
+| `@js-temporal/polyfill`         | 来歴なし受容 (registry 署名のみ検証)    |
+| `acorn`                         | 来歴なし受容 (registry 署名のみ検証)    |
+| `jiti`                          | 来歴なし受容 (registry 署名のみ検証)    |
+| `jsbi`                          | 来歴なし受容 (registry 署名のみ検証)    |
+| `yaml`                          | 来歴なし受容 (registry 署名のみ検証)    |
+
 ```bash
 nix shell --inputs-from . nixpkgs#aqua nixpkgs#jq nixpkgs#curl --command bash scripts/aqua-bump.sh
 ```
