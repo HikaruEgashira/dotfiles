@@ -77,41 +77,6 @@ let
     else
       pkgs.gh;
 
-  # dsh's node-addon-require-builtin rejects nixpkgs' toolchain-built Node (Unsupported/no-getter),
-  # so the wrapper carries the nodejs.org build; npx there installs the prebuilt npm tree (~/.npm/_npx).
-  # shortcut: first run needs network, and nodejs.org version bumps are manual.
-  dshNode =
-    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
-      pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "node-darwin-arm64";
-        passthru.provenance = "ci: scripts/fetchurl-provenance.sh";
-        version = "24.22.0";
-        src = pkgs.fetchurl {
-          url = "https://nodejs.org/dist/v${version}/node-v${version}-darwin-arm64.tar.gz";
-          hash = "sha256-apck2bUKXyK0gWze1EG1qNndrlRhkaXlt++lpeLuJtU=";
-        };
-        dontConfigure = true;
-        dontBuild = true;
-        dontFixup = true;
-        installPhase = ''
-          cp -a . $out/
-        '';
-      }
-    else
-      null;
-
-  dsh =
-    if dshNode == null then
-      null
-    else
-      pkgs.writeShellApplication {
-        name = "dsh";
-        runtimeInputs = [ dshNode ];
-        text = ''
-          exec npx --yes @deepseek-ai/dsh@0.2.0-rc.2 "$@"
-        '';
-      };
-
   # 上流が darwin-arm64 の release を出している CLI は fetchurl で固定する (buildPhase を実行しない)
   sayHook =
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
@@ -190,23 +155,6 @@ let
       }
     else
       null;
-
-  # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
-  evenTerminal = pkgs.writeShellApplication {
-    name = "even-terminal";
-    runtimeInputs = [ pkgs.nodejs ];
-    text = ''
-      exec npx --yes @evenrealities/even-terminal@0.10.5 "$@"
-    '';
-  };
-
-  otelHooks = pkgs.writeShellApplication {
-    name = "otel-hooks";
-    runtimeInputs = [ pkgs.uv ];
-    text = ''
-      exec uvx --from otel-hooks==0.13.0 otel-hooks "$@"
-    '';
-  };
 
   cross = [
     # aqua-proxy (aquaproj-aqua/bin/*) は PATH 上の aqua を呼ぶので、aqua.yaml が対応する全 platform に置く
@@ -315,18 +263,6 @@ let
       pkg = pkgs.google-clasp;
       purpose = "ops";
       reason = "Google Apps Script CLI";
-    })
-    (mkEntry {
-      pkg = evenTerminal;
-      purpose = "util";
-      source = "npm:@evenrealities/even-terminal";
-      reason = "Even Realities glasses terminal";
-    })
-    (mkEntry {
-      pkg = otelHooks;
-      purpose = "observe";
-      source = "pypi:otel-hooks";
-      reason = "OpenTelemetry hook helper";
     })
 
     (mkEntry {
@@ -743,12 +679,6 @@ let
       purpose = "edit";
       source = "github:can1357/oh-my-pi";
       reason = "Oh My Pi coding agent CLI";
-    })
-    (mkEntry {
-      pkg = dsh;
-      purpose = "edit";
-      source = "npm:@deepseek-ai/dsh";
-      reason = "DeepSeek Harness agent CLI (dsh)";
     })
     (mkEntry {
       pkg = sayHook;
