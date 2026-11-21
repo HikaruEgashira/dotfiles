@@ -191,23 +191,6 @@ let
     else
       null;
 
-  # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
-  evenTerminal = pkgs.writeShellApplication {
-    name = "even-terminal";
-    runtimeInputs = [ pkgs.nodejs ];
-    text = ''
-      exec npx --yes @evenrealities/even-terminal@0.10.5 "$@"
-    '';
-  };
-
-  otelHooks = pkgs.writeShellApplication {
-    name = "otel-hooks";
-    runtimeInputs = [ pkgs.uv ];
-    text = ''
-      exec uvx --from otel-hooks==0.13.0 otel-hooks "$@"
-    '';
-  };
-
   cross = [
     # aqua-proxy (aquaproj-aqua/bin/*) は PATH 上の aqua を呼ぶので、aqua.yaml が対応する全 platform に置く
     (mkEntry {
@@ -316,19 +299,6 @@ let
       purpose = "ops";
       reason = "Google Apps Script CLI";
     })
-    (mkEntry {
-      pkg = evenTerminal;
-      purpose = "util";
-      source = "npm:@evenrealities/even-terminal";
-      reason = "Even Realities glasses terminal";
-    })
-    (mkEntry {
-      pkg = otelHooks;
-      purpose = "observe";
-      source = "pypi:otel-hooks";
-      reason = "OpenTelemetry hook helper";
-    })
-
     (mkEntry {
       pkg = ghWithGhtkn;
       purpose = "edit";
