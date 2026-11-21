@@ -66,7 +66,7 @@ inputs を bump した lock が「ローカル source build 禁止」を守っ�
 
 本機の `/nix/store` に既にある path は dry-run に出ないため、評価は空の chroot store (`~/.cache/substitutable-gate/store`、`SUBSTITUTABLE_GATE_STORE` で変更) で行い、CI runner と同じ判定にする。初回は flake inputs の source (約 700MB) をそこへ copy するので 1 分前後かかる。
 
-allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / herdr / pleno-dlp / say-hook / oh-my-pi / node-darwin-arm64)、Cica font。
+allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / herdr / pleno-dlp / say-hook / oh-my-pi)、Cica font。
 
 | 実行場所                           | 対象                                             | 備考                                                                                                                |
 | ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
