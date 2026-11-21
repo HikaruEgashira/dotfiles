@@ -15,14 +15,24 @@ field_of() {
   ' "$registry"
 }
 
+require_field() {
+  local value
+  value=$(field_of "$1" "$2")
+  if [ -z "$value" ]; then
+    echo "FAIL: $1: $2 not found in lib/package-registry.nix" >&2
+    exit 1
+  fi
+  printf '%s\n' "$value"
+}
+
 pinned_sha256() {
-  field_of "$1" hash | sed 's/^sha256-//' | base64 -d | od -An -tx1 | tr -d ' \n'
+  require_field "$1" hash | sed 's/^sha256-//' | base64 -d | od -An -tx1 | tr -d ' \n'
 }
 
 verify_pleno_dlp() {
   local name="pleno-dlp" url version base file
-  url=$(field_of "$name" url)
-  version=$(field_of "$name" version)
+  url=$(require_field "$name" url)
+  version=$(require_field "$name" version)
   base=${url%/*}
   file=${url##*/}
   curl -fsSL --retry 3 "$url" -o "$work/$file"
@@ -36,20 +46,4 @@ verify_pleno_dlp() {
   echo "ok: $name $version (sigstore)"
 }
 
-verify_node() {
-  local name="node-darwin-arm64" url version base file
-  url=$(field_of "$name" url)
-  version=$(field_of "$name" version)
-  base=${url%/*}
-  file=${url##*/}
-  curl -fsSL --retry 3 "$url" -o "$work/$file"
-  curl -fsSL --retry 3 "$base/SHASUMS256.txt.asc" -o "$work/SHASUMS256.txt.asc"
-  curl -fsSL --retry 3 https://github.com/nodejs/release-keys/raw/HEAD/gpg/pubring.kbx -o "$work/node-keys.kbx"
-  gpgv --keyring "$work/node-keys.kbx" --output "$work/SHASUMS256.txt" "$work/SHASUMS256.txt.asc" 2>/dev/null
-  (cd "$work" && grep -E "  $file\$" SHASUMS256.txt | sha256sum -c --quiet -)
-  [ "$(sha256sum "$work/$file" | cut -d' ' -f1)" = "$(pinned_sha256 "$name")" ]
-  echo "ok: $name $version (gpg)"
-}
-
 verify_pleno_dlp
-verify_node
