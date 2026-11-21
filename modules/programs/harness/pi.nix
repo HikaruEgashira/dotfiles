@@ -28,6 +28,9 @@ let
         pkgs.coreutils
       ]
     }:${home}/.nix-profile/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    # pin は public registry で検証済み (pi-npm/package-lock.json)。継承した NPM_CONFIG_REGISTRY が
+    # npm.flatt.tech を指すとトークン失効時に 401 で落ちるため、このジョブは public registry に固定する
+    export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
 
     # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions
