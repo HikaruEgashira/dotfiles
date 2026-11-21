@@ -25,6 +25,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - name: Lock newly added flake inputs before evaluation
+        # flake.nix に input を足した PR では lock entry が flake-update 経由で入るまで欠ける。
+        # eval 中に nix が flake.lock を書き換えると formatter check の source hash が崩れるため、先に lock を確定させる
+        timeout-minutes: 5
+        run: nix flake lock
       - name: Verify fetchurl signatures (sigstore + GPG)
         timeout-minutes: 10
         run: nix shell --inputs-from . nixpkgs#cosign nixpkgs#gnupg nixpkgs#curl nixpkgs#coreutils nixpkgs#gawk --command bash scripts/fetchurl-provenance.sh
@@ -45,6 +50,11 @@ jobs:
             experimental-features = nix-command flakes
             extra-substituters = https://nix-community.cachix.org
             extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+      - name: Lock newly added flake inputs before evaluation
+        # flake.nix に input を足した PR では lock entry が flake-update 経由で入るまで欠ける。
+        # eval 中に nix が flake.lock を書き換えると formatter check の source hash が崩れるため、先に lock を確定させる
+        timeout-minutes: 5
+        run: nix flake lock
       - name: Run formatter check
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
@@ -109,6 +119,7 @@ jobs:
         run: |
           nix eval --raw '.#checks.x86_64-linux.build.drvPath'
           nix eval --raw '.#homeConfigurations.hikae@mac-studio.activationPackage.drvPath'
+          nix eval --raw '.#nixosConfigurations.wsl.config.system.build.toplevel.drvPath'
           echo
           echo "evaluated successfully"
       - name: Eval determinism gate

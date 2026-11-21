@@ -551,6 +551,17 @@ systemctl --user restart ssh-agent ssh-sign-agent
 ghauth
 ```
 
+システム層は `nixosConfigurations.wsl` (`hosts/wsl/default.nix`) が持つ。`wsl.defaultUser = "hikae"`、linger、パスワード無し sudo、`nix-ld`、flakes と `trusted-users` を宣言する。初回の NixOS-WSL は既定ユーザーが `nixos` なので、clone 後に一度だけシステム層を適用してから入り直す。
+
+```bash
+sudo nixos-rebuild switch --flake ~/dotfiles#wsl
+wsl.exe --terminate NixOS   # Windows 側で distro を再起動し、hikae として入り直す
+```
+
+`system.stateVersion` は導入した NixOS-WSL tarball の NixOS release に合わせる。適用前に `nixos-version` と `hosts/wsl/default.nix` の値を比べ、違えば `hosts/wsl/default.nix` を直してから switch する。既存 host で値を上げるのは release notes の移行手順を確認した後だけにする。
+
+`nixos-wsl` input の lock entry は手で書かない。input を新しく足したときは `flake-update` workflow を `lock_input=nixos-wsl` (結果を残す Issue があれば `issue_number`) で dispatch し、bot が flake.lock を commit する。CI は eval 前に `nix flake lock` を走らせるため、lock 前の PR でも formatter check の source が eval 中に変わらない。
+
 常駐は launchd の代わりに systemd user service で動く。
 
 ```bash
