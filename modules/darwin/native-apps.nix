@@ -6,15 +6,15 @@
 }:
 
 {
-  options.dotfiles.tailscaleGui = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-    description = "Install the signed Tailscale GUI pkg. Disable when the host runs the OSS tailscaled.";
+  options.dotfiles = {
+    tailscaleGui = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Install the signed Tailscale GUI pkg. Disable when the host runs the OSS tailscaled.";
+    };
+    orca = lib.mkEnableOption "the signed Orca IDE app (Remote Orca Server host or client)";
+    secretive = lib.mkEnableOption "the signed Secretive app that holds the Touch ID gated sudo key in the Secure Enclave";
   };
-
-  options.dotfiles.orca = lib.mkEnableOption "the signed Orca IDE app (Remote Orca Server host or client)";
-
-  options.dotfiles.secretive = lib.mkEnableOption "the signed Secretive app that holds the Touch ID gated sudo key in the Secure Enclave";
 
   config.system.activationScripts.postActivation.text = lib.mkAfter ''
     PATH="${
