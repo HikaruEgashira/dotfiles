@@ -15,4 +15,6 @@ _:
     localHostName = "Mac-Studio";
     computerName = "Mac Studio";
   };
+
+  dotfiles.orca = true;
 }
