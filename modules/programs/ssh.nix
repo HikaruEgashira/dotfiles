@@ -132,6 +132,12 @@ in
           }
         ];
       };
+      # 宛先解決を tailscaled に任せ、DoH profile が ts.net を奪っても host 名で届くようにする
+      "ms-a2 mac-studio macbook-air" = {
+        User = "hikae";
+        ProxyCommand = "/run/current-system/sw/bin/tailscale nc %h %p";
+        StrictHostKeyChecking = "accept-new";
+      };
       "github.com" = {
         HostName = "ssh.github.com";
         User = "git";

@@ -188,7 +188,9 @@ ISP (ARTERIA/UCOM) は宛先を問わず UDP/TCP 53 を網内で透過傍受す�
 | 自宅 LAN 全体         | UCG: Settings → Security → Protection → Encrypted DNS → Custom に DoH stamp (`sdns://`, host `dns.nextdns.io`, path `/<profile-id>`) を投入 |
 | この Mac (外出先含む) | 下記 profile。profile ID は公開 repo に置かず引数で渡す                                                                                     |
 
-NextDNS 管理画面から DoH の `.mobileconfig` を取得してインストールし、System Settings > General > Device Management で承認する。
+profile は `scripts/nextdns-mobileconfig.sh <profile-id> <device-name> > ~/Downloads/nextdns.mobileconfig` で生成し、ダブルクリックしてから System Settings > General > Device Management で承認する。NextDNS 管理画面が配る profile は `ts.net` を DoH に送るので、`/etc/resolver/ts.net` が無視され MagicDNS (`*.tailc30b81.ts.net`) が `No Such Record` になる。生成版は `ts.net` を `NeverConnect` に入れてある。旧 profile は削除する。
+
+確認 (MagicDNS): `dscacheutil -q host -a name ms-a2.tailc30b81.ts.net` が 100.x を返す。
 
 確認:
 
