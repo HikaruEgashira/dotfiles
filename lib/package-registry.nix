@@ -63,6 +63,11 @@ let
             echo '  fi'
             echo 'fi'
             # GH_HOST が github.com 以外 (gypxy hub) なら gh は GHES として扱い GH_ENTERPRISE_TOKEN を読む
+            # token 不要な呼び出しは ghtkn を通さない。agent が locked だと `gh --version` すら無出力で失敗し、
+            # GUI アプリ (Orca 等) が gh の検出に失敗して「gh が見つからない」扱いになるため
+            echo 'case "''${1:-}" in ""|--version|version|--help|-h|help|completion)'
+            echo '  exec ${pkgs.gh}/bin/gh "$@" ;;'
+            echo 'esac'
             echo 'var=GH_TOKEN'
             echo 'case "''${GH_HOST:-github.com}" in github.com) ;; *) var=GH_ENTERPRISE_TOKEN ;; esac'
             echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then'
