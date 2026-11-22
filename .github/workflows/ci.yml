@@ -122,10 +122,14 @@ jobs:
           nix eval --raw '.#nixosConfigurations.wsl.config.system.build.toplevel.drvPath'
           echo
           echo "evaluated successfully"
-      - name: Build ms-a2 /etc
-        # toplevel 全体は kernel と GUI の取得で重いので、PAM / sudoers を含む /etc だけ実ビルドする
-        timeout-minutes: 15
-        run: nix build --no-link --print-build-logs '.#nixosConfigurations.ms-a2.config.system.build.etc'
+      - name: Build ms-a2 sudo auth files
+        # toplevel は private な gypxy release を取得するので CI では組めない。sudo の認証経路だけ実ビルドする
+        timeout-minutes: 10
+        run: |
+          nix build --no-link --print-build-logs \
+            '.#nixosConfigurations.ms-a2.config.environment.etc."pam.d/sudo".source' \
+            '.#nixosConfigurations.ms-a2.config.environment.etc."ssh/sudo_authorized_keys".source' \
+            '.#nixosConfigurations.ms-a2.config.environment.etc.sudoers.source'
       - name: Eval determinism gate
         # drvPath が 2 回の eval で一致しない = builtins.currentTime / 環境依存 / IFD 等の
         # impurity が紛れ込んだサイン。eval だけなので cheap。build determinism は別途。
