@@ -424,9 +424,9 @@ let
       reason = "embedded analytics DB";
     })
     (mkEntry {
-      pkg = pkgs.postgresql_14;
+      pkg = pkgs.postgresql_16;
       purpose = "ops";
-      reason = "local Postgres for projects";
+      reason = "local Postgres for projects (16 に揃える: 14 は EOL で nixpkgs から削除。major 変更時は既存 data dir の pg_upgrade か dump/restore が必要)";
     })
     (mkEntry {
       pkg = pkgs.redis;
