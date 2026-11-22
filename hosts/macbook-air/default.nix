@@ -11,4 +11,5 @@ _:
   ];
 
   dotfiles.orca = true;
+  dotfiles.secretive = true;
 }

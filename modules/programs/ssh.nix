@@ -13,6 +13,7 @@ let
   agentSocket = "${home}/.local/state/ssh-agent.sock";
   # sandbox には署名 agent だけを見せ、認証鍵で ssh できないようにする
   signAgentSocket = "${home}/.local/state/ssh-sign-agent.sock";
+  secretiveSocket = "${home}/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh";
 
   # agent と ssh-add の起動順は保証されないので、agent が接続を受け付けるまで待つ。
   # 再起動前の stale socket も -S は真になるため、`ssh-add -l` の exit 2 (接続不可) で判定する
@@ -72,86 +73,94 @@ let
   };
 in
 {
-  launchd.agents = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-    ssh-agent = agent "ssh-agent" agentSocket;
-    ssh-add = loader "ssh-add" agentSocket agents.ssh-agent.key;
-    ssh-sign-agent = agent "ssh-sign-agent" signAgentSocket;
-    ssh-sign-add = loader "ssh-sign-add" signAgentSocket agents.ssh-sign-agent.key;
-  };
+  options.dotfiles.ssh.sudoAgentForward = lib.mkEnableOption "forwarding the Secretive agent (Touch ID gated sudo key) to mac-studio and ms-a2";
 
-  # 鍵の投入は agent 起動直後の ExecStartPost で行い、launchd の別 job 相当を不要にする
-  systemd.user.services = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
-    lib.mapAttrs (name: a: {
-      Unit.Description = "dedicated ssh-agent (${name})";
-      Service = {
-        ExecStart = lib.escapeShellArgs (agentArgs a.socket);
-        ExecStartPost = "${pkgs.coreutils}/bin/env SSH_AUTH_SOCK=${a.socket} ${addKey a.key}";
-        Restart = "always";
-      };
-      Install.WantedBy = [ "default.target" ];
-    }) agents
-  );
+  config = {
+    launchd.agents = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+      ssh-agent = agent "ssh-agent" agentSocket;
+      ssh-add = loader "ssh-add" agentSocket agents.ssh-agent.key;
+      ssh-sign-agent = agent "ssh-sign-agent" signAgentSocket;
+      ssh-sign-add = loader "ssh-sign-add" signAgentSocket agents.ssh-sign-agent.key;
+    };
 
-  home.sessionVariables.SSH_SIGN_AUTH_SOCK = signAgentSocket;
-  home.sessionVariables.SSH_AUTH_SOCK = agentSocket;
+    # 鍵の投入は agent 起動直後の ExecStartPost で行い、launchd の別 job 相当を不要にする
+    systemd.user.services = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
+      lib.mapAttrs (name: a: {
+        Unit.Description = "dedicated ssh-agent (${name})";
+        Service = {
+          ExecStart = lib.escapeShellArgs (agentArgs a.socket);
+          ExecStartPost = "${pkgs.coreutils}/bin/env SSH_AUTH_SOCK=${a.socket} ${addKey a.key}";
+          Restart = "always";
+        };
+        Install.WantedBy = [ "default.target" ];
+      }) agents
+    );
 
-  # 鍵ファイルへのフォールバックを潰し、接続も署名も agent だけを見るようにする
-  programs.ssh = {
-    enable = true;
-    enableDefaultConfig = false;
-    extraConfig = ''
-      HashKnownHosts yes
-    '';
-    settings = {
-      "*" = {
-        IdentityAgent = agentSocket;
-        IdentityFile = [ "none" ];
-      };
-      "*.exe.xyz" = {
-        Compression = true;
-        TCPKeepAlive = "yes";
-        ServerAliveInterval = 15;
-        ServerAliveCountMax = 6;
-        IPQoS = "lowdelay throughput";
-        ControlMaster = "auto";
-        ControlPath = "~/.ssh/mux-%r@%h:%p";
-        ControlPersist = "10m";
-      };
-      vultr = {
-        HostName = "45.76.196.181";
-        User = "linuxuser";
-      };
-      vultr2 = {
-        HostName = "45.76.196.181";
-        User = "linuxuser";
-        LocalForward = [
-          {
-            bind.port = 12345;
-            host.address = "2001:19f0:7001:5e49:5400:04ff:fef5:64b7";
-            host.port = 22;
-          }
-        ];
-      };
-      # 宛先解決を tailscaled に任せ、DoH profile が ts.net を奪っても host 名で届くようにする
-      "ms-a2 mac-studio macbook-air" = {
-        User = "hikae";
-        ProxyCommand = "/run/current-system/sw/bin/tailscale nc %h %p";
-        StrictHostKeyChecking = "accept-new";
-      };
-      "github.com" = {
-        HostName = "ssh.github.com";
-        User = "git";
-        Port = 443;
-        TCPKeepAlive = "yes";
-        ServerAliveInterval = 15;
-        ServerAliveCountMax = 6;
+    home.sessionVariables.SSH_SIGN_AUTH_SOCK = signAgentSocket;
+    home.sessionVariables.SSH_AUTH_SOCK = agentSocket;
+
+    # 鍵ファイルへのフォールバックを潰し、接続も署名も agent だけを見るようにする
+    programs.ssh = {
+      enable = true;
+      enableDefaultConfig = false;
+      extraConfig = ''
+        HashKnownHosts yes
+      '';
+      settings = {
+        "*" = {
+          IdentityAgent = agentSocket;
+          IdentityFile = [ "none" ];
+        };
+        "*.exe.xyz" = {
+          Compression = true;
+          TCPKeepAlive = "yes";
+          ServerAliveInterval = 15;
+          ServerAliveCountMax = 6;
+          IPQoS = "lowdelay throughput";
+          ControlMaster = "auto";
+          ControlPath = "~/.ssh/mux-%r@%h:%p";
+          ControlPersist = "10m";
+        };
+        vultr = {
+          HostName = "45.76.196.181";
+          User = "linuxuser";
+        };
+        vultr2 = {
+          HostName = "45.76.196.181";
+          User = "linuxuser";
+          LocalForward = [
+            {
+              bind.port = 12345;
+              host.address = "2001:19f0:7001:5e49:5400:04ff:fef5:64b7";
+              host.port = 22;
+            }
+          ];
+        };
+        # 宛先解決を tailscaled に任せ、DoH profile が ts.net を奪っても host 名で届くようにする
+        "ms-a2 mac-studio macbook-air" = {
+          User = "hikae";
+          ProxyCommand = "/run/current-system/sw/bin/tailscale nc %h %p";
+          StrictHostKeyChecking = "accept-new";
+        };
+        # 転送するのは Secretive の agent だけにし、ファイル鍵の agent は remote の root から使わせない
+        "ms-a2 mac-studio" = lib.mkIf config.dotfiles.ssh.sudoAgentForward {
+          ForwardAgent = secretiveSocket;
+        };
+        "github.com" = {
+          HostName = "ssh.github.com";
+          User = "git";
+          Port = 443;
+          TCPKeepAlive = "yes";
+          ServerAliveInterval = 15;
+          ServerAliveCountMax = 6;
+        };
       };
     };
-  };
 
-  # hm-session-vars は login shell では読まれないため、envExtra でも同じ値を固定する。
-  # sandbox wrapper が署名 socket を指定して起動した shell では上書きしない
-  programs.zsh.envExtra = lib.mkAfter ''
-    [ "''${SSH_AUTH_SOCK-}" = ${lib.escapeShellArg signAgentSocket} ] || export SSH_AUTH_SOCK=${lib.escapeShellArg agentSocket}
-  '';
+    # hm-session-vars は login shell では読まれないため、envExtra でも同じ値を固定する。
+    # sandbox wrapper が署名 socket を指定して起動した shell では上書きしない
+    programs.zsh.envExtra = lib.mkAfter ''
+      [ "''${SSH_AUTH_SOCK-}" = ${lib.escapeShellArg signAgentSocket} ] || export SSH_AUTH_SOCK=${lib.escapeShellArg agentSocket}
+    '';
+  };
 }

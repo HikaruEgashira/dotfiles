@@ -45,6 +45,12 @@ install_zip() {
   /usr/sbin/chown -R hikae:staff "/Applications/$name.app"
 }
 
+if [ "${SECRETIVE:-0}" = 1 ]; then
+  install_zip Secretive com.maxgoedjen.Secretive.Host Z72PRUAWF6 \
+    https://github.com/maxgoedjen/secretive/releases/download/v4.0.0/Secretive.zip \
+    877517e212938ffb7048bc7b6811e992194ba4b3eaa4dae36405b6303d1ac1fa
+fi
+
 if [ "${TAILSCALE_GUI:-1}" = 1 ]; then
   install_pkg Tailscale io.tailscale.ipn.macsys W5364U7YZB \
     https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg \

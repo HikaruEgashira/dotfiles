@@ -168,6 +168,34 @@ grep -E 'pam_tid|pam_reattach' /etc/pam.d/sudo_local
 
 無効化するときは `modules/darwin/security.nix` の該当行を外して switch する。
 
+### 3.1.1 リモート sudo を手元 Mac の Touch ID で通す
+
+mac-studio と ms-a2 の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。署名のたびに macbook-air で Touch ID を求める。
+
+| 層                 | 設定                                                                                          | module                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 鍵 (macbook-air)   | Secretive が Secure Enclave に鍵を作り、署名ごとに Touch ID を要求する                        | `modules/darwin/native-apps.nix` (`dotfiles.secretive`)      |
+| 転送 (macbook-air) | `ms-a2` / `mac-studio` だけに `ForwardAgent <Secretive socket>` を付ける                      | `modules/programs/ssh.nix` (`dotfiles.ssh.sudoAgentForward`) |
+| ms-a2              | `pam_ssh_agent_auth`。信頼する鍵は root 所有の実ファイル `/etc/ssh/sudo_authorized_keys` だけ | `hosts/ms-a2/sudo-agent-auth.nix`                            |
+| mac-studio         | `sudo_local` に `pam_rssh`、その後に `pam_tid`                                                | `modules/darwin/sudo-agent-auth.nix`                         |
+| 信頼する公開鍵     | 1 行 1 鍵                                                                                     | `keys/sudo-agent.pub`                                        |
+
+鍵に Secretive を使う理由: macOS の FIDO 系鍵 (`ecdsa-sk`) は外部 authenticator を前提にしており、Secure Enclave で使うには Apple 版 ssh 専用の middleware が要る。このリポジトリは nixpkgs の openssh を使うため、その middleware を使えない。Secretive は agent として動くので ssh の実装に依存せず、鍵ごとに「署名のたびに認証」を強制できる。
+
+`SSH_AUTH_SOCK` は Secretive に切り替えない。ForwardAgent に socket のパスを直接指定し、転送先に Secretive の agent だけを見せる。こうすると、ファイル鍵 (`id_ed25519`) の agent を remote の root に使わせずに済む。
+
+認証の順序は、転送鍵、Touch ID (mac-studio の手元だけ)、パスワードの順になる。鍵を失くしたときや転送が無いときはパスワードで入れる。mac-studio の `pam_reattach` には `ignore_ssh` を渡す。渡さないと、SSH 越しの sudo で `pam_tid` が mac-studio の画面側で Touch ID を待って止まる。
+
+nixpkgs の `pam_rssh` は nixpkgs の openpam にリンクしている。macOS の `/usr/lib/libpam.2.dylib` が作った handle を渡して `pam_sm_authenticate` を直接呼び、互換性を確かめた。結果は、登録済みの鍵で `PAM_SUCCESS`、別の鍵で `7`、agent が無いときに `9` で、クラッシュはしなかった。nixpkgs を bump して挙動が変わった場合は、`modules/darwin/sudo-agent-auth.nix` の import を外して pam_tid とパスワードに戻す。
+
+初回の手順:
+
+1. macbook-air: `nix run .#switch` で Secretive を入れる。Secretive を起動し、"Require authentication" を有効にした鍵を作る。
+2. 公開鍵を `keys/sudo-agent.pub` に追記して push する。
+3. ms-a2: `ssh ms-a2` してから `cd ~/dotfiles && git pull && sudo nixos-rebuild switch --flake .#ms-a2`。この時点ではまだパスワードを入力する。
+4. mac-studio: `ssh mac-studio` してから `cd ~/dotfiles && git pull && nix run .#switch`。ここでもパスワードを入力する。
+5. 確認: macbook-air から `ssh ms-a2 sudo -k true` と `ssh mac-studio sudo -k true` を実行し、Touch ID だけで通ることを確かめる。`ssh -o ForwardAgent=no ms-a2 sudo -k true` ではパスワードを求められることも確かめる。
+
 ### 3.2 cachix substituter を実効化
 
 `modules/darwin/nix.nix` の `nix.settings` が `/etc/nix/nix.conf` を生成する (`trusted-users = root @admin` を含む)。手で追記する設定は無い。

@@ -7,6 +7,7 @@
     ./deck-cast.nix
     ./gypxy.nix
     ./claude-runner.nix
+    ./sudo-agent-auth.nix
   ];
 
   boot = {
