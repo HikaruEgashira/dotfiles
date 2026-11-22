@@ -731,6 +731,16 @@
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
+          # toplevel は private な gypxy release を取得するので、sudo の認証経路だけを実ビルドする
+          ms-a2-sudo-auth =
+            let
+              etc = msA2.config.environment.etc;
+            in
+            msA2.pkgs.linkFarm "ms-a2-sudo-auth" {
+              pam-sudo = etc."pam.d/sudo".source;
+              keys = etc."ssh/sudo_authorized_keys".source;
+              sudoers = etc.sudoers.source;
+            };
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           aqua-policy = aquaPolicyCheckFor "x86_64-linux";
