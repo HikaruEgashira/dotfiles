@@ -13,55 +13,75 @@
   pkgs,
   ...
 }:
+let
+  readonly = config.dotfiles.ghtkn.readonly;
+  appName = if readonly then "HikaruEgashira/ghtkn-hikae-readonly" else "HikaruEgashira/ghtkn-hikae";
+  apps =
+    if readonly then
+      ''
+        # 書き込み権限を持たない App。シンクライアントに push 可能な token を置かない
+        apps:
+          - name: ${appName}
+            client_id: Iv23liLdZ6iYl41g70Rp
+      ''
+    else
+      ''
+        # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / sisaku-security に install)
+        apps:
+          - name: ${appName}
+            client_id: Iv23li4HDmrucWZqsdP4
+          # App: ghtkn-potato (account: jarman-potato, gh-intel-e2e / BinaryBaconLabs に install)
+          - name: jarman-potato
+            client_id: Iv23lifOlYpSnmUdsUuA
+      '';
+in
 {
-  xdg.configFile."ghtkn/ghtkn.yaml".text = ''
-    # yaml-language-server: $schema=https://raw.githubusercontent.com/suzuki-shunsuke/ghtkn/main/json-schema/ghtkn.json
-    # Client ID は秘密ではない (device flow は client secret を使わない)。
-    # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / sisaku-security に install)
-    apps:
-      - name: HikaruEgashira/ghtkn-hikae
-        client_id: Iv23li4HDmrucWZqsdP4
-      # App: ghtkn-potato (account: jarman-potato, gh-intel-e2e / BinaryBaconLabs に install)
-      - name: jarman-potato
-        client_id: Iv23lifOlYpSnmUdsUuA
-    backend:
-      type: agent
-  '';
+  options.dotfiles.ghtkn.readonly = lib.mkEnableOption "the read-only GitHub App as the only ghtkn app (thin client)";
 
-  # `GHTKN_GITHUB_TOKEN` を export すれば一時的に PAT へ切替できる (configuration.md)。
-  home.sessionVariables.GHTKN_APP = "HikaruEgashira/ghtkn-hikae";
+  config = {
+    xdg.configFile."ghtkn/ghtkn.yaml".text = ''
+      # yaml-language-server: $schema=https://raw.githubusercontent.com/suzuki-shunsuke/ghtkn/main/json-schema/ghtkn.json
+      # Client ID は秘密ではない (device flow は client secret を使わない)。
+      ${apps}
+      backend:
+        type: agent
+    '';
 
-  # 人間が叩く唯一の認証入口。agent の起動と unlock を吸収して device flow へ入る
-  home.file.".local/bin/ghauth" = {
-    text = builtins.readFile ./ghtkn/ghauth.sh;
-    executable = true;
-  };
+    # `GHTKN_GITHUB_TOKEN` を export すれば一時的に PAT へ切替できる (configuration.md)。
+    home.sessionVariables.GHTKN_APP = appName;
 
-  # `ghtkn agent stop` は exit 0 なので SuccessfulExit=false で crash だけ再起動する
-  # linux (WSL) も同じ常駐を systemd user service で持つ。exit 0 の stop では再起動しない
-  systemd.user.services.ghtkn-agent = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isLinux) {
-    Unit.Description = "ghtkn agent";
-    Service = {
-      ExecStart = "${pkgs.ghtkn}/bin/ghtkn agent start";
-      Restart = "on-failure";
+    # 人間が叩く唯一の認証入口。agent の起動と unlock を吸収して device flow へ入る
+    home.file.".local/bin/ghauth" = {
+      text = builtins.readFile ./ghtkn/ghauth.sh;
+      executable = true;
     };
-    Install.WantedBy = [ "default.target" ];
-  };
 
-  launchd.agents = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isDarwin) {
-    ghtkn-agent = {
-      enable = true;
-      config = {
-        Label = "dev.egahika.ghtkn-agent";
-        ProgramArguments = [
-          "${pkgs.ghtkn}/bin/ghtkn"
-          "agent"
-          "start"
-        ];
-        RunAtLoad = true;
-        KeepAlive.SuccessfulExit = false;
-        StandardOutPath = "${config.home.homeDirectory}/Library/Logs/ghtkn-agent.log";
-        StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/ghtkn-agent.log";
+    # `ghtkn agent stop` は exit 0 なので SuccessfulExit=false で crash だけ再起動する
+    # linux (WSL) も同じ常駐を systemd user service で持つ。exit 0 の stop では再起動しない
+    systemd.user.services.ghtkn-agent = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isLinux) {
+      Unit.Description = "ghtkn agent";
+      Service = {
+        ExecStart = "${pkgs.ghtkn}/bin/ghtkn agent start";
+        Restart = "on-failure";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+
+    launchd.agents = lib.mkIf (pkgs ? ghtkn && pkgs.stdenv.hostPlatform.isDarwin) {
+      ghtkn-agent = {
+        enable = true;
+        config = {
+          Label = "dev.egahika.ghtkn-agent";
+          ProgramArguments = [
+            "${pkgs.ghtkn}/bin/ghtkn"
+            "agent"
+            "start"
+          ];
+          RunAtLoad = true;
+          KeepAlive.SuccessfulExit = false;
+          StandardOutPath = "${config.home.homeDirectory}/Library/Logs/ghtkn-agent.log";
+          StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/ghtkn-agent.log";
+        };
       };
     };
   };

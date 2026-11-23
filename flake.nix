@@ -691,7 +691,12 @@
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations = {
         hikae = (mkHome "aarch64-darwin").extendModules {
-          modules = [ { dotfiles.ssh.sudoAgentForward = true; } ];
+          modules = [
+            {
+              dotfiles.ssh.sudoAgentForward = true;
+              dotfiles.ghtkn.readonly = true;
+            }
+          ];
         };
         "hikae@mac-studio" = mkStudioHome;
         "hikae@wsl" = (mkHome "x86_64-linux").extendModules {
