@@ -66,9 +66,3 @@ if [ ! -d /Applications/Bitwarden.app ]; then
   /usr/bin/sudo -u hikae -H "$MAS" get 1352778147
 fi
 verify_app /Applications/Bitwarden.app com.bitwarden.desktop LTZ2PFU5D6
-
-if [ "${ORCA:-0}" = 1 ]; then
-  install_zip Orca com.stablyai.orca 6CX3WHS9HZ \
-    https://github.com/stablyai/orca/releases/download/v1.4.269/Orca-1.4.269-arm64-mac.zip \
-    a6d49b13fb315c55abf68f01937e02262bfa46ce3c8d6d1833c96eebc435070d
-fi

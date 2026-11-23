@@ -9,7 +9,5 @@ _:
     ../../modules/darwin/claude-code.nix
     ../../modules/darwin/tailscale-ssh.nix
   ];
-
-  dotfiles.orca = true;
   dotfiles.secretive = true;
 }

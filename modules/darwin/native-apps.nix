@@ -12,7 +12,6 @@
       default = true;
       description = "Install the signed Tailscale GUI pkg. Disable when the host runs the OSS tailscaled.";
     };
-    orca = lib.mkEnableOption "the signed Orca IDE app";
     secretive = lib.mkEnableOption "the signed Secretive app that holds the Touch ID gated sudo key in the Secure Enclave";
   };
 
@@ -24,8 +23,8 @@
       ]
     }:/usr/bin:/usr/sbin:/bin" MAS=${pkgs.mas}/bin/mas SECRETIVE=${
       if config.dotfiles.secretive then "1" else "0"
-    } TAILSCALE_GUI=${if config.dotfiles.tailscaleGui then "1" else "0"} ORCA=${
-      if config.dotfiles.orca then "1" else "0"
+    } TAILSCALE_GUI=${
+      if config.dotfiles.tailscaleGui then "1" else "0"
     } ${pkgs.bash}/bin/bash ${./native-apps/install-system-apps.sh}
   '';
 }
