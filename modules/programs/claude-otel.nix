@@ -1,5 +1,5 @@
 # Claude Code の telemetry を gh-intel.com の collector に欠損なく送る
-# (sisaku-security/gh-intel.com docs/operations/connect-otel.md)。
+# (gh-intel/gh-intel.com docs/operations/connect-otel.md)。
 #
 # Claude Code は送れなかった telemetry を捨てるので、手元の collector
 # (127.0.0.1:4318) に送らせる。collector は送れない batch をディスクの queue に

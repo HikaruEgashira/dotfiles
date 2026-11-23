@@ -82,7 +82,6 @@ in
       type = lib.types.listOf lib.types.str;
       default = [
         "gh-intel"
-        "sisaku-security"
       ];
     };
   };
