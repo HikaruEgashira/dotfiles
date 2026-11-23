@@ -24,6 +24,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,6 +41,7 @@
       nix-darwin,
       home-manager,
       disko,
+      nixos-wsl,
       treefmt-nix,
       ...
     }:
@@ -62,7 +67,11 @@
         };
 
       mkStudioHome = (mkHome "aarch64-darwin").extendModules {
-        modules = [ { programs.cliproxyapi.hub.enable = true; } ];
+        modules = [
+          {
+            programs.cliproxyapi.hub.enable = true;
+          }
+        ];
       };
 
       mkDarwin = system: mkDarwinHost system ./hosts/macbook-air/default.nix;
@@ -108,6 +117,21 @@
                 programs.gypxy.hub.enable = true;
               };
             };
+          }
+        ];
+      };
+
+      wsl = nixpkgs.lib.nixosSystem {
+        modules = [
+          nixos-wsl.nixosModules.default
+          ./hosts/wsl/default.nix
+          {
+            nixpkgs = {
+              hostPlatform = "x86_64-linux";
+              inherit overlays;
+              config.allowUnfree = true;
+            };
+            system.configurationRevision = self.rev or self.dirtyRev or null;
           }
         ];
       };
@@ -533,10 +557,16 @@
             system=$(${pkgs.nix}/bin/nix build --no-link --print-out-paths "$root#darwinConfigurations.$host.system")
             if [ "$(readlink /run/current-system)" != "$system" ]; then
               # 非対話で sudo できない場合は pending として報告し、ユーザー層の適用結果を保つ
-              if [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
-                /usr/bin/sudo ${darwin-rebuild}/bin/darwin-rebuild switch --flake "$root#$host"
+              # TTY の無い agent 向けに SUDO_ASKPASS (sudo -A) か SWITCH_SUDO_STDIN=1 (sudo -S) を受け付ける
+              rebuild="${darwin-rebuild}/bin/darwin-rebuild"
+              if [ -n "''${SUDO_ASKPASS:-}" ]; then
+                /usr/bin/sudo -A "$rebuild" switch --flake "$root#$host"
+              elif [ "''${SWITCH_SUDO_STDIN:-}" = 1 ]; then
+                /usr/bin/sudo -S -p "" "$rebuild" switch --flake "$root#$host"
+              elif [ -t 0 ] || /usr/bin/sudo -n true 2>/dev/null; then
+                /usr/bin/sudo "$rebuild" switch --flake "$root#$host"
               else
-                echo "switch: OS layer pending (non-interactive sudo unavailable); user layer applied" >&2
+                echo "switch: OS layer pending (non-interactive sudo unavailable; set SUDO_ASKPASS or SWITCH_SUDO_STDIN=1); user layer applied" >&2
               fi
             fi
           '';
@@ -645,11 +675,21 @@
     in
     {
       darwinConfigurations.hikae = mkDarwin "aarch64-darwin";
-      nixosConfigurations.ms-a2 = msA2;
+      nixosConfigurations = {
+        ms-a2 = msA2;
+        inherit wsl;
+      };
       packages.x86_64-linux.ms-a2-installer-iso = msA2Installer.config.system.build.isoImage;
       darwinConfigurations.mac-studio = mkDarwinHost "aarch64-darwin" ./hosts/mac-studio/default.nix;
       homeConfigurations = {
-        hikae = mkHome "aarch64-darwin";
+        hikae = (mkHome "aarch64-darwin").extendModules {
+          modules = [
+            {
+              dotfiles.ssh.sudoAgentForward = true;
+              dotfiles.ghtkn.readonly = true;
+            }
+          ];
+        };
         "hikae@mac-studio" = mkStudioHome;
         "hikae@wsl" = (mkHome "x86_64-linux").extendModules {
           modules = [ ./hosts/wsl/home.nix ];
@@ -688,6 +728,16 @@
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
+          # toplevel は private な gypxy release を取得するので、sudo の認証経路だけを実ビルドする
+          ms-a2-sudo-auth =
+            let
+              etc = msA2.config.environment.etc;
+            in
+            msA2.pkgs.linkFarm "ms-a2-sudo-auth" {
+              pam-sudo = etc."pam.d/sudo".source;
+              keys = etc."ssh/sudo_authorized_keys".source;
+              sudoers = etc.sudoers.source;
+            };
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           aqua-policy = aquaPolicyCheckFor "x86_64-linux";
@@ -698,6 +748,9 @@
           "xdg-entries-guards" = xdgGuardCheckFor "x86_64-linux";
           ms-a2-eval = builtins.seq msA2.config.system.build.toplevel.drvPath (
             (pkgsFor "x86_64-linux").runCommand "ms-a2-eval" { } "touch $out"
+          );
+          wsl-eval = builtins.seq wsl.config.system.build.toplevel.drvPath (
+            (pkgsFor "x86_64-linux").runCommand "wsl-eval" { } "touch $out"
           );
         };
         # ローカルの `nix flake check` でも guard を走らせる (CI は aarch64-linux 側を回す)

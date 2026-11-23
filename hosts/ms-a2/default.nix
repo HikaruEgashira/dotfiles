@@ -6,6 +6,8 @@
     ./gh-runner.nix
     ./deck-cast.nix
     ./gypxy.nix
+    ./claude-runner.nix
+    ./sudo-agent-auth.nix
   ];
 
   boot = {
@@ -46,8 +48,22 @@
     inputMethod = {
       enable = true;
       type = "fcitx5";
-      fcitx5.waylandFrontend = true;
-      fcitx5.addons = [ pkgs.fcitx5-mozc ];
+      fcitx5 = {
+        waylandFrontend = true;
+        addons = [ pkgs.fcitx5-mozc ];
+        # Mac の英数/かな相当: 左 Super 単押しで keyboard-us、右 Super 単押しで mozc。
+        settings.globalOptions = {
+          "Hotkey/TriggerKeys" = {
+            "0" = "Control+space";
+          };
+          "Hotkey/DeactivateKeys" = {
+            "0" = "Super+Super_L";
+          };
+          "Hotkey/ActivateKeys" = {
+            "0" = "Super+Super_R";
+          };
+        };
+      };
     };
   };
 
@@ -66,7 +82,11 @@
       enable = true;
       pulse.enable = true;
     };
-    tailscale.enable = true;
+    tailscale = {
+      enable = true;
+      # sshd を開けず tailnet ACL で認可する。鍵配布が不要になる
+      extraSetFlags = [ "--ssh" ];
+    };
     fwupd.enable = true;
     fstrim.enable = true;
   };

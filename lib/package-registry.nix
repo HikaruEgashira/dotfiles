@@ -12,6 +12,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation rec {
         pname = "oh-my-pi";
+        passthru.provenance = "accepted: 上流が署名・attestation を公開していない単体 binary。hash pin のみで固定する";
         version = "18.6.1";
         src = pkgs.fetchurl {
           url = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-darwin-arm64";
@@ -62,6 +63,11 @@ let
             echo '  fi'
             echo 'fi'
             # GH_HOST が github.com 以外 (gypxy hub) なら gh は GHES として扱い GH_ENTERPRISE_TOKEN を読む
+            # token 不要な呼び出しは ghtkn を通さない。agent が locked だと `gh --version` すら無出力で失敗し、
+            # GUI アプリ (Orca 等) が gh の検出に失敗して「gh が見つからない」扱いになるため
+            echo 'case "''${1:-}" in ""|--version|version|--help|-h|help|completion)'
+            echo '  exec ${pkgs.gh}/bin/gh "$@" ;;'
+            echo 'esac'
             echo 'var=GH_TOKEN'
             echo 'case "''${GH_HOST:-github.com}" in github.com) ;; *) var=GH_ENTERPRISE_TOKEN ;; esac'
             echo 'if [ -n "''${GH_TOKEN:-}''${GITHUB_TOKEN:-}" ]; then'
@@ -76,45 +82,12 @@ let
     else
       pkgs.gh;
 
-  # dsh's node-addon-require-builtin rejects nixpkgs' toolchain-built Node (Unsupported/no-getter),
-  # so the wrapper carries the nodejs.org build; npx there installs the prebuilt npm tree (~/.npm/_npx).
-  # shortcut: first run needs network, and nodejs.org version bumps are manual.
-  dshNode =
-    if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
-      pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "node-darwin-arm64";
-        version = "24.22.0";
-        src = pkgs.fetchurl {
-          url = "https://nodejs.org/dist/v${version}/node-v${version}-darwin-arm64.tar.gz";
-          hash = "sha256-apck2bUKXyK0gWze1EG1qNndrlRhkaXlt++lpeLuJtU=";
-        };
-        dontConfigure = true;
-        dontBuild = true;
-        dontFixup = true;
-        installPhase = ''
-          cp -a . $out/
-        '';
-      }
-    else
-      null;
-
-  dsh =
-    if dshNode == null then
-      null
-    else
-      pkgs.writeShellApplication {
-        name = "dsh";
-        runtimeInputs = [ dshNode ];
-        text = ''
-          exec npx --yes @deepseek-ai/dsh@0.2.0-rc.2 "$@"
-        '';
-      };
-
   # 上流が darwin-arm64 の release を出している CLI は fetchurl で固定する (buildPhase を実行しない)
   sayHook =
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "say-hook";
+        passthru.provenance = "accepted: 自作 repo の release。署名を出しておらず hash pin のみで固定する";
         version = "0.5.1";
         src = pkgs.fetchurl {
           url = "https://github.com/HikaruEgashira/say-hook/releases/download/v0.5.1/say-hook-v0.5.1-darwin-arm64.tar.gz";
@@ -133,6 +106,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "pleno-dlp";
+        passthru.provenance = "ci: scripts/fetchurl-provenance.sh";
         version = "0.67.3";
         src = pkgs.fetchurl {
           url = "https://github.com/plenoai/pleno-dlp/releases/download/v0.67.3/pleno-dlp_darwin_arm64.tar.gz";
@@ -152,6 +126,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "dagger";
+        passthru.provenance = "accepted: 上流 checksums.txt は無署名。hash pin のみで固定する";
         version = "0.21.11";
         src = pkgs.fetchurl {
           url = "https://github.com/dagger/dagger/releases/download/v0.21.11/dagger_v0.21.11_darwin_arm64.tar.gz";
@@ -171,6 +146,7 @@ let
     if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then
       pkgs.stdenvNoCC.mkDerivation {
         pname = "herdr";
+        passthru.provenance = "accepted: 上流 release は署名無しの raw binary。hash pin のみで固定する";
         version = "0.9.5";
         src = pkgs.fetchurl {
           url = "https://github.com/ogulcancelik/herdr/releases/download/v0.9.5/herdr-macos-aarch64";
@@ -184,23 +160,6 @@ let
       }
     else
       null;
-
-  # nixpkgs に無い npm / pypi CLI。初回実行時にレジストリから取得する (dsh と同じ trade-off)
-  evenTerminal = pkgs.writeShellApplication {
-    name = "even-terminal";
-    runtimeInputs = [ pkgs.nodejs ];
-    text = ''
-      exec npx --yes @evenrealities/even-terminal@0.10.5 "$@"
-    '';
-  };
-
-  otelHooks = pkgs.writeShellApplication {
-    name = "otel-hooks";
-    runtimeInputs = [ pkgs.uv ];
-    text = ''
-      exec uvx --from otel-hooks==0.13.0 otel-hooks "$@"
-    '';
-  };
 
   cross = [
     # aqua-proxy (aquaproj-aqua/bin/*) は PATH 上の aqua を呼ぶので、aqua.yaml が対応する全 platform に置く
@@ -310,19 +269,6 @@ let
       purpose = "ops";
       reason = "Google Apps Script CLI";
     })
-    (mkEntry {
-      pkg = evenTerminal;
-      purpose = "util";
-      source = "npm:@evenrealities/even-terminal";
-      reason = "Even Realities glasses terminal";
-    })
-    (mkEntry {
-      pkg = otelHooks;
-      purpose = "observe";
-      source = "pypi:otel-hooks";
-      reason = "OpenTelemetry hook helper";
-    })
-
     (mkEntry {
       pkg = ghWithGhtkn;
       purpose = "edit";
@@ -483,9 +429,9 @@ let
       reason = "embedded analytics DB";
     })
     (mkEntry {
-      pkg = pkgs.postgresql_14;
+      pkg = pkgs.postgresql_16;
       purpose = "ops";
-      reason = "local Postgres for projects";
+      reason = "local Postgres for projects (16 に揃える: 14 は EOL で nixpkgs から削除。major 変更時は既存 data dir の pg_upgrade か dump/restore が必要)";
     })
     (mkEntry {
       pkg = pkgs.redis;
@@ -737,12 +683,6 @@ let
       purpose = "edit";
       source = "github:can1357/oh-my-pi";
       reason = "Oh My Pi coding agent CLI";
-    })
-    (mkEntry {
-      pkg = dsh;
-      purpose = "edit";
-      source = "npm:@deepseek-ai/dsh";
-      reason = "DeepSeek Harness agent CLI (dsh)";
     })
     (mkEntry {
       pkg = sayHook;

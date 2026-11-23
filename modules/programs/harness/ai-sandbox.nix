@@ -111,6 +111,11 @@ let
     "${home}/.aws"
     "${home}/.local/bin"
     "${home}/.local/share/claude"
+    # Aqua root / nix profile / spicetify は host の PATH 上で ~/.local/bin より前にあり、
+    # codex-sandbox wrapper と launchd agent も aquaBin を sandbox 外で実行する
+    "${home}/.local/share/aquaproj-aqua"
+    "${home}/.nix-profile"
+    "${home}/.spicetify"
   ];
 
   # codex は 1 path 1 verdict なので、自分が読む設定は write だけ deny できない
@@ -124,6 +129,9 @@ let
     "${home}/.aws"
     "${home}/.local/bin"
     "${home}/.local/share/claude"
+    "${home}/.local/share/aquaproj-aqua"
+    "${home}/.nix-profile"
+    "${home}/.spicetify"
   ];
   codexPersistence = lib.filter (
     p: !builtins.elem p codexReadable && !builtins.elem p codexReadOnly
@@ -176,12 +184,15 @@ let
 
   # エージェントの gh は hikaevi[bot] の installation token で叩き、個人の 5,000/h を消費しない。
   # 対象 owner は hikaevi の allowed_owners、-R/--repo を優先し、無ければ cwd の origin から引く。
+  # read-only 端末では書き込み可能な token を発行しない。
   # token 発行に失敗したとき・明示 GH_TOKEN があるときは個人認証のまま通す。
   ghWrapper = pkgs.writeShellScript "gh-hikaevi" ''
     set -eu
     real=${lib.escapeShellArg "${registry.ghWithGhtkn}/bin/gh"}
     minter=${lib.escapeShellArg "${home}/ghq/github.com/HikaruEgashira/hikaevi/scripts/local-token.mjs"}
-    if [ -z "''${GH_TOKEN:-}" ] && [ -f "$minter" ]; then
+    if ${
+      lib.boolToString (!config.dotfiles.ghtkn.readonly)
+    } && [ -z "''${GH_TOKEN:-}" ] && [ -f "$minter" ]; then
       owner=""
       prev=""
       for a in "$@"; do

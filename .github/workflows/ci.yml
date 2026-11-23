@@ -11,6 +11,29 @@ on:
 permissions:
   contents: read
 jobs:
+  fetchurl-provenance:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        timeout-minutes: 5
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Lock newly added flake inputs before evaluation
+        # flake.nix に input を足した PR では lock entry が flake-update 経由で入るまで欠ける。
+        # eval 中に nix が flake.lock を書き換えると formatter check の source hash が崩れるため、先に lock を確定させる
+        timeout-minutes: 5
+        run: nix flake lock
+      - name: Verify fetchurl signatures (sigstore + GPG)
+        timeout-minutes: 10
+        run: nix shell --inputs-from . nixpkgs#cosign nixpkgs#gnupg nixpkgs#curl nixpkgs#coreutils nixpkgs#gawk --command bash scripts/fetchurl-provenance.sh
+
   validate:
     timeout-minutes: 30
     runs-on: ubuntu-24.04
@@ -27,6 +50,11 @@ jobs:
             experimental-features = nix-command flakes
             extra-substituters = https://nix-community.cachix.org
             extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+      - name: Lock newly added flake inputs before evaluation
+        # flake.nix に input を足した PR では lock entry が flake-update 経由で入るまで欠ける。
+        # eval 中に nix が flake.lock を書き換えると formatter check の source hash が崩れるため、先に lock を確定させる
+        timeout-minutes: 5
+        run: nix flake lock
       - name: Run formatter check
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.formatting'
@@ -44,7 +72,17 @@ jobs:
         timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
-        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils --command bash scripts/aqua-provenance.sh
+        run: nix shell --inputs-from . nixpkgs#gh nixpkgs#gnupg nixpkgs#jq nixpkgs#curl nixpkgs#coreutils nixpkgs#python3 --command bash scripts/aqua-provenance.sh
+      - name: Verify pi npm extension signatures
+        timeout-minutes: 10
+        working-directory: modules/programs/harness/pi-npm
+        run: npm ci --ignore-scripts && npm audit signatures
+      - name: Guard pi npm pins and provenance ledger
+        run: python3 tests/pi-npm-provenance.py
+      - name: Guard Aqua provenance ledger
+        run: python3 tests/aqua-provenance-ledger.py
+      - name: Guard fetchurl provenance ledger
+        run: python3 tests/fetchurl-provenance.py
       - name: Test CLIProxyAPI credential rendering
         run: python3 tests/cliproxyapi-config.py
       - name: Test encrypted Store unlock
@@ -81,8 +119,12 @@ jobs:
         run: |
           nix eval --raw '.#checks.x86_64-linux.build.drvPath'
           nix eval --raw '.#homeConfigurations.hikae@mac-studio.activationPackage.drvPath'
+          nix eval --raw '.#nixosConfigurations.wsl.config.system.build.toplevel.drvPath'
           echo
           echo "evaluated successfully"
+      - name: Build ms-a2 sudo auth files
+        timeout-minutes: 10
+        run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.ms-a2-sudo-auth'
       - name: Eval determinism gate
         # drvPath が 2 回の eval で一致しない = builtins.currentTime / 環境依存 / IFD 等の
         # impurity が紛れ込んだサイン。eval だけなので cheap。build determinism は別途。

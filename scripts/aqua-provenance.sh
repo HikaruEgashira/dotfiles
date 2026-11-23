@@ -39,3 +39,4 @@ for platform in "${platforms[@]}"; do
   verify_npm @openai/codex "$codex-$platform" openai/codex rust-release.yml "codex-$codex-$platform.tgz"
   verify_npm "@opencode/cli-$platform" "$opencode" anomalyco/opencode release.yml "cli-$platform-$opencode.tgz"
 done
+python3 "$root/scripts/aqua-upstream-checksum.py"

@@ -28,6 +28,29 @@ install_pkg() {
   verify_app "/Applications/$name.app" "$bundle" "$team"
 }
 
+install_zip() {
+  local name=$1 bundle=$2 team=$3 url=$4 hash=$5 archive
+  if [ -d "/Applications/$name.app" ]; then
+    verify_app "/Applications/$name.app" "$bundle" "$team"
+    return
+  fi
+
+  archive="$work/$name.zip"
+  curl -fsSL --retry 3 "$url" -o "$archive"
+  printf '%s  %s\n' "$hash" "$archive" | sha256sum -c -
+  /usr/bin/ditto -x -k "$archive" "$work/$name"
+  verify_app "$work/$name/$name.app" "$bundle" "$team"
+  /usr/sbin/spctl --assess --type execute "$work/$name/$name.app"
+  /usr/bin/ditto "$work/$name/$name.app" "/Applications/$name.app"
+  /usr/sbin/chown -R hikae:staff "/Applications/$name.app"
+}
+
+if [ "${SECRETIVE:-0}" = 1 ]; then
+  install_zip Secretive com.maxgoedjen.Secretive.Host Z72PRUAWF6 \
+    https://github.com/maxgoedjen/secretive/releases/download/v4.0.0/Secretive.zip \
+    877517e212938ffb7048bc7b6811e992194ba4b3eaa4dae36405b6303d1ac1fa
+fi
+
 if [ "${TAILSCALE_GUI:-1}" = 1 ]; then
   install_pkg Tailscale io.tailscale.ipn.macsys W5364U7YZB \
     https://pkgs.tailscale.com/stable/Tailscale-1.104.5-macos.pkg \

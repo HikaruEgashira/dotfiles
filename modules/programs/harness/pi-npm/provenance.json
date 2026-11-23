@@ -1,0 +1,10 @@
+{
+  "@hikae/pi-prompt-enhancer": "ci: npm audit signatures",
+  "pi-subagents": "ci: npm audit signatures",
+  "undici": "ci: npm audit signatures",
+  "@js-temporal/polyfill": "accepted: 来歴なし受容 (registry 署名のみ検証)",
+  "acorn": "accepted: 来歴なし受容 (registry 署名のみ検証)",
+  "jiti": "accepted: 来歴なし受容 (registry 署名のみ検証)",
+  "jsbi": "accepted: 来歴なし受容 (registry 署名のみ検証)",
+  "yaml": "accepted: 来歴なし受容 (registry 署名のみ検証)"
+}

@@ -66,7 +66,7 @@ inputs を bump した lock が「ローカル source build 禁止」を守っ�
 
 本機の `/nix/store` に既にある path は dry-run に出ないため、評価は空の chroot store (`~/.cache/substitutable-gate/store`、`SUBSTITUTABLE_GATE_STORE` で変更) で行い、CI runner と同じ判定にする。初回は flake inputs の source (約 700MB) をそこへ copy するので 1 分前後かかる。
 
-allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / herdr / pleno-dlp / say-hook / oh-my-pi / node-darwin-arm64)、Cica font。
+allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / herdr / pleno-dlp / say-hook / oh-my-pi)、Cica font。
 
 | 実行場所                           | 対象                                             | 備考                                                                                                                |
 | ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
@@ -168,6 +168,34 @@ grep -E 'pam_tid|pam_reattach' /etc/pam.d/sudo_local
 
 無効化するときは `modules/darwin/security.nix` の該当行を外して switch する。
 
+### 3.1.1 リモート sudo を手元 Mac の Touch ID で通す
+
+mac-studio と ms-a2 の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。署名のたびに macbook-air で Touch ID を求める。
+
+| 層                 | 設定                                                                                          | module                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 鍵 (macbook-air)   | Secretive が Secure Enclave に鍵を作り、署名ごとに Touch ID を要求する                        | `modules/darwin/native-apps.nix` (`dotfiles.secretive`)      |
+| 転送 (macbook-air) | `ms-a2` / `mac-studio` だけに `ForwardAgent <Secretive socket>` を付ける                      | `modules/programs/ssh.nix` (`dotfiles.ssh.sudoAgentForward`) |
+| ms-a2              | `pam_ssh_agent_auth`。信頼する鍵は root 所有の実ファイル `/etc/ssh/sudo_authorized_keys` だけ | `hosts/ms-a2/sudo-agent-auth.nix`                            |
+| mac-studio         | `sudo_local` に `pam_rssh`、その後に `pam_tid`                                                | `modules/darwin/sudo-agent-auth.nix`                         |
+| 信頼する公開鍵     | 1 行 1 鍵                                                                                     | `keys/sudo-agent.pub`                                        |
+
+鍵に Secretive を使う理由: macOS の FIDO 系鍵 (`ecdsa-sk`) は外部 authenticator を前提にしており、Secure Enclave で使うには Apple 版 ssh 専用の middleware が要る。このリポジトリは nixpkgs の openssh を使うため、その middleware を使えない。Secretive は agent として動くので ssh の実装に依存せず、鍵ごとに「署名のたびに認証」を強制できる。
+
+`SSH_AUTH_SOCK` は Secretive に切り替えない。ForwardAgent に socket のパスを直接指定し、転送先に Secretive の agent だけを見せる。こうすると、ファイル鍵 (`id_ed25519`) の agent を remote の root に使わせずに済む。
+
+認証の順序は、転送鍵、Touch ID (mac-studio の手元だけ)、パスワードの順になる。鍵を失くしたときや転送が無いときはパスワードで入れる。mac-studio の `pam_reattach` には `ignore_ssh` を渡す。渡さないと、SSH 越しの sudo で `pam_tid` が mac-studio の画面側で Touch ID を待って止まる。
+
+nixpkgs の `pam_rssh` は nixpkgs の openpam にリンクしている。macOS の `/usr/lib/libpam.2.dylib` が作った handle を渡して `pam_sm_authenticate` を直接呼び、互換性を確かめた。結果は、登録済みの鍵で `PAM_SUCCESS`、別の鍵で `7`、agent が無いときに `9` で、クラッシュはしなかった。nixpkgs を bump して挙動が変わった場合は、`modules/darwin/sudo-agent-auth.nix` の import を外して pam_tid とパスワードに戻す。
+
+初回の手順:
+
+1. macbook-air: `nix run .#switch` で Secretive を入れる。Secretive を起動し、"Require authentication" を有効にした鍵を作る。
+2. 公開鍵を `keys/sudo-agent.pub` に追記して push する。
+3. ms-a2: `ssh ms-a2` してから `cd ~/dotfiles && git pull && sudo nixos-rebuild switch --flake .#ms-a2`。この時点ではまだパスワードを入力する。
+4. mac-studio: `ssh mac-studio` してから `cd ~/dotfiles && git pull && nix run .#switch`。ここでもパスワードを入力する。
+5. 確認: macbook-air から `ssh ms-a2 sudo -k true` と `ssh mac-studio sudo -k true` を実行し、Touch ID だけで通ることを確かめる。`ssh -o ForwardAgent=no ms-a2 sudo -k true` ではパスワードを求められることも確かめる。
+
 ### 3.2 cachix substituter を実効化
 
 `modules/darwin/nix.nix` の `nix.settings` が `/etc/nix/nix.conf` を生成する (`trusted-users = root @admin` を含む)。手で追記する設定は無い。
@@ -188,7 +216,9 @@ ISP (ARTERIA/UCOM) は宛先を問わず UDP/TCP 53 を網内で透過傍受す�
 | 自宅 LAN 全体         | UCG: Settings → Security → Protection → Encrypted DNS → Custom に DoH stamp (`sdns://`, host `dns.nextdns.io`, path `/<profile-id>`) を投入 |
 | この Mac (外出先含む) | 下記 profile。profile ID は公開 repo に置かず引数で渡す                                                                                     |
 
-NextDNS 管理画面から DoH の `.mobileconfig` を取得してインストールし、System Settings > General > Device Management で承認する。
+profile は `scripts/nextdns-mobileconfig.sh <profile-id> <device-name> > ~/Downloads/nextdns.mobileconfig` で生成し、ダブルクリックしてから System Settings > General > Device Management で承認する。NextDNS 管理画面が配る profile は `ts.net` を DoH に送るので、`/etc/resolver/ts.net` が無視され MagicDNS (`*.tailc30b81.ts.net`) が `No Such Record` になる。生成版は `ts.net` を `NeverConnect` に入れてある。旧 profile は削除する。
+
+確認 (MagicDNS): `dscacheutil -q host -a name ms-a2.tailc30b81.ts.net` が 100.x を返す。
 
 確認:
 
@@ -268,7 +298,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
-ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air と Mac Studio は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。GUI 版が残る host では OSS tailscaled を userspace で並走させて login URL を activation が出力し、承認されて Running になってから `dev.egahika.tailscale-gui-retire` が GUI 版を外し tailscaled を utun に切り替える。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
 
 Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。`local.env` は wrapper が `KEY=VALUE` 行としてだけ読む (`modules/programs/artex/load-env.sh`、shell 評価はしない。両端の quote は外す)。shell 構文の行があると起動前に fail する。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を起動する (drift の修復ログは `pg.log`)。停止時は launchd の SIGTERM を wrapper が SIGINT (fast shutdown) に変換し、`ExitTimeOut` 60s 内に checkpoint を終えて止まる。
 
@@ -285,7 +315,7 @@ psql "$ARTEX_PG_DSN"
 lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788) '   # 全て 127.0.0.1
 nc -z 127.0.0.1 5432; echo $?                          # 1 (Postgres は TCP を開けない)
 psql -h ~/.local/share/artex/run -U artex -d artex -c 'select 1'   # password を求められる
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status # Mac Studio は :8317 のみ
+tailscale serve status # Mac Studio は :8317 のみ
 ```
 
 復旧 (password 紛失・pg_hba 切替失敗で ARTEX が DB に繋がらない):
@@ -551,12 +581,34 @@ systemctl --user restart ssh-agent ssh-sign-agent
 ghauth
 ```
 
+システム層は `nixosConfigurations.wsl` (`hosts/wsl/default.nix`) が持つ。`wsl.defaultUser = "hikae"`、linger、パスワード無し sudo、`nix-ld`、flakes と `trusted-users` を宣言する。初回の NixOS-WSL は既定ユーザーが `nixos` なので、clone 後に一度だけシステム層を適用してから入り直す。
+
+```bash
+sudo nixos-rebuild switch --flake ~/dotfiles#wsl
+wsl.exe --terminate NixOS   # Windows 側で distro を再起動し、hikae として入り直す
+```
+
+`system.stateVersion` は導入した NixOS-WSL tarball の NixOS release に合わせる。適用前に `nixos-version` と `hosts/wsl/default.nix` の値を比べ、違えば `hosts/wsl/default.nix` を直してから switch する。既存 host で値を上げるのは release notes の移行手順を確認した後だけにする。
+
+`nixos-wsl` input の lock entry は手で書かない。input を新しく足したときは `flake-update` workflow を `lock_input=nixos-wsl` (結果を残す Issue があれば `issue_number`) で dispatch し、bot が flake.lock を commit する。CI は eval 前に `nix flake lock` を走らせるため、lock 前の PR でも formatter check の source が eval 中に変わらない。
+
 常駐は launchd の代わりに systemd user service で動く。
 
 ```bash
 systemctl --user status ssh-agent ssh-sign-agent ghtkn-agent   # state 確認
 systemctl --user restart ghtkn-agent                           # 再起動 (unlock は ghauth でやり直す)
 journalctl --user -u ssh-sign-agent -n 20                      # ログ
+```
+
+#### WSL VM 起動後の ghtkn unlock
+
+ghtkn-agent は locked で起動し、passphrase を永続化しない。`users.users.hikae.linger = true` で session 終了時の停止は防げるが、WSL VM 自体が idle で停止すると次の boot で agent が locked に戻り、`ghauth` を実行するまで Windows / WSL 両方の git push と `gh` が失敗する。
+
+`.wslconfig` の `vmIdleTimeout` や keep-alive で VM を止めない手もあるが、割り当てメモリ (40GB) を常時確保し続けるため採用しない。運用は「VM 起動後に `ghauth` を実行する」に固定する。
+
+```bash
+systemctl --user status ghtkn-agent   # VM 再起動後の agent 状態
+ghauth                                # unlock と必要なら device flow
 ```
 
 ## 7. 容量

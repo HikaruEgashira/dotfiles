@@ -8,10 +8,19 @@ on:
         description: "bump と gate だけ走らせ、push しない"
         type: boolean
         default: false
+      lock_input:
+        description: "指定時は全 bump せず、この input だけを lock する (flake.nix に新しく足した input 用)"
+        type: string
+        default: ""
+      issue_number:
+        description: "結果を comment する Issue 番号 (任意)"
+        type: string
+        default: ""
 
 permissions:
   contents: write
   actions: write
+  issues: write
 
 jobs:
   update:
@@ -29,8 +38,20 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - name: Run nix flake update
+        if: ${{ !inputs.lock_input }}
         timeout-minutes: 10
         run: nix flake update
+      - name: Lock a newly added input
+        if: ${{ inputs.lock_input }}
+        timeout-minutes: 10
+        env:
+          LOCK_INPUT: ${{ inputs.lock_input }}
+        run: |
+          set -euo pipefail
+          case "$LOCK_INPUT" in
+            *[!A-Za-z0-9_-]*) echo "invalid input name: $LOCK_INPUT" >&2; exit 1 ;;
+          esac
+          nix flake update "$LOCK_INPUT"
       - name: Substitutable gate
         # runner は x86_64-linux だが dry-run は eval + cache 問い合わせだけなので darwin 閉包も判定できる
         timeout-minutes: 10
@@ -39,6 +60,8 @@ jobs:
         id: push
         if: ${{ !inputs.dry_run }}
         timeout-minutes: 5
+        env:
+          LOCK_INPUT: ${{ inputs.lock_input }}
         run: |
           set -euo pipefail
           if git diff --quiet flake.lock; then
@@ -49,9 +72,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add flake.lock
-          git commit -m "chore: nix flake update"
+          if [ -n "${LOCK_INPUT:-}" ]; then
+            git commit -m "chore: nix flake lock ${LOCK_INPUT}"
+          else
+            git commit -m "chore: nix flake update"
+          fi
           git push origin main
           echo "pushed=true" >>"$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
       - name: Run CI for the pushed commit
         # GITHUB_TOKEN の push は workflow を起動しないので、dispatch で明示的に回す
         if: steps.push.outputs.pushed == 'true'
@@ -60,3 +88,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run ci.yml --ref main
+      - name: Report the result on the Issue
+        if: ${{ always() && inputs.issue_number }}
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ inputs.issue_number }}
+          LOCK_INPUT: ${{ inputs.lock_input }}
+          PUSHED: ${{ steps.push.outputs.pushed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.push.outputs.sha }}
+          STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          case "$ISSUE" in *[!0-9]*) echo "invalid issue number" >&2; exit 1 ;; esac
+          if [ "$PUSHED" = "true" ]; then
+            result="flake.lock を更新して main に push した: $COMMIT_URL"
+          else
+            result="flake.lock の push なし (status: $STATUS)"
+          fi
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" \
+            --body "flake-update (input: \`${LOCK_INPUT:-all}\`): $result
+          run: $RUN_URL"

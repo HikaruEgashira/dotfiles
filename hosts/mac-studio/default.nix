@@ -7,6 +7,8 @@ _:
     ../../modules/darwin/security.nix
     ../../modules/darwin/native-apps.nix
     ../../modules/darwin/claude-code.nix
+    ../../modules/darwin/tailscale-ssh.nix
+    ../../modules/darwin/sudo-agent-auth.nix
   ];
 
   networking = {

@@ -16,10 +16,10 @@ let
   # git extension (ponytail) は sha 固定で upstream の main HEAD を追させない。設定した ref への
   # reset を `pi update --extensions` が行うので、更新は sha を差し替える手動操作だけになる:
   #   git ls-remote https://github.com/DietrichGebert/ponytail HEAD
-  pinnedNpmExtensions = [
-    "@hikae/pi-prompt-enhancer"
-    "pi-subagents"
-  ];
+  # 版の更新はここを書き換える手動操作だけにし、activation で floating install しない
+  # pin の正本は CI が lockfile と npm audit signatures で検証する pi-npm/package.json
+  pinnedNpmExtensions = (lib.importJSON ./pi-npm/package.json).dependencies;
+  npmPkgs = lib.attrNames pinnedNpmExtensions;
   extensionsUpdate = pkgs.writeShellScript "pi-extensions-update" ''
     set -eu
     export PATH=${
@@ -28,15 +28,19 @@ let
         pkgs.coreutils
       ]
     }:${home}/.nix-profile/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    # pin は public registry で検証済み (pi-npm/package-lock.json)。継承した NPM_CONFIG_REGISTRY が
+    # npm.flatt.tech を指すとトークン失効時に 401 で落ちるため、このジョブは public registry に固定する
+    export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
 
     # pin 済み git ref をその sha へ reset するだけ（追従はしない）
     pi update --extensions
 
-    # "latest" の解決は npm の min-release-age に従うので、冷却期間を終えた版だけが入る
-    npm install ${lib.concatMapStringsSep " " (pkg: "'${pkg}@latest'") pinnedNpmExtensions} \
-      --prefix "${npmRoot}" --legacy-peer-deps >/dev/null
+    npm install ${
+      lib.concatStringsSep " " (lib.mapAttrsToList (pkg: v: "'${pkg}@${v}'") pinnedNpmExtensions)
+    } \
+      --prefix "${npmRoot}" --save-exact --legacy-peer-deps >/dev/null
 
-    for pkg in ${lib.concatMapStringsSep " " (pkg: "'${pkg}'") pinnedNpmExtensions}; do
+    for pkg in ${lib.concatMapStringsSep " " (pkg: "'${pkg}'") npmPkgs}; do
       version=$(jq -r .version "${npmRoot}/node_modules/$pkg/package.json")
       tmp=$(mktemp)
       jq --arg src "npm:$pkg" --arg pin "npm:$pkg@$version" \
