@@ -298,7 +298,7 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
-ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
+ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air と Mac Studio は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。GUI 版が残る host では OSS tailscaled を userspace で並走させて login URL を activation が出力し、承認されて Running になってから `dev.egahika.tailscale-gui-retire` が GUI 版を外し tailscaled を utun に切り替える。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
 
 Postgres は TCP を待ち受けず、unix socket `~/.local/share/artex/run/` (0700) だけで受ける。認証は `modules/programs/artex/pg_hba.conf` が宣言する `local all all scram-sha-256` で、superuser `artex` の password は `~/.local/share/artex/local.env` の `ARTEX_PG_DSN` にだけ置く (URL の host 部を空にし、`?host=<socket dir>&sslmode=disable` で socket を指す)。`local.env` は wrapper が `KEY=VALUE` 行としてだけ読む (`modules/programs/artex/load-env.sh`、shell 評価はしない。両端の quote は外す)。shell 構文の行があると起動前に fail する。この socket dir は ai-sandbox の `unixSockets` に載せていないので、sandbox 内 agent は DB に到達できない。launchd の wrapper は起動毎に `~/.local/share/artex/pg/pg_hba.conf` を repo 宣言と比較し、違えば上書きしてから postgres を起動する (drift の修復ログは `pg.log`)。停止時は launchd の SIGTERM を wrapper が SIGINT (fast shutdown) に変換し、`ExitTimeOut` 60s 内に checkpoint を終えて止まる。
 
@@ -315,7 +315,7 @@ psql "$ARTEX_PG_DSN"
 lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8787|8788) '   # 全て 127.0.0.1
 nc -z 127.0.0.1 5432; echo $?                          # 1 (Postgres は TCP を開けない)
 psql -h ~/.local/share/artex/run -U artex -d artex -c 'select 1'   # password を求められる
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status # Mac Studio は :8317 のみ
+tailscale serve status # Mac Studio は :8317 のみ
 ```
 
 復旧 (password 紛失・pg_hba 切替失敗で ARTEX が DB に繋がらない):
