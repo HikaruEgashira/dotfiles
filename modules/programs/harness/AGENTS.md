@@ -24,8 +24,8 @@
 
 ## gypxy dogfooding
 
-- gh CLI (wrapper が対象 owner のとき GH_HOST を hub にする) と `https://github.com/sisaku-security/` への git は gypxy (gh-intel/packages/gypxy) を経由する。hub は ms-a2、tailnet の `https://ms-a2.tailc30b81.ts.net`
-- sisaku-security の clone・fetch・push の失敗、遅延、不整合は gypxy のバグを疑う
+- gh CLI (wrapper が対象 owner のとき GH_HOST を hub にする) と `https://github.com/gh-intel/` (旧 sisaku-security) への git は gypxy (gh-intel/packages/gypxy) を経由する。hub は ms-a2、tailnet の `https://ms-a2.tailc30b81.ts.net`
+- gh-intel の clone・fetch・push の失敗、遅延、不整合は gypxy のバグを疑う
 - ログを確認する: `ssh ms-a2 journalctl --user -u gypxy`、`~/.local/state/gypxy/{audit,findings}.jsonl`、応答ヘッダ `X-GitHub-Proxy-Cache`
-- gypxy が原因なら sisaku-security/gh-intel に再現手順とログを添えて Issue を起票する
+- gypxy が原因なら gh-intel/gh-intel に再現手順とログを添えて Issue を起票する
 - 作業を止めないための迂回: dotfiles で `programs.gypxy.client.enable = false` にして適用する

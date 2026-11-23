@@ -8,9 +8,9 @@ host=${1:-ms-a2}
 target=${2:-linux_amd64}
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 aqua=$root/modules/programs/aqua
-repo=sisaku-security/gh-intel
+repo=gh-intel/gh-intel
 
-version=$(sed -nE 's|^  - name: sisaku-security/gh-intel@gypxy/(v[0-9.]+)$|\1|p' "$aqua/aqua.yaml")
+version=$(sed -nE 's|^  - name: gh-intel/gh-intel@gypxy/(v[0-9.]+)$|\1|p' "$aqua/aqua.yaml")
 [ -n "$version" ] || {
   echo "gypxy pin is missing in aqua.yaml" >&2
   exit 1

@@ -17,7 +17,7 @@
   xdg.configFile."ghtkn/ghtkn.yaml".text = ''
     # yaml-language-server: $schema=https://raw.githubusercontent.com/suzuki-shunsuke/ghtkn/main/json-schema/ghtkn.json
     # Client ID は秘密ではない (device flow は client secret を使わない)。
-    # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / sisaku-security に install)
+    # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / gh-intel に install)
     apps:
       - name: HikaruEgashira/ghtkn-hikae
         client_id: Iv23li4HDmrucWZqsdP4

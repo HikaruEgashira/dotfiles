@@ -6,8 +6,8 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hm=".#nixosConfigurations.ms-a2.config.home-manager.users.hikae"
 cd "$root"
 
-pin=$(sed -nE 's|^  - name: sisaku-security/gh-intel@gypxy/(v[0-9.]+)$|\1|p' modules/programs/aqua/aqua.yaml)
-want=$(grep -A1 "\"github_release/github.com/sisaku-security/gh-intel/gypxy/$pin/gypxy_${pin}_linux_amd64.tar.gz\"" \
+pin=$(sed -nE 's|^  - name: gh-intel/gh-intel@gypxy/(v[0-9.]+)$|\1|p' modules/programs/aqua/aqua.yaml)
+want=$(grep -A1 "\"github_release/github.com/gh-intel/gh-intel/gypxy/$pin/gypxy_${pin}_linux_amd64.tar.gz\"" \
   modules/programs/aqua/aqua-checksums.json | sed -nE 's/.*"checksum": "([0-9A-F]+)".*/\1/p' | tr 'A-F' 'a-f')
 [ -n "$pin" ] && [ -n "$want" ] || {
   echo "FAIL: gypxy pin or checksum not found" >&2

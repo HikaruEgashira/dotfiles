@@ -80,7 +80,10 @@ in
     };
     owners = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "sisaku-security" ];
+      default = [
+        "gh-intel"
+        "sisaku-security"
+      ];
     };
   };
 
