@@ -35,6 +35,7 @@
     ./modules/programs/disk-maintenance.nix
     ./modules/programs/claude-otel.nix
     ./modules/programs/nuphy-kvm.nix
+    ./modules/programs/orca-browser.nix
     ./modules/programs/apple-agents.nix
   ];
 

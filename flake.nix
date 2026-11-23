@@ -707,8 +707,11 @@
         hikae = (mkHome "aarch64-darwin").extendModules {
           modules = [
             {
-              dotfiles.ssh.sudoAgentForward = true;
-              dotfiles.ghtkn.readonly = true;
+              dotfiles = {
+                ssh.sudoAgentForward = true;
+                ghtkn.readonly = true;
+                orcaBrowser.enable = true;
+              };
             }
           ];
         };
