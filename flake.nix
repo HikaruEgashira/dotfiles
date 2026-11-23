@@ -70,10 +70,6 @@
         modules = [
           {
             programs.cliproxyapi.hub.enable = true;
-            programs.orca.serve = {
-              enable = true;
-              pairingAddress = "mac-studio.tailc30b81.ts.net";
-            };
           }
         ];
       };
@@ -119,10 +115,6 @@
                   ./hosts/linux/home.nix
                 ];
                 programs.gypxy.hub.enable = true;
-                programs.orca.serve = {
-                  enable = true;
-                  pairingAddress = "ms-a2.tailc30b81.ts.net";
-                };
               };
             };
           }

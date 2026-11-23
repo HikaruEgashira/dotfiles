@@ -30,7 +30,6 @@
     ./modules/programs/artex.nix
     ./modules/programs/cliproxyapi.nix
     ./modules/programs/gypxy.nix
-    ./modules/programs/orca-serve.nix
     ./modules/programs/clean-worktree.nix
     ./modules/programs/disk-maintenance.nix
     ./modules/programs/claude-otel.nix
