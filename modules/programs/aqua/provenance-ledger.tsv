@@ -2,4 +2,4 @@ package	provenance
 withgraphite/homebrew-tap	accepted: upstream release に checksum asset も署名も無い
 bitwarden/clients	accepted: upstream release に checksum asset も署名も無い
 HikaruEgashira/nuphy-air60-v2-tools	accepted: upstream release に checksum asset も署名も無い
-sisaku-security/gh-intel	accepted: CI から upstream の checksums.txt を取得できない。pin は aqua-checksums.json で検証する
+gh-intel/gh-intel	accepted: CI から upstream の checksums.txt を取得できない。pin は aqua-checksums.json で検証する

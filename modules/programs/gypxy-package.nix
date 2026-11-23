@@ -11,7 +11,7 @@ let
   aquaDir = ./aqua;
   version = lib.pipe (builtins.readFile "${aquaDir}/aqua.yaml") [
     (lib.splitString "\n")
-    (map (builtins.match "  - name: sisaku-security/gh-intel@gypxy/(v[0-9.]+)"))
+    (map (builtins.match "  - name: gh-intel/gh-intel@gypxy/(v[0-9.]+)"))
     (lib.findFirst (m: m != null) (throw "gypxy pin is missing in aqua.yaml"))
     builtins.head
   ];
@@ -19,7 +19,7 @@ let
   os = if platform.isDarwin then "darwin" else "linux";
   arch = if platform.isAarch64 then "arm64" else "amd64";
   stem = "gypxy_${version}_${os}_${arch}";
-  id = "github_release/github.com/sisaku-security/gh-intel/gypxy/${version}/${stem}.tar.gz";
+  id = "github_release/github.com/gh-intel/gh-intel/gypxy/${version}/${stem}.tar.gz";
   entry =
     lib.findFirst (c: c.id == id) (throw "${id} is missing in aqua-checksums.json")
       (builtins.fromJSON (builtins.readFile "${aquaDir}/aqua-checksums.json")).checksums;
@@ -28,7 +28,7 @@ stdenvNoCC.mkDerivation {
   pname = "gypxy";
   inherit version;
   src = fetchurl {
-    url = "https://github.com/sisaku-security/gh-intel/releases/download/gypxy/${version}/${stem}.tar.gz";
+    url = "https://github.com/gh-intel/gh-intel/releases/download/gypxy/${version}/${stem}.tar.gz";
     sha256 = lib.toLower entry.checksum;
   };
   dontConfigure = true;

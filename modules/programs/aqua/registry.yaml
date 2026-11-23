@@ -50,7 +50,7 @@ packages:
       asset: checksums.txt
       algorithm: sha256
   - type: github_release
-    repo_owner: sisaku-security
+    repo_owner: gh-intel
     repo_name: sisakulint
     asset: sisakulint_{{trimV .Version}}_{{.OS}}_{{.Arch}}.{{.Format}}
     format: tar.gz
@@ -153,7 +153,7 @@ packages:
       - name: snap
         src: bin/snap
   - type: github_release
-    repo_owner: sisaku-security
+    repo_owner: gh-intel
     repo_name: gh-intel
     version_prefix: gypxy/
     asset: gypxy_{{.SemVer}}_{{.OS}}_{{.Arch}}.tar.gz

@@ -26,7 +26,7 @@ let
       ''
     else
       ''
-        # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / sisaku-security に install)
+        # App: https://github.com/settings/apps/ghtkn-hikae (Device Flow 有効、HikaruEgashira / plenoai / gh-intel に install)
         apps:
           - name: ${appName}
             client_id: Iv23li4HDmrucWZqsdP4
