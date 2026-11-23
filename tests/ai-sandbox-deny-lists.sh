@@ -70,6 +70,9 @@ persistence=(
   .aws
   .local/bin
   .local/share/claude
+  .local/share/aquaproj-aqua
+  .nix-profile
+  .spicetify
 )
 for path in "${persistence[@]}"; do
   assert_list_has persistence "$path"
@@ -82,7 +85,7 @@ done
 
 # codex は ~/.aws を組み込み deny するため read で上書きし、token cache は secrets の子 path deny に任せる
 # shellcheck disable=SC2016 # Match the literal Nix home interpolation.
-for path in .aws .local/bin .local/share/claude; do
+for path in .aws .local/bin .local/share/claude .local/share/aquaproj-aqua .nix-profile .spicetify; do
   assert_list_has codexReadOnly "$path"
 done
 grep -Fq '// lib.genAttrs codexReadOnly (_: "read")' "$source_nix"

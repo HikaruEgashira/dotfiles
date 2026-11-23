@@ -111,6 +111,11 @@ let
     "${home}/.aws"
     "${home}/.local/bin"
     "${home}/.local/share/claude"
+    # Aqua root / nix profile / spicetify は host の PATH 上で ~/.local/bin より前にあり、
+    # codex-sandbox wrapper と launchd agent も aquaBin を sandbox 外で実行する
+    "${home}/.local/share/aquaproj-aqua"
+    "${home}/.nix-profile"
+    "${home}/.spicetify"
   ];
 
   # codex は 1 path 1 verdict なので、自分が読む設定は write だけ deny できない
@@ -124,6 +129,9 @@ let
     "${home}/.aws"
     "${home}/.local/bin"
     "${home}/.local/share/claude"
+    "${home}/.local/share/aquaproj-aqua"
+    "${home}/.nix-profile"
+    "${home}/.spicetify"
   ];
   codexPersistence = lib.filter (
     p: !builtins.elem p codexReadable && !builtins.elem p codexReadOnly
