@@ -85,6 +85,8 @@ jobs:
         run: python3 tests/fetchurl-provenance.py
       - name: Test CLIProxyAPI credential rendering
         run: python3 tests/cliproxyapi-config.py
+      - name: Test Fleet controller
+        run: python3 -I tests/fleet-controller.py
       - name: Test encrypted Store unlock
         timeout-minutes: 5
         run: nix shell --inputs-from . nixpkgs#python3 --command python3 tests/nix-store.py
@@ -140,3 +142,33 @@ jobs:
           fi
           echo "OK: drvPath stable across evaluations"
           echo "  $h1"
+
+  # CI を通った main だけを deploy に進める。Fleet controller (hosts/ms-a2/fleet.nix) はこの ref だけを端末へ配る
+  promote:
+    needs: [fetchurl-provenance, validate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: promote-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Fast-forward deploy to the verified commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/$REPO/git/ref/heads/deploy" >/dev/null 2>&1; then
+            # force=false なので、後着の古い run が deploy を巻き戻すことはない (non fast-forward は 422)
+            if ! gh api -X PATCH "repos/$REPO/git/refs/heads/deploy" -f sha="$SHA" -F force=false >/dev/null; then
+              status=$(gh api "repos/$REPO/compare/$SHA...deploy" --jq .status)
+              [ "$status" = ahead ] || [ "$status" = identical ] || { echo "::error::deploy could not move to $SHA ($status)"; exit 1; }
+              echo "deploy is already ahead of $SHA"
+            fi
+          else
+            gh api -X POST "repos/$REPO/git/refs" -f ref=refs/heads/deploy -f sha="$SHA" >/dev/null
+          fi

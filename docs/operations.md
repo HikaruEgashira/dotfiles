@@ -233,6 +233,37 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `system.activationScripts.wifiDnsFromDhcp` (`modules/darwin/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
+### 3.5 Fleet による端末管理
+
+Fleet サーバーは ms-a2 で動き (`hosts/ms-a2/fleet.nix`)、tailnet 内の `https://ms-a2.tailc30b81.ts.net:8443` だけに公開する。MySQL 8.4 と Redis は loopback に閉じる。DB パスワード、MDM 用サーバー鍵、初期 admin、enroll secret は初回起動時に ms-a2 上で生成し、repo には置かない (`/var/lib/fleet`、root 0600)。
+
+dotfiles の配布:
+
+1. CI が main で通ると `promote` job が `deploy` branch を fast-forward する (巻き戻さない)
+2. ms-a2 の `fleet-controller.timer` (5 分毎) が `git ls-remote` で `deploy` を読み、適用スクリプト (`scripts/fleet/dotfiles-apply.sh`) に commit を埋めて Fleet に登録し、policy「dotfiles: applied CI-green main」の query もその commit に更新する
+3. policy に失敗した Mac に Fleet が root でスクリプトを実行する。ユーザー権限で ff-only pull と build を行い、OS 層を root で activate して `/var/db/dotfiles.plist` に適用済み commit を書く。branch が main 以外、または未 commit の変更がある Mac は触らない。同じ commit への再試行は 3 回まで
+
+Fleet Free には policy 連動の自動スクリプト実行が無い (Premium) ため、controller がそれを代替する。GitHub の REST API は未認証だと 60 回/時で詰まるので使わない。
+
+Mac の登録 (1 台 1 回): `nix run .#fleet-enroll`。ms-a2 から enroll secret を ssh で読み、`fleetctl package` で fleetd を作って install する (sudo が要る)。
+
+MDM (DNS profile の配布):
+
+1. Fleet UI (Settings → Integrations → MDM) で CSR を取り、Apple Push Certificates Portal で APNs 証明書を発行して戻す。毎年同じ Apple Account で更新する。別の Account で更新すると全端末の MDM を入れ直すことになる
+2. 各 Mac で Fleet Desktop から MDM 登録を承認する
+3. DNS resolver (egahika.dev `gateway.tf`) の DoH URL を ms-a2 の `/var/lib/fleet/doh-url` に置くと、controller が `com.apple.dnsSettings.managed` profile を配る。`ts.net` と `captive.apple.com` は DoH から外す。手で入れた NextDNS profile は配布を確認してから消す
+
+確認:
+
+```bash
+ssh ms-a2 systemctl status fleet fleet-controller.timer
+ssh ms-a2 journalctl -u fleet-controller -n 20      # apply <sha> on host <id>
+defaults read /var/db/dotfiles rev                  # Mac 側の適用済み commit
+git ls-remote origin refs/heads/deploy
+```
+
+Fleet UI の admin 資格情報は ms-a2 の `/var/lib/fleet/admin.json` にある。初回ログイン後にパスワードを変える場合は、controller が使えるようにこのファイルも更新する。
+
 ### 3.4 SSH 鍵の役割分担とローテーション
 
 鍵は用途で 2 本に分け、agent も 2 本立てる (`modules/programs/ssh.nix`)。agent と鍵の対応表は 1 つで、darwin では launchd agent、linux (WSL) では同名の systemd user service (`ssh-agent` / `ssh-sign-agent`、鍵は `ExecStartPost` で投入) を生成する。鍵は端末ごとに発行し、秘密鍵を端末間でコピーしない。

@@ -8,6 +8,7 @@
     ./gypxy.nix
     ./claude-runner.nix
     ./sudo-agent-auth.nix
+    ./fleet.nix
     ../../modules/nixos/telemetry.nix
   ];
 
