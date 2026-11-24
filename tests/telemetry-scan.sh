@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# usage: telemetry-scan.sh <python3> <telemetry-scan.py> <telemetry-ledger.json>
+# usage: telemetry-scan.sh [<python3> <telemetry-scan.py> <telemetry-ledger.json>]
 set -euo pipefail
-py=$1 scan=$2 ledger=$3
+root=$(cd "$(dirname "$0")/.." && pwd)
+py=${1:-python3} scan=${2:-$root/scripts/telemetry-scan.py} ledger=${3:-$root/lib/telemetry-ledger.json}
 work=$(mktemp -d)
 export XDG_CACHE_HOME="$work/cache"
 mkdir -p "$work/bin"
