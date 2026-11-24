@@ -8,6 +8,8 @@
   # WSL の session 終了で ssh-agent / ghtkn-agent の user service を止めない
   users.users.hikae.linger = true;
 
+  environment.etc."t3code/policy.json".source = ../../modules/programs/t3code/policy.json;
+
   security.sudo.wheelNeedsPassword = false;
 
   # upstream の動的リンク binary (Aqua / VS Code Server) を動かす

@@ -10,6 +10,8 @@
     ./sudo-agent-auth.nix
   ];
 
+  environment.etc."t3code/policy.json".source = ../../modules/programs/t3code/policy.json;
+
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "organization": "dotfiles",
+  "limits": {
+    "telemetry": false
+  }
+}
