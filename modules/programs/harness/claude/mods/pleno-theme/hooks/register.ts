@@ -1,9 +1,37 @@
 import type { Register, ThemeSetArgs } from "claude-code";
 
 import { makeColors } from "./make-colors.js";
+import pleno from "./palette.js";
+
+type Hex = `#${string}`;
+type Mode = {
+  canvas: Hex;
+  accent: Hex;
+  sidebar: Hex;
+  text: Hex;
+  mutedForeground: Hex;
+  messageSurface: Hex;
+};
+
+const dark: Mode = {
+  ...pleno.colors,
+  canvas: pleno.canvas,
+  accent: pleno.accent,
+} as Mode;
+const light: Mode = pleno.variants.light as Mode;
+
+// Desktop paints the sidebar from surface-0 and the chat column from the backdrop; other surfaces stay on the canvas.
+const anchors = (m: Mode) => ({
+  "surface-0": m.sidebar,
+  "surface-1": m.canvas,
+  "surface-2": m.canvas,
+  "surface-3": m.canvas,
+  "text-primary": m.text,
+  "text-muted": m.mutedForeground,
+});
 
 const { theme, problems } = makeColors({
-  label: "Pleno",
+  label: pleno.name,
   roles: {
     accent: "#8f8f8f",
     danger: "#d14b4b",
@@ -11,45 +39,22 @@ const { theme, problems } = makeColors({
     warning: "#c9952e",
     pro: "#8b6fc4",
   },
-  light: {
-    gray: {
-      anchors: {
-        "surface-0": "#f6f6f6",
-        "surface-1": "#fcfcfc",
-        "surface-2": "#ffffff",
-        "text-primary": "#1a1a1a",
-        "text-secondary": "#3d3d3d",
-        "text-muted": "#6b6b6b",
-      },
-    },
-  },
-  dark: {
-    gray: {
-      anchors: {
-        "surface-0": "#0e0e0e",
-        "surface-1": "#0f0f0f",
-        "surface-2": "#0f0f0f",
-        "surface-3": "#0f0f0f",
-        "text-primary": "#ededed",
-        "text-secondary": "#c2c2c2",
-        "text-muted": "#8f8f8f",
-      },
-    },
-  },
+  light: { gray: { anchors: anchors(light) } },
+  dark: { gray: { anchors: anchors(dark) } },
 });
 
 theme.inputs.light = {
   ...theme.inputs.light,
-  "bg-user-message": "#efefef",
-  "text-user-message": "#1a1a1a",
+  "bg-user-message": light.messageSurface,
+  "text-user-message": light.text,
 };
 theme.inputs.dark = {
   ...theme.inputs.dark,
-  "bg-user-message": "#1c1c1c",
-  "text-user-message": "#ededed",
+  "bg-user-message": dark.messageSurface,
+  "text-user-message": dark.text,
 };
 
-const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "#0f0f0f" } };
+const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "surface-1" } };
 
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
