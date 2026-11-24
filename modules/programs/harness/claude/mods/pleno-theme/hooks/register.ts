@@ -49,7 +49,7 @@ theme.inputs.dark = {
   "text-user-message": "#ededed",
 };
 
-const LOOK: ThemeSetArgs = { colors: theme };
+const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "surface-0" } };
 
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
