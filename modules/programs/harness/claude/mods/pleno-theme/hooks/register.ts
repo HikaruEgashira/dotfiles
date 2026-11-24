@@ -26,7 +26,7 @@ const { theme, problems } = makeColors({
   dark: {
     gray: {
       anchors: {
-        "surface-0": "#0b0b0b",
+        "surface-0": "#0e0e0e",
         "surface-1": "#0f0f0f",
         "surface-2": "#0f0f0f",
         "surface-3": "#0f0f0f",
@@ -49,7 +49,7 @@ theme.inputs.dark = {
   "text-user-message": "#ededed",
 };
 
-const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "#111111" } };
+const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "#0f0f0f" } };
 
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
