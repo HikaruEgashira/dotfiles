@@ -121,11 +121,7 @@ in
         requires = [ "fleet.service" ];
         serviceConfig = {
           Type = "oneshot";
-          StateDirectory = "fleet-enroll";
-          StateDirectoryMode = "0750";
           ExecStart = "${pkgs.python3}/bin/python3 -I ${../../scripts/fleet-controller.py} ${stateDir} http://127.0.0.1:${toString port} ${fleetUrl} ${../../scripts/fleet/dotfiles-apply.sh} /var/lib/fleet-enroll/secret";
-          # StateDirectory は root:root で作られるので、wheel が secret まで辿れるようにする
-          ExecStartPre = "${pkgs.coreutils}/bin/chgrp wheel /var/lib/fleet-enroll";
         };
       };
     };
@@ -140,6 +136,9 @@ in
       };
     };
   };
+
+  # Mac の登録時に wheel が ssh 越しに enroll secret を読む
+  systemd.tmpfiles.rules = [ "d /var/lib/fleet-enroll 0750 root wheel -" ];
 
   environment.etc."fleet/url".text = fleetUrl;
 }
