@@ -26,10 +26,10 @@ const { theme, problems } = makeColors({
   dark: {
     gray: {
       anchors: {
-        "surface-0": "#0f0f0f",
-        "surface-1": "#161616",
-        "surface-2": "#1c1c1c",
-        "surface-3": "#202020",
+        "surface-0": "#0b0b0b",
+        "surface-1": "#0f0f0f",
+        "surface-2": "#101010",
+        "surface-3": "#161616",
         "text-primary": "#ededed",
         "text-secondary": "#c2c2c2",
         "text-muted": "#8f8f8f",
