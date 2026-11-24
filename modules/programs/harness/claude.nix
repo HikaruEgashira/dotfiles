@@ -5,7 +5,7 @@
   ...
 }:
 
-(import ../../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" ([
+(import ../../../lib/hm-managed-files.nix { inherit pkgs lib; }).files "Claude" [
   {
     rel = ".claude/CLAUDE.md";
     source = ./AGENTS.md;
@@ -15,7 +15,7 @@
     source = ./claude/bin/claude-caffeinate.sh;
     executable = true;
   }
-])
+]
 // (
   let
     plenoMod = pkgs.runCommand "claude-pleno-theme" { } ''
