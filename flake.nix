@@ -575,29 +575,6 @@
           type = "app";
           program = "${script}/bin/switch";
         };
-      fleetEnrollAppFor =
-        system:
-        let
-          pkgs = pkgsFor system;
-          url = msA2.config.environment.etc."fleet/url".text;
-          script = pkgs.writeShellScriptBin "fleet-enroll" ''
-            set -eu
-            if [ -d /opt/orbit ]; then
-              echo "fleet-enroll: fleetd is already installed (/opt/orbit)"
-              exit 0
-            fi
-            work=$(mktemp -d)
-            trap 'rm -rf "$work"' EXIT
-            ssh ms-a2 cat /var/lib/fleet-enroll/secret > "$work/secret"
-            ${pkgs.fleetctl}/bin/fleetctl package --type pkg --fleet-url ${url} \
-              --enroll-secret "$(cat "$work/secret")" --enable-scripts --outfile "$work/fleetd.pkg"
-            /usr/bin/sudo /usr/sbin/installer -pkg "$work/fleetd.pkg" -target /
-          '';
-        in
-        {
-          type = "app";
-          program = "${script}/bin/fleet-enroll";
-        };
       telemetryAuditAppFor =
         system:
         let
@@ -760,7 +737,6 @@
         }
         // nixpkgs.lib.optionalAttrs (system == "aarch64-darwin") {
           switch = switchAppFor system;
-          fleet-enroll = fleetEnrollAppFor system;
         }
       );
 
