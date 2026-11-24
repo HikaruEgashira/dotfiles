@@ -28,8 +28,8 @@ const { theme, problems } = makeColors({
       anchors: {
         "surface-0": "#0b0b0b",
         "surface-1": "#0f0f0f",
-        "surface-2": "#101010",
-        "surface-3": "#161616",
+        "surface-2": "#0f0f0f",
+        "surface-3": "#0f0f0f",
         "text-primary": "#ededed",
         "text-secondary": "#c2c2c2",
         "text-muted": "#8f8f8f",
