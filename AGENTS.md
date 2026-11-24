@@ -13,6 +13,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | nixpkgs cache に無い GUI | 上流署名済み installer。root installer は `modules/darwin/native-apps/` |
 | AI agent 共有 system prompt | `modules/programs/harness/AGENTS.md` が single source。live の `settings.json` / `opencode.json` は repo 管理しない。Claude Code に強制する設定は `modules/darwin/claude-code.nix` の managed settings |
 | repo が使う secret | 正史は `~/.config/secrets/env.age`。repo の `.envrc` に `use secrets <KEY>` を書いて direnv で局所ロードする (`docs/operations.md` §2.6) |
+| tool の telemetry 分類と DNS denylist | `lib/telemetry-ledger.json` (`docs/operations.md` §4.10) |
 | 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
 
@@ -25,7 +26,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | `nix fmt` / `nix run .#lint` | 整形 / deadnix + shellcheck |
 | `nix flake check` | formatter + eval + guards |
 | `nix run .#update` | 全 inputs を bump + eval gate |
-| `nix run .#audit` / `.#xdg-audit` / `.#launchd-audit` | ledger 集計 / XDG drift / launchd drift |
+| `nix run .#audit` / `.#xdg-audit` / `.#launchd-audit` / `.#telemetry-audit` | ledger 集計 / XDG drift / launchd drift / 未分類 telemetry |
 
 タスク完了 = commit + push + 必要な適用 + 反映先の確認。
 

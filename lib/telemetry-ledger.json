@@ -1,0 +1,165 @@
+{
+  "tools": {
+    "@openai/codex": {
+      "status": "disabled",
+      "via": "/etc/codex/managed_config.toml (analytics.enabled=false, feedback.enabled=false)"
+    },
+    "@opencode/cli-darwin-arm64": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK; the Claude Code env names are from the bundled Claude Agent SDK"
+    },
+    "Bitwarden.app": {
+      "status": "blocked",
+      "via": "Google Analytics endpoint embedded by a bundled library; blocked at DNS",
+      "domains": [
+        "google-analytics.com",
+        "www.google-analytics.com",
+        "ssl.google-analytics.com",
+        "region1.google-analytics.com"
+      ]
+    },
+    "bun": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK"
+    },
+    "bunx": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK"
+    },
+    "ccdeck.app": {
+      "status": "blocked",
+      "via": "Google Analytics endpoint embedded; covered by the Bitwarden.app domains"
+    },
+    "Claude Code URL Handler.app": {
+      "status": "disabled",
+      "via": "Claude Code managed settings DISABLE_TELEMETRY / DISABLE_ERROR_REPORTING",
+      "domains": ["http-intake.logs.us5.datadoghq.com"]
+    },
+    "Claude.app": {
+      "status": "blocked",
+      "via": "no opt-out in the desktop app; RUM and analytics are blocked at DNS",
+      "domains": [
+        "browser-intake-us5-datadoghq.com",
+        "www.datadoghq-browser-agent.com"
+      ]
+    },
+    "cli/cli": {
+      "status": "disabled",
+      "via": "GH_TELEMETRY=false"
+    },
+    "dagger": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK"
+    },
+    "fly": {
+      "status": "disabled",
+      "via": "FLY_SEND_METRICS=0",
+      "domains": ["flyctl-metrics.fly.dev"]
+    },
+    "flyctl": {
+      "status": "disabled",
+      "via": "FLY_SEND_METRICS=0"
+    },
+    "gcloud": {
+      "status": "disabled",
+      "via": "CLOUDSDK_CORE_DISABLE_USAGE_REPORTING"
+    },
+    "gh": {
+      "status": "disabled",
+      "via": "GH_TELEMETRY=false"
+    },
+    "go": {
+      "status": "disabled",
+      "via": "go telemetry off (home activation)",
+      "domains": ["telemetry.go.dev"]
+    },
+    "Google Chrome.app": {
+      "status": "disabled",
+      "via": "com.google.Chrome MetricsReportingEnabled / UrlKeyedAnonymizedDataCollectionEnabled / FeedbackSurveysEnabled = false"
+    },
+    "HeyClicky.app": {
+      "status": "blocked",
+      "via": "no opt-out; PostHog ingestion is blocked at DNS",
+      "domains": [
+        "us.i.posthog.com",
+        "eu.i.posthog.com",
+        "us-assets.i.posthog.com",
+        "eu-assets.i.posthog.com"
+      ]
+    },
+    "higgsfield-ai/cli": {
+      "status": "disabled",
+      "via": "HIGGSFIELD_DISABLE_TELEMETRY"
+    },
+    "huggingface-cli": {
+      "status": "disabled",
+      "via": "HF_HUB_DISABLE_TELEMETRY"
+    },
+    "ollama": {
+      "status": "none",
+      "via": "cobra flag string, no remote reporting"
+    },
+    "omp": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK (bun crash reporter)"
+    },
+    "pi": {
+      "status": "disabled",
+      "via": "PI_TELEMETRY=0"
+    },
+    "pingdotgg/t3code": {
+      "status": "disabled",
+      "via": "same policy and env as T3 Code (Nightly).app"
+    },
+    "pleno-dlp": {
+      "status": "disabled",
+      "via": "PLENO_DLP_CRASH_REPORTS=0; the vendor hosts are secret-detector targets"
+    },
+    "plenoai/pleno-dlp": {
+      "status": "disabled",
+      "via": "PLENO_DLP_CRASH_REPORTS=0"
+    },
+    "pwsh": {
+      "status": "disabled",
+      "via": "POWERSHELL_TELEMETRY_OPTOUT"
+    },
+    "say-hook": {
+      "status": "disabled",
+      "via": "DO_NOT_TRACK (bun crash reporter)"
+    },
+    "sigstore/cosign": {
+      "status": "none",
+      "via": "Azure SDK constants, no telemetry"
+    },
+    "T3 Code (Nightly).app": {
+      "status": "disabled",
+      "via": "/Library/Application Support/T3Code/policy.json (limits.telemetry=false), T3CODE_TELEMETRY_ENABLED, T3CODE_OTEL_SDK_DISABLED, CLERK_TELEMETRY_DISABLED",
+      "domains": ["ingest.t3.codes", "clerk-telemetry.com"]
+    },
+    "Tailscale.app": {
+      "status": "blocked",
+      "via": "the GUI build cannot set TS_NO_LOGS_NO_SUPPORT; logtail is blocked at DNS (tailnet keeps working)",
+      "domains": [
+        "log.tailscale.com",
+        "log.tailscale.io",
+        "logheap.tailscale.com"
+      ]
+    },
+    "terraform": {
+      "status": "disabled",
+      "via": "CHECKPOINT_DISABLE"
+    },
+    "trufflehog": {
+      "status": "none",
+      "via": "vendor hosts are secret verification targets, not telemetry"
+    },
+    "withgraphite/homebrew-tap": {
+      "status": "disabled",
+      "via": "GRAPHITE_DISABLE_TELEMETRY"
+    },
+    "Xcode.app": {
+      "status": "disabled",
+      "via": "macOS AutoSubmit / ThirdPartyDataSubmit = false (modules/darwin/telemetry.nix); agent env names belong to bundled coding-agent integrations"
+    }
+  }
+}

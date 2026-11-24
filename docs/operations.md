@@ -521,6 +521,20 @@ tail -n20 ~/Library/Logs/aws-cred-agent.log
 
 sandbox 内の `aws sso login` は cache に書けず失敗する。これは仕様で、login は常に sandbox 外で行う。broker の allowlist (`sso-readonly` / `sso-admin` / `*-chain`) を増減するときは `modules/programs/aws.nix` の `sourceProfiles` と `tests/aws-cred-broker.sh` を同時に更新する。
 
+### 4.10 telemetry-audit が未分類の tool を報告した
+
+Home Manager の activation ごとに `scripts/telemetry-scan.py` が背景で走り、Nix profile・Aqua pkgs・`/Applications` のバイナリから telemetry 用の環境変数名と送信先ホストを抽出する。`lib/telemetry-ledger.json` に無い tool を見つけると macOS 通知を出し、詳細を `~/.local/state/telemetry-audit.log` に残す。手動では `nix run .#telemetry-audit` (未分類があれば exit 1、`--json` で全検出結果)。走査結果は `~/.cache/telemetry-audit.json` に size/mtime で cache する。
+
+台帳への分類:
+
+| status     | 条件                                     | 書くもの                                                                                      |
+| ---------- | ---------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `disabled` | opt-out の手段がある                     | 手段を宣言化する (`modules/programs/telemetry-optout.nix` の env、managed policy 等) と `via` |
+| `blocked`  | opt-out が無い                           | `domains` に送信先 hostname。DNS resolver の denylist に入る                                  |
+| `none`     | 検出は文字列の誤検出 (検知対象の API 等) | 誤検出の理由を `via`                                                                          |
+
+`disabled` でも `domains` を書けば多層防御として遮断される。opt-out の可否はバイナリの文字列で判断せず、上流 docs か実装 (`--help`、bundle 内の設定読み込み処理) で確かめる。
+
 ## 5. 緊急時 / ロールバック
 
 ### 5.1 直近の switch を巻き戻す

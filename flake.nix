@@ -575,6 +575,29 @@
           type = "app";
           program = "${script}/bin/switch";
         };
+      telemetryAuditAppFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+          script = pkgs.writeShellScriptBin "telemetry-audit" ''
+            exec ${pkgs.python3}/bin/python3 -I ${./scripts/telemetry-scan.py} ${./lib/telemetry-ledger.json} "$@" \
+              "$HOME/.nix-profile/bin" "$HOME/.local/share/aquaproj-aqua/pkgs" /Applications "$HOME/Applications"
+          '';
+        in
+        {
+          type = "app";
+          program = "${script}/bin/telemetry-audit";
+        };
+      telemetryScanCheckFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        pkgs.runCommand "telemetry-scan-test" { } ''
+          ${pkgs.bash}/bin/bash ${./tests/telemetry-scan.sh} ${pkgs.python3}/bin/python3 \
+            ${./scripts/telemetry-scan.py} ${./lib/telemetry-ledger.json}
+          touch "$out"
+        '';
       skillsAuditCheckFor =
         system:
         let
@@ -706,6 +729,7 @@
           audit = auditAppFor system;
           launchd-audit = launchdAuditAppFor system;
           skills-audit = skillsAuditAppFor system;
+          telemetry-audit = telemetryAuditAppFor system;
           lint = lintAppFor system;
           substitutable-gate = substitutableGateAppFor system;
           update = updateAppFor system;
@@ -720,6 +744,7 @@
         aarch64-linux = {
           launchd-audit = launchdAuditCheckFor "aarch64-linux";
           skills-audit = skillsAuditCheckFor "aarch64-linux";
+          telemetry-scan = telemetryScanCheckFor "aarch64-linux";
           aqua-policy = aquaPolicyCheckFor "aarch64-linux";
           build = (mkHome "aarch64-linux").activationPackage;
           formatting = (treefmtFor "aarch64-linux").config.build.check self;
@@ -740,6 +765,7 @@
             };
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
+          telemetry-scan = telemetryScanCheckFor "x86_64-linux";
           aqua-policy = aquaPolicyCheckFor "x86_64-linux";
           build = (mkHome "x86_64-linux").activationPackage;
           formatting = (treefmtFor "x86_64-linux").config.build.check self;
@@ -757,6 +783,7 @@
         aarch64-darwin = {
           launchd-audit = launchdAuditCheckFor "aarch64-darwin";
           skills-audit = skillsAuditCheckFor "aarch64-darwin";
+          telemetry-scan = telemetryScanCheckFor "aarch64-darwin";
           aqua-policy = aquaPolicyCheckFor "aarch64-darwin";
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-darwin";
           "darwin-eval" = darwinEvalCheckFor "aarch64-darwin";
