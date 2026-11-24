@@ -7,7 +7,6 @@
     ./deck-cast.nix
     ./gypxy.nix
     ./claude-runner.nix
-    ./sudo-agent-auth.nix
     ../../modules/nixos/telemetry.nix
   ];
 

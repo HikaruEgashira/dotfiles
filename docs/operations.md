@@ -170,15 +170,14 @@ grep -E 'pam_tid|pam_reattach' /etc/pam.d/sudo_local
 
 ### 3.1.1 リモート sudo を手元 Mac の Touch ID で通す
 
-mac-studio と ms-a2 の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。署名のたびに macbook-air で Touch ID を求める。
+mac-studio の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。ms-a2 には鍵を転送せず、sudo はパスワードで通す (侵害前提の host に署名を要求させないため。`docs/security/threat-model.md` F1)。署名のたびに macbook-air で Touch ID を求める。
 
-| 層                 | 設定                                                                                          | module                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| 鍵 (macbook-air)   | Secretive が Secure Enclave に鍵を作り、署名ごとに Touch ID を要求する                        | `modules/darwin/native-apps.nix` (`dotfiles.secretive`)      |
-| 転送 (macbook-air) | `ms-a2` / `mac-studio` だけに `ForwardAgent <Secretive socket>` を付ける                      | `modules/programs/ssh.nix` (`dotfiles.ssh.sudoAgentForward`) |
-| ms-a2              | `pam_ssh_agent_auth`。信頼する鍵は root 所有の実ファイル `/etc/ssh/sudo_authorized_keys` だけ | `hosts/ms-a2/sudo-agent-auth.nix`                            |
-| mac-studio         | `sudo_local` に `pam_rssh`、その後に `pam_tid`                                                | `modules/darwin/sudo-agent-auth.nix`                         |
-| 信頼する公開鍵     | 1 行 1 鍵                                                                                     | `keys/sudo-agent.pub`                                        |
+| 層                 | 設定                                                                   | module                                                       |
+| ------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 鍵 (macbook-air)   | Secretive が Secure Enclave に鍵を作り、署名ごとに Touch ID を要求する | `modules/darwin/native-apps.nix` (`dotfiles.secretive`)      |
+| 転送 (macbook-air) | `mac-studio` だけに `ForwardAgent <Secretive socket>` を付ける         | `modules/programs/ssh.nix` (`dotfiles.ssh.sudoAgentForward`) |
+| mac-studio         | `sudo_local` に `pam_rssh`、その後に `pam_tid`                         | `modules/darwin/sudo-agent-auth.nix`                         |
+| 信頼する公開鍵     | 1 行 1 鍵                                                              | `keys/sudo-agent.pub`                                        |
 
 鍵に Secretive を使う理由: macOS の FIDO 系鍵 (`ecdsa-sk`) は外部 authenticator を前提にしており、Secure Enclave で使うには Apple 版 ssh 専用の middleware が要る。このリポジトリは nixpkgs の openssh を使うため、その middleware を使えない。Secretive は agent として動くので ssh の実装に依存せず、鍵ごとに「署名のたびに認証」を強制できる。
 
@@ -192,9 +191,8 @@ nixpkgs の `pam_rssh` は nixpkgs の openpam にリンクしている。macOS 
 
 1. macbook-air: `nix run .#switch` で Secretive を入れる。Secretive を起動し、"Require authentication" を有効にした鍵を作る。
 2. 公開鍵を `keys/sudo-agent.pub` に追記して push する。
-3. ms-a2: `ssh ms-a2` してから `cd ~/dotfiles && git pull && sudo nixos-rebuild switch --flake .#ms-a2`。この時点ではまだパスワードを入力する。
-4. mac-studio: `ssh mac-studio` してから `cd ~/dotfiles && git pull && nix run .#switch`。ここでもパスワードを入力する。
-5. 確認: macbook-air から `ssh ms-a2 sudo -k true` と `ssh mac-studio sudo -k true` を実行し、Touch ID だけで通ることを確かめる。`ssh -o ForwardAgent=no ms-a2 sudo -k true` ではパスワードを求められることも確かめる。
+3. mac-studio: `ssh mac-studio` してから `cd ~/dotfiles && git pull && nix run .#switch`。ここでもパスワードを入力する。
+4. 確認: macbook-air から `ssh mac-studio sudo -k true` が Touch ID だけで通ること、`ssh ms-a2 sudo -k true` がパスワードを求めることを確かめる。
 
 ### 3.2 cachix substituter を実効化
 
@@ -235,34 +233,7 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 ### 3.5 Fleet による端末管理
 
-Fleet サーバーは ms-a2 で動き (`hosts/ms-a2/fleet.nix`)、tailnet 内の `https://ms-a2.tailc30b81.ts.net:8443` だけに公開する。MySQL 8.4 と Redis は loopback に閉じる。DB パスワード、MDM 用サーバー鍵、初期 admin、enroll secret は初回起動時に ms-a2 上で生成し、repo には置かない (`/var/lib/fleet`、root 0600)。
-
-dotfiles の配布:
-
-1. CI が main で通ると `promote` job が `deploy` branch を fast-forward する (巻き戻さない)
-2. ms-a2 の `fleet-controller.timer` (5 分毎) が `git ls-remote` で `deploy` を読み、適用スクリプト (`scripts/fleet/dotfiles-apply.sh`) に commit を埋めて Fleet に登録し、policy「dotfiles: applied CI-green main」の query もその commit に更新する
-3. policy に失敗した Mac に Fleet が root でスクリプトを実行する。ユーザー権限で ff-only pull と build を行い、OS 層を root で activate して `/var/db/dotfiles.plist` に適用済み commit を書く。branch が main 以外、または未 commit の変更がある Mac は触らない。同じ commit への再試行は 3 回まで
-
-Fleet Free には policy 連動の自動スクリプト実行が無い (Premium) ため、controller がそれを代替する。GitHub の REST API は未認証だと 60 回/時で詰まるので使わない。
-
-Mac の登録 (1 台 1 回): `nix run .#fleet-enroll`。ms-a2 から enroll secret を ssh で読み、`fleetctl package` で fleetd を作って install する (sudo が要る)。
-
-MDM (DNS profile の配布):
-
-1. Fleet UI (Settings → Integrations → MDM) で CSR を取り、Apple Push Certificates Portal で APNs 証明書を発行して戻す。毎年同じ Apple Account で更新する。別の Account で更新すると全端末の MDM を入れ直すことになる
-2. 各 Mac で Fleet Desktop から MDM 登録を承認する
-3. DNS resolver (egahika.dev `gateway.tf`) の DoH URL を ms-a2 の `/var/lib/fleet/doh-url` に置くと、controller が `com.apple.dnsSettings.managed` profile を配る。`ts.net` と `captive.apple.com` は DoH から外す。手で入れた NextDNS profile は配布を確認してから消す
-
-確認:
-
-```bash
-ssh ms-a2 systemctl status fleet fleet-controller.timer
-ssh ms-a2 journalctl -u fleet-controller -n 20      # apply <sha> on host <id>
-defaults read /var/db/dotfiles rev                  # Mac 側の適用済み commit
-git ls-remote origin refs/heads/deploy
-```
-
-Fleet UI の admin 資格情報は ms-a2 の `/var/lib/fleet/admin.json` にある。初回ログイン後にパスワードを変える場合は、controller が使えるようにこのファイルも更新する。
+Fleet server は AWS に置く (構築前)。ms-a2 には置かない。設計と理由は `docs/security/threat-model.md` §5。dotfiles 側の部品は配布の仕組みとして残してある: CI の `promote` job が CI 緑の main だけを `deploy` branch へ fast-forward し、`scripts/fleet-controller.py` が `deploy` を読んで `scripts/fleet/dotfiles-apply.sh` を Fleet 経由で各 Mac に root で流す。
 
 ### 3.4 SSH 鍵の役割分担とローテーション
 

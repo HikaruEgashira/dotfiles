@@ -73,7 +73,7 @@ let
   };
 in
 {
-  options.dotfiles.ssh.sudoAgentForward = lib.mkEnableOption "forwarding the Secretive agent (Touch ID gated sudo key) to mac-studio and ms-a2";
+  options.dotfiles.ssh.sudoAgentForward = lib.mkEnableOption "forwarding the Secretive agent (Touch ID gated sudo key) to mac-studio";
 
   config = {
     launchd.agents = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
@@ -142,8 +142,9 @@ in
           ProxyCommand = "/run/current-system/sw/bin/tailscale nc %h %p";
           StrictHostKeyChecking = "accept-new";
         };
-        # 転送するのは Secretive の agent だけにし、ファイル鍵の agent は remote の root から使わせない
-        "ms-a2 mac-studio" = lib.mkIf config.dotfiles.ssh.sudoAgentForward {
+        # 転送するのは Secretive の agent だけにし、ファイル鍵の agent は remote の root から使わせない。
+        # ms-a2 には転送しない: 侵害前提の host の root に、mac-studio の sudo を通す署名を要求させない
+        "mac-studio" = lib.mkIf config.dotfiles.ssh.sudoAgentForward {
           ForwardAgent = secretiveSocket;
         };
         "github.com" = {
