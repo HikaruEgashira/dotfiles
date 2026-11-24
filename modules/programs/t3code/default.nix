@@ -1,7 +1,10 @@
 { lib, ... }:
 {
-  # policy.json を置けない host (root 無し) でも送信を止める
-  home.sessionVariables.T3CODE_TELEMETRY_ENABLED = "false";
+  # policy.json を置けない host (root 無し) でも PostHog と Axiom への relay trace を止める
+  home.sessionVariables = {
+    T3CODE_TELEMETRY_ENABLED = "false";
+    T3CODE_OTEL_SDK_DISABLED = "true";
+  };
 
   # T3 Code opens theme files with O_NOFOLLOW, so store symlinks from home.file are skipped
   home.activation.t3codeThemes = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
