@@ -63,7 +63,11 @@ flowchart LR
 | F3  | ms-a2 の claude self-hosted runner が `/etc/claude-runner/env` に token を持つ                                                                                                                      | 「認証情報なし」の例外                                     | token の権限を runner 登録だけに絞り、失効手順を持つ。可能なら gh-runner と同じく broker 経由にする | 未対応                                                |
 | F4  | tailnet の ACL。ms-a2 は利用者と同じ identity で登録されており、既定 ACL では mac-studio・macbook-air の全 port と Tailscale SSH に届く                                                             | ACL がコード管理されていない                               | ms-a2 を `tag:untrusted-dev` にし、高区分への通信を拒否する ACL をコードで管理する                  | 未対応                                                |
 
-## 5. Fleet を AWS に置く設計方針
+## 5. CI runner の扱い
+
+ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret や OIDC を使うことは許容する。job ごとに使い捨ての環境で受け取り、終われば消えるため。禁止するのは、ホストに資格情報が最初から置かれている状態である。
+
+## 6. Fleet を AWS に置く設計方針
 
 - 公開面: tailnet 内からだけ到達できるようにする (subnet router か Tailscale on ECS)。インターネットに公開しない
 - 実行: ECS Fargate。DB は Aurora MySQL Serverless v2 (0 ACU で自動停止)、Redis は ElastiCache
@@ -71,7 +75,7 @@ flowchart LR
 - controller: 同じ VPC の Lambda か ECS scheduled task。`deploy` branch だけを読む。`deploy` は CI 緑の main だけが fast-forward する
 - 変更経路: iac-aws の main push から OIDC で apply する。ms-a2 の runner には、この state と role を触らせない
 
-## 6. 残るリスク
+## 7. 残るリスク
 
 - macbook-air が侵害されると、sudo 鍵の署名要求を Touch ID で通してしまう可能性がある。Touch ID の確認画面に要求元が出ないため、利用者は区別できない
 - GitHub の main を書き換えられる者 (mac-studio の token 保有者) は、CI を通れば全 Mac に配布できる。CI は改ざん検知ではなく品質の関門にすぎない
