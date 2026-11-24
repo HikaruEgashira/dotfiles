@@ -11,6 +11,7 @@ type Mode = {
   text: Hex;
   mutedForeground: Hex;
   messageSurface: Hex;
+  sidebarRowSelected: Hex;
 };
 
 const dark: Mode = {
@@ -50,9 +51,12 @@ theme.inputs.light = {
 };
 theme.inputs.dark = {
   ...theme.inputs.dark,
+  "gray-700": dark.sidebarRowSelected,
   "bg-user-message": dark.messageSurface,
   "text-user-message": dark.text,
 };
+// Panes and code blocks take their background from the code theme.
+theme.codeTheme = { dark: "vesper" };
 
 const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "surface-1" } };
 
