@@ -54,6 +54,8 @@ theme.inputs.dark = {
   "text-user-message": dark.text,
 };
 
+// Desktop paints panes and code blocks from the code theme; vitesse-dark (#121212) is the closest neutral it accepts.
+theme.codeTheme = { dark: "vitesse-dark" };
 const LOOK: ThemeSetArgs = { colors: theme, backdrop: { color: "surface-1" } };
 
 export const register: Register = (on) => {
