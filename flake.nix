@@ -114,7 +114,6 @@
                   ./home.nix
                   ./hosts/linux/home.nix
                 ];
-                programs.gypxy.hub.enable = true;
               };
             };
           }

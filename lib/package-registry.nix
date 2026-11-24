@@ -47,20 +47,10 @@ let
             echo '  mkdir -p "$GH_CONFIG_DIR"'
             echo '  cp "$HOME/.config/gh/config.yml" "$GH_CONFIG_DIR/config.yml" 2>/dev/null || true'
             echo 'fi'
-            # gypxy の対象 owner は hub に向ける。git の insteadOf で remote が hub になるので gh も揃えないと host を解決できない
-            echo 'if [ -z "''${GH_HOST:-}" ] && [ -n "''${GYPXY_GH_HOST:-}" ]; then'
-            echo '  owner="" prev=""'
-            echo '  for a in "$@"; do'
-            echo '    case "$prev" in -R|--repo) owner=''${a%%/*} ;; esac'
-            echo '    case "$a" in --repo=*) r=''${a#--repo=}; owner=''${r%%/*} ;; esac'
-            echo '    prev=$a'
-            echo '  done'
-            echo '  if [ -z "$owner" ]; then'
-            echo '    url=$(git remote get-url origin 2>/dev/null || true)'
-            echo '    case "$url" in *"$GYPXY_GH_HOST"/*) export GH_HOST="$GYPXY_GH_HOST" ;; esac'
-            echo '  else'
-            echo '    case " $GYPXY_OWNERS " in *" $owner "*) export GH_HOST="$GYPXY_GH_HOST" ;; esac'
-            echo '  fi'
+            # git の insteadOf で remote が loopback の gypxy hub になると gh は repo を解決できない。URL から owner/repo を戻す
+            echo 'if [ -z "''${GH_REPO:-}" ]; then'
+            echo '  url=$(git remote get-url origin 2>/dev/null || true)'
+            echo '  case "$url" in http://127.0.0.1:9300/*/*) r=''${url#http://127.0.0.1:9300/}; export GH_REPO=''${r%.git} ;; esac'
             echo 'fi'
             # GH_HOST が github.com 以外 (gypxy hub) なら gh は GHES として扱い GH_ENTERPRISE_TOKEN を読む
             # token 不要な呼び出しは ghtkn を通さない。agent が locked だと `gh --version` すら無出力で失敗し、

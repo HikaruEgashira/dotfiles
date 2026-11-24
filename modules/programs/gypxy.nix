@@ -45,8 +45,6 @@ let
       listen = "127.0.0.1:${toString adminPort}";
       token_file = "${stateDir}/admin-token";
     };
-    # tailscale serve が TLS を終端して loopback から転送する
-    trusted_proxies = [ "127.0.0.1/32" ];
     log_level = "info";
   };
 
@@ -61,7 +59,12 @@ let
 in
 {
   options.programs.gypxy = {
-    hub.enable = lib.mkEnableOption "gypxy hub that serves the tailnet";
+    # token を他の端末に渡さないよう、各端末が自分の loopback で hub を動かす (docs/security/threat-model.md F2)
+    hub.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = cfg.client.enable;
+      description = "Run a gypxy hub on this host's loopback.";
+    };
     # 起動時に取得しない。store の固定 hash の asset を使い、版を上げると activation が unit を再起動する
     package = lib.mkOption {
       type = lib.types.package;
@@ -76,7 +79,7 @@ in
     };
     url = lib.mkOption {
       type = lib.types.str;
-      default = "https://ms-a2.tailc30b81.ts.net";
+      default = "http://127.0.0.1:${toString port}";
     };
     owners = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -88,11 +91,7 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.client.enable {
-      # gh wrapper (lib/package-registry.nix) が対象 owner のときだけ GH_HOST に hub を入れる
-      home.sessionVariables = {
-        GYPXY_GH_HOST = lib.removePrefix "https://" cfg.url;
-        GYPXY_OWNERS = lib.concatStringsSep " " cfg.owners;
-      };
+      # gh は GH_HOST に https でしか繋がないため loopback の hub を使えない。gh は github.com に直接繋ぎ、git だけ hub を通す
       programs.git.settings = {
         credential."${cfg.url}".helper = [
           ""
@@ -107,10 +106,24 @@ in
       };
     })
 
-    (lib.mkIf cfg.hub.enable {
+    (lib.mkIf (cfg.hub.enable && pkgs.stdenv.hostPlatform.isDarwin) {
+      launchd.agents.gypxy = {
+        enable = true;
+        config = {
+          Label = "dev.egahika.gypxy";
+          ProgramArguments = [ "${run}" ];
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "${config.home.homeDirectory}/Library/Logs/gypxy.log";
+          StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/gypxy.log";
+        };
+      };
+    })
+
+    (lib.mkIf (cfg.hub.enable && pkgs.stdenv.hostPlatform.isLinux) {
       systemd.user.services.gypxy = {
         Unit = {
-          Description = "gypxy GitHub reverse proxy (tailnet hub)";
+          Description = "gypxy GitHub reverse proxy (loopback hub)";
           After = [ "network-online.target" ];
         };
         Service = {

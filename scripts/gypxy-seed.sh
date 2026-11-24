@@ -28,8 +28,9 @@ trap 'rm -rf "$work"' EXIT
 GH_HOST=github.com gh release download "$tag" --repo "$repo" --dir "$work" \
   --pattern "$asset" --pattern checksums.txt --pattern checksums.txt.sigstore.json
 
+# organization 改名 (sisaku-security -> gh-intel) 前の release は旧名の workflow identity で署名されている
 "${cosign[@]}" verify-blob --bundle "$work/checksums.txt.sigstore.json" \
-  --certificate-identity "https://github.com/$repo/.github/workflows/gypxy-release.yml@refs/tags/$tag" \
+  --certificate-identity-regexp "^https://github.com/(gh-intel|sisaku-security)/gh-intel/\\.github/workflows/gypxy-release\\.yml@refs/tags/${tag//./\\.}\$" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com "$work/checksums.txt"
 
 signed=$(awk -v f="$asset" '$2 == f { print $1 }' "$work/checksums.txt")

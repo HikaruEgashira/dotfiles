@@ -24,8 +24,8 @@
 
 ## gypxy dogfooding
 
-- gh CLI (wrapper が対象 owner のとき GH_HOST を hub にする) と `https://github.com/gh-intel/` への git は gypxy (gh-intel/packages/gypxy) を経由する。hub は ms-a2、tailnet の `https://ms-a2.tailc30b81.ts.net`
+- `https://github.com/gh-intel/` への git は gypxy (gh-intel/packages/gypxy) を経由する。hub は各端末の loopback `http://127.0.0.1:9300` で動き、token を他の端末に渡さない。gh は https 必須のため hub を経由せず github.com に直接繋ぐ
 - gh-intel の clone・fetch・push の失敗、遅延、不整合は gypxy のバグを疑う
-- ログを確認する: `ssh ms-a2 journalctl --user -u gypxy`、`~/.local/state/gypxy/{audit,findings}.jsonl`、応答ヘッダ `X-GitHub-Proxy-Cache`
+- ログを確認する: macOS は `~/Library/Logs/gypxy.log`、Linux は `journalctl --user -u gypxy`。どちらも `~/.local/state/gypxy/{audit,findings}.jsonl` と応答ヘッダ `X-GitHub-Proxy-Cache`
 - gypxy が原因なら gh-intel/gh-intel に再現手順とログを添えて Issue を起票する
 - 作業を止めないための迂回: dotfiles で `programs.gypxy.client.enable = false` にして適用する
