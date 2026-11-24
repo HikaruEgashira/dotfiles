@@ -8,6 +8,7 @@ _:
     ../../modules/darwin/native-apps.nix
     ../../modules/darwin/claude-code.nix
     ../../modules/darwin/t3code.nix
+    ../../modules/darwin/telemetry.nix
     ../../modules/darwin/tailscale-ssh.nix
   ];
   dotfiles.secretive = true;

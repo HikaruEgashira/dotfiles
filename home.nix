@@ -17,6 +17,7 @@
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix
     ./modules/programs/t3code
+    ./modules/programs/telemetry-optout.nix
     ./modules/programs/harness/ai-sandbox.nix
     ./modules/programs/harness/claude.nix
     ./modules/programs/harness/codex.nix

@@ -8,9 +8,8 @@
     ./gypxy.nix
     ./claude-runner.nix
     ./sudo-agent-auth.nix
+    ../../modules/nixos/telemetry.nix
   ];
-
-  environment.etc."t3code/policy.json".source = ../../modules/programs/t3code/policy.json;
 
   boot = {
     loader.systemd-boot.enable = true;

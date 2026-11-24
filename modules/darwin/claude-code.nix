@@ -9,6 +9,8 @@ let
       env = {
         CLAUDE_CODE_EXPERIMENTAL_CODE_MODE = "1";
         CLAUDE_CODE_ENABLE_TELEMETRY = "1";
+        DISABLE_TELEMETRY = "1";
+        DISABLE_ERROR_REPORTING = "1";
         OTEL_METRICS_EXPORTER = "otlp";
         OTEL_LOGS_EXPORTER = "otlp";
         OTEL_EXPORTER_OTLP_PROTOCOL = "http/json";

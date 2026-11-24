@@ -1,5 +1,7 @@
 # NixOS-WSL のシステム層。ユーザー層は homeConfigurations."hikae@wsl" (./home.nix) が持つ
 {
+  imports = [ ../../modules/nixos/telemetry.nix ];
+
   wsl = {
     enable = true;
     defaultUser = "hikae";
@@ -7,8 +9,6 @@
 
   # WSL の session 終了で ssh-agent / ghtkn-agent の user service を止めない
   users.users.hikae.linger = true;
-
-  environment.etc."t3code/policy.json".source = ../../modules/programs/t3code/policy.json;
 
   security.sudo.wheelNeedsPassword = false;
 
