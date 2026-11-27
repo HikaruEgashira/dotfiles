@@ -57,7 +57,7 @@ with Diagram(
                 ledger = Rack("ledger (studio)")
 
             with Cluster("資格情報"):
-                gh = Vault("GitHub token\n(studio: 書込 / air: 読取)")
+                gh = Vault("ghtkn\nGitHub App の token\n(studio: 書込 / air: 読取)")
                 aws = SingleSignOn("AWS broker")
                 age = SecretsManager("secret (age)\nrepo ごとに渡す")
                 auth = Vault("ssh 認証鍵")
