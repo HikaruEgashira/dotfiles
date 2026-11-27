@@ -53,7 +53,7 @@ with Diagram(
         msa2 = Ubuntu("ms-a2\n認証情報なし\nAI agent / CI runner\nsudo はパスワード")
 
     with Cluster("AWS"):
-        broker = SingleSignOn("credential broker\n(mac-studio host)\nsandbox は socket 経由のみ")
+        broker = SingleSignOn("credential broker\n(mac-studio)")
         with Cluster("main 951872725222"):
             ro = IAMRole("ReadOnlyAccess\n(sso-readonly = 既定)")
             admin = IAMRole("AdministratorAccess\n(hikae-admin-sso)")
@@ -75,12 +75,12 @@ with Diagram(
     ai >> Edge(color=ALLOW, label="実験・CI job (使い捨て secret)") >> msa2
     human >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> ledger
     human >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> hikaevi
-    ledger >> Edge(color=ALLOW, label="sandbox で実行\nbroker 経由の資格情報") >> studio
-    hikaevi >> Edge(color=ALLOW, label="sandbox で実行\n資格情報なし") >> msa2
+    ledger >> Edge(color=ALLOW, label="AWS は broker 経由") >> studio
+    hikaevi >> Edge(color=ALLOW, label="資格情報なし") >> msa2
     hikaevi >> Edge(color=ALLOW, label="PR (bot、CI 緑で merge)") >> gh
 
     studio >> Edge(color=ALLOW, label="push (ghtkn)") >> gh
-    studio >> Edge(color=ALLOW, label="credential_process") >> broker
+    studio >> Edge(color=ALLOW, label="資格情報を取得") >> broker
     broker >> Edge(color=ALLOW, label="既定") >> ro
     broker >> Edge(color=ROOT, label="明示切替時のみ") >> admin
     admin >> Edge(color=ROOT, label="role chain") >> apply
