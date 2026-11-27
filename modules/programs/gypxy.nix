@@ -82,14 +82,15 @@ in
     };
     client.enable = lib.mkOption {
       type = lib.types.bool;
-      # hub が止まると対象 owner の git が全端末で失敗する。その間は false にして適用し直す
+      # hub が止まるとその端末の github.com への git が全て失敗する。その間は false にして適用し直す
       default = true;
-      description = "Route git traffic for the listed owners through the hub.";
+      description = "Route all github.com git traffic through the hub.";
     };
     url = lib.mkOption {
       type = lib.types.str;
       default = "http://127.0.0.1:${toString port}";
     };
+    # mirror する owner。それ以外の owner も hub を通るが GitHub へ中継するだけ
     owners = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
@@ -100,18 +101,18 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.client.enable {
-      # gh は GH_HOST に https でしか繋がないため loopback の hub を使えない。gh は github.com に直接繋ぎ、git だけ hub を通す
+      # gh は GH_HOST に https でしか繋がないため loopback の hub を使えず、API は github.com に直接繋ぐ (gh-intel/gh-intel#1083)
       programs.git.settings = {
         credential."${cfg.url}".helper = [
           ""
           ghCredentialHelper
         ];
-        url = lib.listToAttrs (
-          map (owner: {
-            name = "${cfg.url}/${owner}/";
-            value.insteadOf = "https://github.com/${owner}/";
-          }) cfg.owners
-        );
+        # 全 owner の git を hub に通す。owners 以外は mirror せず GitHub へ中継される (mirror_scope = covered)
+        url."${cfg.url}/".insteadOf = [
+          "https://github.com/"
+          "git@github.com:"
+          "ssh://git@github.com/"
+        ];
       };
     })
 

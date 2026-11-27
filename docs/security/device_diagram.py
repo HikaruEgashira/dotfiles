@@ -120,7 +120,7 @@ def mac(name, studio):
         flow(resolver, dns, "暗号化 DNS")
         deny(dns, tel, "名前を返さない")
         flow(ghtkn, hub)
-        flow(hub, github, "git")
+        flow(hub, github, "git (全 owner)")
         flow(ghtkn, github, "API")
         if studio:
             flow(broker, aws, "一時資格情報")
@@ -161,6 +161,6 @@ with diagram("ms-a2"):
     flow(runner, job, "起動")
     deny(job, tpm, "読めない")
     flow(cenv, crunner, "起動時に渡す")
-    flow(hub, github, "gh-intel の git")
+    flow(hub, github, "git (全 owner)")
     flow(crunner, github, "git / API")
     flow(job, github, "git / API")
