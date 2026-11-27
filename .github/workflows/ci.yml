@@ -151,12 +151,21 @@ jobs:
     environment: deploy
     timeout-minutes: 5
     runs-on: ubuntu-24.04
+    # deploy の ruleset は deploy key だけを通す。秘密鍵は GitHub に置かず、environment deploy に固定した OIDC role で Secrets Manager から取る
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     concurrency:
       group: promote-deploy
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::951872725222:role/dotfiles-deploy
+          aws-region: ap-northeast-1
       - name: Fast-forward deploy to the verified commit
         env:
           GH_TOKEN: ${{ github.token }}
@@ -164,13 +173,14 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if gh api "repos/$REPO/git/ref/heads/deploy" >/dev/null 2>&1; then
-            # force=false なので、後着の古い run が deploy を巻き戻すことはない (non fast-forward は 422)
-            if ! gh api -X PATCH "repos/$REPO/git/refs/heads/deploy" -f sha="$SHA" -F force=false >/dev/null; then
-              status=$(gh api "repos/$REPO/compare/$SHA...deploy" --jq .status)
-              [ "$status" = ahead ] || [ "$status" = identical ] || { echo "::error::deploy could not move to $SHA ($status)"; exit 1; }
-              echo "deploy is already ahead of $SHA"
-            fi
-          else
-            gh api -X POST "repos/$REPO/git/refs" -f ref=refs/heads/deploy -f sha="$SHA" >/dev/null
+          key="$RUNNER_TEMP/deploy_key"
+          (umask 077; aws secretsmanager get-secret-value --secret-id dotfiles/deploy-key --query SecretString --output text > "$key")
+          trap 'rm -f "$key"' EXIT
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "$RUNNER_TEMP/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts -o StrictHostKeyChecking=yes"
+          # 非 force なので、後着の古い run が deploy を巻き戻すことはない
+          if ! git push "git@github.com:$REPO.git" "$SHA:refs/heads/deploy"; then
+            status=$(gh api "repos/$REPO/compare/$SHA...deploy" --jq .status)
+            [ "$status" = ahead ] || [ "$status" = identical ] || { echo "::error::deploy could not move to $SHA ($status)"; exit 1; }
+            echo "deploy is already ahead of $SHA"
           fi
