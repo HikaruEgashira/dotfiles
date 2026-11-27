@@ -15,7 +15,6 @@ from diagrams.aws.management import Organizations
 from diagrams.aws.security import IAMRole, SingleSignOn
 from diagrams.generic.compute import Rack
 from diagrams.generic.device import Mobile
-from diagrams.generic.network import VPN
 from diagrams.generic.os import Ubuntu
 from diagrams.onprem.client import Client
 from diagrams.onprem.vcs import Github
@@ -26,7 +25,7 @@ ALLOW = "darkgreen"
 ROOT = "firebrick"
 DENY = "gray"
 
-graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.7", "ranksep": "1.4", "splines": "ortho", "forcelabels": "true"}
+graph = {"rankdir": "TB", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.6", "ranksep": "1.0", "splines": "ortho", "forcelabels": "true"}
 node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
@@ -39,20 +38,21 @@ with Diagram(
     node_attr=node,
     edge_attr=edge,
 ):
-    with Cluster("信頼: 高"):
-        with Cluster("macbook-air"):
-            human = User("人間")
-            air = Mobile("操作端末\nsudo 鍵")
-        with Cluster("mac-studio"):
-            studio = Client("開発機\n認証情報あり")
-            ai = Rack("Claude Code / Codex")
-            ledger = Rack("ledger")
-            broker = SingleSignOn("AWS 認証")
+    with Cluster("tailnet (ACL: iac-tailscale)"):
+        with Cluster("信頼: 高"):
+            with Cluster("macbook-air"):
+                human = User("人間")
+                air = Mobile("操作端末\nsudo 鍵")
+            with Cluster("mac-studio"):
+                studio = Client("開発機\n認証情報あり")
+                ai = Rack("Claude Code / Codex")
+                ledger = Rack("ledger")
+                broker = SingleSignOn("AWS 認証")
 
-    with Cluster("信頼: 低 (侵害前提)"):
-        with Cluster("ms-a2"):
-            msa2 = Ubuntu("開発機\n認証情報なし")
-            hikaevi = Rack("hikaevi")
+        with Cluster("信頼: 低 (侵害前提)"):
+            with Cluster("ms-a2 (tag:untrusted-dev)"):
+                msa2 = Ubuntu("開発機\n認証情報なし")
+                hikaevi = Rack("hikaevi")
 
     with Cluster("AWS"):
         with Cluster("main 951872725222"):
@@ -62,12 +62,11 @@ with Diagram(
         with Cluster("sisaku-security 034111987897"):
             sisaku = IAMRole("ReadOnly")
         with Cluster("device-fleet 607106784884"):
-            fleet = Organizations("Fleet (計画)")
+            fleet = Organizations("Fleet (計画)\ntailnet 内からのみ")
         with Cluster("lab-seccamp26d2 931932531320"):
             lab = IAMRole("apply")
 
     gh = Github("GitHub")
-    tailnet = VPN("tailnet\n(ACL: iac-tailscale)")
 
     human >> Edge(color=ALLOW, xlabel="操作") >> air
     air >> Edge(color=ALLOW, xlabel="操作") >> studio
@@ -90,10 +89,5 @@ with Diagram(
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio
 
-    for host in (air, studio):
-        host >> Edge(color=ALLOW, style="dotted", dir="both") >> tailnet
-    msa2 >> Edge(color=DENY, style="dotted", xlabel="tag:untrusted-dev") >> tailnet
-    tailnet >> Edge(color=ALLOW, xlabel="tailnet 内だけ") >> fleet
-
-    for dst, why in [(studio, "書込禁止"), (broker, "到達禁止"), (fleet, "到達禁止")]:
+    for dst, why in [(studio, "書込禁止"), (fleet, "到達禁止")]:
         msa2 >> Edge(color=DENY, style="dashed", xlabel=f"✕ {why}") >> dst

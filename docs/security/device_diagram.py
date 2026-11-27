@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["diagrams==0.24.4"]
 # ///
-"""端末ごとの内部構成 (OS 層・ユーザー層・agent sandbox・資格情報・常駐・更新元) を図にする。
+"""端末ごとの内部構成 (OS 層・ユーザー層・agent sandbox・資格情報・常駐) を図にする。
 
 uv run docs/security/device_diagram.py  →  docs/security/device.png
 """
@@ -10,26 +10,28 @@ uv run docs/security/device_diagram.py  →  docs/security/device.png
 from pathlib import Path
 
 from diagrams import Cluster, Diagram, Edge
-from diagrams.aws.management import Organizations
 from diagrams.aws.security import SecretsManager, SingleSignOn
 from diagrams.generic.compute import Rack
-from diagrams.generic.os import LinuxGeneral
-from diagrams.onprem.client import Client, User
+from diagrams.generic.network import Firewall
+from diagrams.onprem.client import Client
 from diagrams.onprem.security import Vault
-from diagrams.onprem.vcs import Github
 
 OUT = Path(__file__).with_name("device")
 
 ALLOW = "darkgreen"
-ROOT = "firebrick"
 DENY = "gray"
 
-graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.5", "ranksep": "1.2", "splines": "ortho", "forcelabels": "true"}
+graph = {"rankdir": "TB", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.4", "ranksep": "1.0", "splines": "ortho", "forcelabels": "true"}
 node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
+
+def deny(src, dst):
+    src >> Edge(color=DENY, style="dashed", xlabel="✕") >> dst
+
+
 with Diagram(
-    "端末の内部: 層 / sandbox / 資格情報 / 更新元",
+    "端末の内部",
     filename=str(OUT),
     outformat="png",
     show=False,
@@ -37,47 +39,57 @@ with Diagram(
     node_attr=node,
     edge_attr=edge,
 ):
-    gh = Github("dotfiles\nmain / deploy")
-    fleet = Organizations("Fleet (計画)")
+    with Cluster("macOS (macbook-air / mac-studio)"):
+        with Cluster("OS 層 (nix-darwin, root)"):
+            fw = Firewall("受信遮断\nDNS 暗号化")
+            sudo = Vault("sudo\nSecretive 鍵 → Touch ID")
+            managed = Rack("AI CLI の強制設定\ntelemetry 停止")
+            tsd = Rack("tailscaled\n(SSH は tailnet ACL)")
+            apps = Rack("署名検証済み app")
 
-    with Cluster("macbook-air (信頼: 高)"):
-        air_os = Client("macOS\nnix-darwin")
-        air_home = User("home-manager")
-        air_key = Vault("sudo 鍵\n(Secretive)")
-        air_tok = Vault("ghtkn token\n(読み取り専用)")
-        air_sync = Rack("dotfiles-sync")
-        air_hub = Rack("gypxy hub")
+        with Cluster("ユーザー層 (home-manager)"):
+            pkgs = Rack("package\n(cache と checksum のみ)")
+            with Cluster("常駐 (loopback のみ)"):
+                sync = Rack("dotfiles-sync")
+                hub = Rack("gypxy hub")
+                otel = Rack("telemetry collector")
+                artex = Rack("ARTEX / Postgres")
+                ledger = Rack("ledger (studio)")
 
-    with Cluster("mac-studio (信頼: 高)"):
-        studio_os = Client("macOS\nnix-darwin")
-        studio_home = User("home-manager")
-        with Cluster("AI agent sandbox"):
-            agent = Rack("Claude Code / Codex")
-        with Cluster("sandbox の外の資格情報"):
-            tok = Vault("ghtkn token")
-            broker = SingleSignOn("AWS 認証 broker")
-            age = SecretsManager("age secret")
-        ledger = Rack("ledger")
-        studio_sync = Rack("dotfiles-sync")
-        studio_hub = Rack("gypxy hub")
+            with Cluster("資格情報"):
+                gh = Vault("GitHub token\n(studio: 書込 / air: 読取)")
+                aws = SingleSignOn("AWS broker")
+                age = SecretsManager("secret (age)\nrepo ごとに渡す")
+                auth = Vault("ssh 認証鍵")
+                sign = Vault("署名鍵")
 
-    with Cluster("ms-a2 (信頼: 低、侵害前提)"):
-        msa2_os = LinuxGeneral("NixOS\n+ home-manager")
+            with Cluster("AI agent sandbox (読みは許可・書きは $HOME)"):
+                agent = Rack("Claude Code / Codex")
+
+    agent >> Edge(color=ALLOW, xlabel="仲介") >> gh
+    agent >> Edge(color=ALLOW, xlabel="仲介") >> aws
+    agent >> Edge(color=ALLOW) >> sign
+    agent >> Edge(color=ALLOW) >> otel
+    for dst in (age, auth, artex):
+        deny(agent, dst)
+    ledger >> Edge(color=ALLOW) >> aws
+    sync >> Edge(color=ALLOW, xlabel="適用") >> pkgs
+    hub >> Edge(color=ALLOW) >> gh
+
+    with Cluster("ms-a2 (NixOS, 侵害前提)"):
+        with Cluster("OS 層"):
+            disk = Vault("ディスク暗号化")
+            net = Firewall("sshd なし\ntailnet ACL のみ")
+        with Cluster("job ごとの使い捨て環境"):
+            job = Rack("CI job\n(専用 netns)")
+        runner = Rack("CI runner\n(token なし)")
+        tpm = Vault("TPM 鍵")
+        crunner = Rack("claude runner\n(専用ユーザー)")
+        cenv = Vault("runner token\n(root のみ読める)")
+        mhub = Rack("gypxy hub\n(loopback)")
         hikaevi = Rack("hikaevi")
-        runner = Rack("CI runner\n(job ごと使い捨て)")
-        msa2_hub = Rack("gypxy hub")
 
-    gh >> Edge(color=ROOT, xlabel="deploy") >> fleet
-    fleet >> Edge(color=ROOT, style="bold", xlabel="root") >> air_os
-    fleet >> Edge(color=ROOT, style="bold", xlabel="root") >> studio_os
-    gh >> Edge(color=ALLOW, xlabel="main pull") >> air_sync
-    gh >> Edge(color=ALLOW, xlabel="main pull") >> studio_sync
-    air_sync >> Edge(color=ALLOW) >> air_home
-    studio_sync >> Edge(color=ALLOW) >> studio_home
-    air_os >> Edge(color=ALLOW) >> air_home
-    studio_os >> Edge(color=ALLOW) >> studio_home
-
-    agent >> Edge(color=ALLOW, xlabel="仲介") >> tok
-    agent >> Edge(color=ALLOW, xlabel="仲介") >> broker
-    agent >> Edge(color=DENY, style="dashed", xlabel="✕ 読めない") >> age
-    ledger >> Edge(color=ALLOW) >> broker
+    runner >> Edge(color=ALLOW, xlabel="起動") >> job
+    runner >> Edge(color=ALLOW, xlabel="AWS 経由で認証") >> tpm
+    deny(crunner, cenv)
+    deny(job, tpm)
