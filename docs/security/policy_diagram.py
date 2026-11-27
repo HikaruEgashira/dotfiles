@@ -25,7 +25,7 @@ ALLOW = "darkgreen"
 ROOT = "firebrick"
 DENY = "gray"
 
-graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.7", "ranksep": "1.4", "splines": "line", "forcelabels": "true"}
+graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.7", "ranksep": "1.4", "splines": "ortho", "forcelabels": "true"}
 node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
