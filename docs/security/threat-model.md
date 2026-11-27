@@ -2,12 +2,12 @@
 
 ## 1. 信頼区分
 
-| 端末        | 役割                                                                | 持つ認証情報                                                                                              | 信頼                         |
-| ----------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| macbook-air | シンクライアント。手元で操作する入口                                | Secure Enclave の sudo 鍵 (Secretive、署名ごとに Touch ID)。tailnet の利用者 identity                     | 高。ここが落ちると他も落ちる |
-| mac-studio  | 認証情報を持つ開発機。自律 AI `ledger` が常駐                       | GitHub user token (ghtkn、8h)、AWS SSO、`~/.config/secrets/env.age` の secret、Claude / OpenAI の資格情報 | 高                           |
-| ms-a2       | 認証情報を持たない開発機。自律 AI `hikaevi`・CI job・実験を走らせる | 原則なし (例外は §4 F3)                                                                                   | 低                           |
-| AWS (Fleet) | 端末管理と dotfiles 配布の制御面                                    | Fleet admin、enroll secret、MDM の APNs 証明書                                                            | 高。全 Mac に root で書ける  |
+| 端末        | 役割                                                                | 持つ認証情報                                                                                                                                      | 信頼                         |
+| ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| macbook-air | シンクライアント。手元で操作する入口                                | Secure Enclave の sudo 鍵 (Secretive、署名ごとに Touch ID)。tailnet の利用者 identity。AWS の資格情報は持たず、AWS には mac-studio 経由でだけ届く | 高。ここが落ちると他も落ちる |
+| mac-studio  | 認証情報を持つ開発機。自律 AI `ledger` が常駐                       | GitHub user token (ghtkn、8h)、AWS SSO、`~/.config/secrets/env.age` の secret、Claude / OpenAI の資格情報                                         | 高                           |
+| ms-a2       | 認証情報を持たない開発機。自律 AI `hikaevi`・CI job・実験を走らせる | 原則なし (例外は §4 F3)                                                                                                                           | 低                           |
+| AWS (Fleet) | 端末管理と dotfiles 配布の制御面                                    | Fleet admin、enroll secret、MDM の APNs 証明書                                                                                                    | 高。全 Mac に root で書ける  |
 
 **不変条件:** 信頼の低い区分から高い区分へは、書き込みもコード実行もさせない。ms-a2 から mac-studio・macbook-air・AWS の制御面へ向かう経路は、読み取りも含めて最小にする。
 

@@ -30,116 +30,132 @@ let
   ];
 in
 {
-  home.file.".local/bin/aws-cred-client" = {
-    text = ''
-      #!/bin/sh
-      exec ${lib.escapeShellArgs broker} client "$@"
-    '';
-    executable = true;
+  options.dotfiles.aws.enable = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "AWS の SSO 設定と credential broker を置く。シンクライアントは false にし、AWS には mac-studio 経由でだけ届く";
   };
 
-  launchd.agents.aws-cred-agent = {
-    enable = true;
-    config = {
-      Label = "dev.egahika.aws-cred-agent";
-      ProgramArguments =
-        broker
-        ++ [
-          "agent"
-          "--aws"
-          "${pkgs.awscli2}/bin/aws"
-        ]
-        ++ lib.concatMap (p: [
-          "--allow"
-          p
-        ]) sourceProfiles;
-      RunAtLoad = true;
-      KeepAlive = true;
-      StandardOutPath = "${home}/Library/Logs/aws-cred-agent.log";
-      StandardErrorPath = "${home}/Library/Logs/aws-cred-agent.log";
-    };
-  };
+  config = lib.mkMerge [
+    (lib.mkIf (!config.dotfiles.aws.enable) {
+      # 以前の generation が残した SSO token を消し、再ログインしない限り AWS に届かないようにする
+      home.activation.purgeAwsSession = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        run rm -rf "${home}/.aws/sso/cache" "${home}/.aws/cli/cache"
+      '';
+    })
+    (lib.mkIf config.dotfiles.aws.enable {
+      home.file.".local/bin/aws-cred-client" = {
+        text = ''
+          #!/bin/sh
+          exec ${lib.escapeShellArgs broker} client "$@"
+        '';
+        executable = true;
+      };
 
-  home.file.".aws/config".text = ''
-    [sso-session hikae]
-    sso_start_url = https://d-9567730231.awsapps.com/start
-    sso_region = ap-northeast-1
-    sso_registration_scopes = sso:account:access
+      launchd.agents.aws-cred-agent = {
+        enable = true;
+        config = {
+          Label = "dev.egahika.aws-cred-agent";
+          ProgramArguments =
+            broker
+            ++ [
+              "agent"
+              "--aws"
+              "${pkgs.awscli2}/bin/aws"
+            ]
+            ++ lib.concatMap (p: [
+              "--allow"
+              p
+            ]) sourceProfiles;
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "${home}/Library/Logs/aws-cred-agent.log";
+          StandardErrorPath = "${home}/Library/Logs/aws-cred-agent.log";
+        };
+      };
 
-    # host 専用 source。sandbox では ~/.aws/sso が deny されるため直接使えない。
-    [profile sso-readonly]
-    region = ap-northeast-1
-    sso_session = hikae
-    sso_account_id = 951872725222
-    sso_role_name = ReadOnlyAccess
+      home.file.".aws/config".text = ''
+        [sso-session hikae]
+        sso_start_url = https://d-9567730231.awsapps.com/start
+        sso_region = ap-northeast-1
+        sso_registration_scopes = sso:account:access
 
-    [profile sso-admin]
-    region = ap-northeast-1
-    sso_session = hikae
-    sso_account_id = 951872725222
-    sso_role_name = AdministratorAccess
+        # host 専用 source。sandbox では ~/.aws/sso が deny されるため直接使えない。
+        [profile sso-readonly]
+        region = ap-northeast-1
+        sso_session = hikae
+        sso_account_id = 951872725222
+        sso_role_name = ReadOnlyAccess
 
-    # sisaku-security (gh-intel 本番) の Identity Center ReadOnlyAccess。secret・SSM・kms:Decrypt は permission set が拒否する。
-    [profile sisaku-security-readonly-sso]
-    region = ap-northeast-1
-    sso_session = hikae
-    sso_account_id = 034111987897
-    sso_role_name = ReadOnlyAccess
+        [profile sso-admin]
+        region = ap-northeast-1
+        sso_session = hikae
+        sso_account_id = 951872725222
+        sso_role_name = AdministratorAccess
 
-    [profile sisaku-security-readonly]
-    region = ap-northeast-1
-    credential_process = ${client} sisaku-security-readonly-sso
+        # sisaku-security (gh-intel 本番) の Identity Center ReadOnlyAccess。secret・SSM・kms:Decrypt は permission set が拒否する。
+        [profile sisaku-security-readonly-sso]
+        region = ap-northeast-1
+        sso_session = hikae
+        sso_account_id = 034111987897
+        sso_role_name = ReadOnlyAccess
 
-    # `default` = Identity Center ReadOnlyAccess permission set (長期 AKIA なし)。
-    [default]
-    region = ap-northeast-1
-    credential_process = ${client} sso-readonly
+        [profile sisaku-security-readonly]
+        region = ap-northeast-1
+        credential_process = ${client} sisaku-security-readonly-sso
 
-    # terraform apply 等の特権操作 (iac-aws ADR-0010 L2)。AWS_PROFILE=hikae-admin-sso で切替。
-    [profile hikae-admin-sso]
-    region = ap-northeast-1
-    credential_process = ${client} sso-admin
+        # `default` = Identity Center ReadOnlyAccess permission set (長期 AKIA なし)。
+        [default]
+        region = ap-northeast-1
+        credential_process = ${client} sso-readonly
 
-    # sso-admin → iac-aws-apply の role chain (CI と権限パリティ)。
-    # chaining のためセッションは 1h だが、host の CLI が無プロンプトで再 assume する。
-    [profile iac-aws-apply]
-    region             = ap-northeast-1
-    credential_process = ${client} iac-aws-apply-chain
+        # terraform apply 等の特権操作 (iac-aws ADR-0010 L2)。AWS_PROFILE=hikae-admin-sso で切替。
+        [profile hikae-admin-sso]
+        region = ap-northeast-1
+        credential_process = ${client} sso-admin
 
-    [profile iac-aws-apply-chain]
-    region            = ap-northeast-1
-    role_arn          = arn:aws:iam::951872725222:role/iac-aws-apply
-    role_session_name = local-apply
-    source_profile    = sso-admin
+        # sso-admin → iac-aws-apply の role chain (CI と権限パリティ)。
+        # chaining のためセッションは 1h だが、host の CLI が無プロンプトで再 assume する。
+        [profile iac-aws-apply]
+        region             = ap-northeast-1
+        credential_process = ${client} iac-aws-apply-chain
 
-    # ARTEX の MicroVM オーケストレーション (ローカル launchd)。
-    # 長期キーを持たず、sso-admin から artex-microvm-run を引受ける。
-    [profile artex-microvm]
-    region             = ap-northeast-1
-    credential_process = ${client} artex-microvm-chain
+        [profile iac-aws-apply-chain]
+        region            = ap-northeast-1
+        role_arn          = arn:aws:iam::951872725222:role/iac-aws-apply
+        role_session_name = local-apply
+        source_profile    = sso-admin
 
-    [profile artex-microvm-chain]
-    region            = ap-northeast-1
-    role_arn          = arn:aws:iam::951872725222:role/artex-microvm-run
-    role_session_name = artex-local
-    source_profile    = sso-admin
+        # ARTEX の MicroVM オーケストレーション (ローカル launchd)。
+        # 長期キーを持たず、sso-admin から artex-microvm-run を引受ける。
+        [profile artex-microvm]
+        region             = ap-northeast-1
+        credential_process = ${client} artex-microvm-chain
 
-    # lab-seccamp26d2 (931932531320, seccamp-2026-d2 の terraform 対象)。
-    # iac-aws-apply@lab の trust は OrganizationAccountAccessRole のみのため 2-hop chain。
-    [profile seccamp-lab-apply]
-    region             = ap-northeast-1
-    credential_process = ${client} seccamp-lab-apply-chain
+        [profile artex-microvm-chain]
+        region            = ap-northeast-1
+        role_arn          = arn:aws:iam::951872725222:role/artex-microvm-run
+        role_session_name = artex-local
+        source_profile    = sso-admin
 
-    [profile seccamp-lab-apply-chain]
-    region            = ap-northeast-1
-    role_arn          = arn:aws:iam::931932531320:role/iac-aws-apply
-    role_session_name = local-apply
-    source_profile    = seccamp-lab-org
+        # lab-seccamp26d2 (931932531320, seccamp-2026-d2 の terraform 対象)。
+        # iac-aws-apply@lab の trust は OrganizationAccountAccessRole のみのため 2-hop chain。
+        [profile seccamp-lab-apply]
+        region             = ap-northeast-1
+        credential_process = ${client} seccamp-lab-apply-chain
 
-    [profile seccamp-lab-org]
-    region            = ap-northeast-1
-    role_arn          = arn:aws:iam::931932531320:role/OrganizationAccountAccessRole
-    role_session_name = local-apply
-    source_profile    = sso-admin
-  '';
+        [profile seccamp-lab-apply-chain]
+        region            = ap-northeast-1
+        role_arn          = arn:aws:iam::931932531320:role/iac-aws-apply
+        role_session_name = local-apply
+        source_profile    = seccamp-lab-org
+
+        [profile seccamp-lab-org]
+        region            = ap-northeast-1
+        role_arn          = arn:aws:iam::931932531320:role/OrganizationAccountAccessRole
+        role_session_name = local-apply
+        source_profile    = sso-admin
+      '';
+    })
+  ];
 }

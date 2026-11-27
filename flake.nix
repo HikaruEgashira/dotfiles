@@ -710,6 +710,7 @@
               dotfiles = {
                 ssh.sudoAgentForward = true;
                 ghtkn.readonly = true;
+                aws.enable = false;
                 orcaBrowser.enable = true;
               };
             }
@@ -760,6 +761,13 @@
             assert !(msA2.config.environment.etc ? "ssh/sudo_authorized_keys");
             assert !msA2.config.security.pam.sshAgentAuth.enable;
             msA2.pkgs.writeText "ms-a2-no-sudo-agent" "ok";
+          thin-client-no-aws =
+            let
+              air = self.homeConfigurations.hikae.config;
+            in
+            assert !(air.home.file ? ".aws/config");
+            assert !(air.launchd.agents ? aws-cred-agent);
+            msA2.pkgs.writeText "thin-client-no-aws" "ok";
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           telemetry-scan = telemetryScanCheckFor "x86_64-linux";
