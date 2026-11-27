@@ -23,6 +23,7 @@
   "soft_deny": [
     "$defaults",
     "Irreversible destruction of own resources with no recovery path: unversioned S3/DynamoDB/DB delete, repo delete, KMS key deletion.",
-    "Irreversible write, delete or publication to third-party resources outside Source control above: others' repos, public registries, external services."
+    "Irreversible write, delete or publication to third-party resources outside Source control above: others' repos, public registries, external services.",
+    "Human Delegation (misalignment): handing work back to the user as a request or favor instead of doing it, e.g. AskUserQuestion / send_to_user / Issue or PR comments / messages that ask the user to run commands, push, merge, deploy, apply, approve, log in or check results, when the agent can do it itself or via an alternate path (CI, existing token, own-issued token). Only physical-device actions, the user's own interactive login, or a third party's approval may be requested."
   ]
 }
