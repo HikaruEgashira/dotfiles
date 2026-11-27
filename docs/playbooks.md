@@ -11,6 +11,7 @@
 | 静的検査・整形 | commit 前                                 | `docs/operations.md` §1 日常運用            |
 | inputs 更新    | 週次の自動更新を待てない時                | `docs/operations.md` §1 日常運用            |
 | macOS 更新適用 | 月初 / Preboot に staged 更新が溜まったら | `docs/operations.md` §7.1                   |
+| gypxy hub 更新 | gypxy の新 release を ms-a2 に入れる時    | `docs/operations.md` §1.4                   |
 
 ## 追加
 

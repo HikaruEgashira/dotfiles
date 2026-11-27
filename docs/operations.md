@@ -76,6 +76,24 @@ allowlist は「cache に無いと分かっていて持っているもの」の�
 
 `workflow_dispatch` の `dry_run=true` は bump と gate だけ走らせ push しない。gate 自体の動作確認に使う。
 
+### 1.4 ms-a2 の gypxy hub を上げる (module: `modules/programs/gypxy.nix`)
+
+hub は `modules/programs/aqua/aqua.yaml` で固定し `aqua-checksums.json` で hash を検証した release の store copy を動かし、起動時に取得しない。release は private のため nix も非対話の service も取得できない。
+
+```bash
+# 1. Mac: pin を上げ checksum を更新して PR を出す (tests/gypxy-hub.sh が pin と hash の一致を検査する)
+sed -i '' 's|gh-intel@gypxy/v.*|gh-intel@gypxy/vX.Y.Z|' modules/programs/aqua/aqua.yaml
+aqua update-checksum -a --prune
+# 2. Mac: cosign bundle と sha256 を検証し、asset を ms-a2 の store に入れる
+scripts/gypxy-seed.sh ms-a2
+# 3. merge 後、ms-a2: ユーザー層を build して activate する (sudo 不要)
+hm=$(nix build --no-link --print-out-paths --refresh \
+  "github:HikaruEgashira/dotfiles/main#nixosConfigurations.ms-a2.config.home-manager.users.hikae.home.activationPackage")
+"$hm/activate"
+```
+
+手順 2 を飛ばすと手順 3 の build が失敗し、動いている hub は旧版のまま応答を続ける。unit の再起動は store path が変わった時だけで、新 process が bind するまで listener が閉じる。
+
 ## 2. 何かを追加する
 
 ### 2.1 新しい `home.packages` を足す
