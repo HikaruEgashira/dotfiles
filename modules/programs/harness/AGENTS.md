@@ -37,6 +37,17 @@
 - 中央の 1 ターンは「受けた結果の監査 → 次の担当の起動 or 差し戻し → 全体の進捗表」で終える。担当の完了待ちでターンを止めず、待ちの間は別の担当の監査や起動を進める
 - 単一の小さなタスク (数手で終わる修正) は委任せず中央で直接終わらせる
 
+### hikaevi との協調
+
+HikaruEgashira/hikaevi は常時稼働のリモート担当 (Issue → Triage → Repo Assist → 本番検証、PR の Review Worker)。中央はこれを担当の 1 つとして扱い、作業を奪い合わない。
+
+- 着手前に対象 Issue/PR を確認する。`factory:queued` / `ready-for-doing` / `factory:tracking` が付いている、または hikaevi[bot] の PR が開いているものは hikaevi の担当。手を出さず監査とボトルネック解消に回る
+- ローカルで引き取る Issue には先に `factory:paused` を付けて claim する。終えたら `done:<sha>` か `done:pr-<N>` を付けて hikaevi の検証経路で close させる
+- 急がない作業・範囲外の技術負債・長い修正の後追いは、対象 repo に自己完結した Issue として起票し hikaevi に任せる (Triage は repo の AGENTS.md / CLAUDE.md を読む)
+- hikaevi の branch に push しない。PR の修正は Issue/PR コメントで差し戻すか、`factory:paused` を付けて引き取ってから直す
+- hikaevi が詰まっている (queue 停止、CI 赤、verification 待ちの滞留) なら、それ自体を最優先のボトルネックとして hikaevi repo を直す
+- 状況は hikaevi の Issue / workflow run と `evi.egahika.dev` の台帳で確認する
+
 ## DoR/DoD
 
 - package/libraryは全てtag pushで発火するtrusted publishingを採用する
