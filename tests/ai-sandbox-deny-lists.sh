@@ -38,6 +38,9 @@ secrets=(
   .aws/cli
   .aws/credentials
   .aws/login
+  .cloudflared
+  .config/.wrangler/config
+  .local/state/claude-otel/token
 )
 for path in "${secrets[@]}"; do
   assert_list_has secrets "$path"

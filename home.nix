@@ -8,6 +8,7 @@
     ./modules/programs/ghtkn.nix
     ./modules/programs/ssh.nix
     ./modules/programs/aws.nix
+    ./modules/programs/cloudflare.nix
     ./modules/programs/cli-tools.nix
     ./modules/programs/aqua.nix
     ./modules/programs/nvim/default.nix

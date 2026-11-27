@@ -711,6 +711,7 @@
                 ssh.sudoAgentForward = true;
                 ghtkn.readonly = true;
                 aws.enable = false;
+                cloudflare.enable = false;
                 orcaBrowser.enable = true;
               };
             }
@@ -768,6 +769,15 @@
             assert !(air.home.file ? ".aws/config");
             assert !(air.launchd.agents ? aws-cred-agent);
             msA2.pkgs.writeText "thin-client-no-aws" "ok";
+          thin-client-no-cloudflare =
+            let
+              air = self.homeConfigurations.hikae.config;
+              studio = self.homeConfigurations."hikae@mac-studio".config;
+            in
+            assert !air.dotfiles.cloudflare.enable;
+            assert air.home.activation ? purgeCloudflareSession;
+            assert studio.dotfiles.cloudflare.enable;
+            msA2.pkgs.writeText "thin-client-no-cloudflare" "ok";
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           telemetry-scan = telemetryScanCheckFor "x86_64-linux";

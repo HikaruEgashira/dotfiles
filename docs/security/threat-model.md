@@ -2,12 +2,12 @@
 
 ## 1. 信頼区分
 
-| 端末        | 役割                                                                | 持つ認証情報                                                                                                                                      | 信頼                         |
-| ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| macbook-air | シンクライアント。手元で操作する入口                                | Secure Enclave の sudo 鍵 (Secretive、署名ごとに Touch ID)。tailnet の利用者 identity。AWS の資格情報は持たず、AWS には mac-studio 経由でだけ届く | 高。ここが落ちると他も落ちる |
-| mac-studio  | 認証情報を持つ開発機。自律 AI `ledger` が常駐                       | GitHub user token (ghtkn、8h)、AWS SSO、`~/.config/secrets/env.age` の secret、Claude / OpenAI の資格情報                                         | 高                           |
-| ms-a2       | 認証情報を持たない開発機。自律 AI `hikaevi`・CI job・実験を走らせる | 原則なし (例外は §4 F3)                                                                                                                           | 低                           |
-| AWS (Fleet) | 端末管理と dotfiles 配布の制御面                                    | Fleet admin、enroll secret、MDM の APNs 証明書                                                                                                    | 高。全 Mac に root で書ける  |
+| 端末        | 役割                                                                | 持つ認証情報                                                                                                                                                                                    | 信頼                         |
+| ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| macbook-air | シンクライアント。手元で操作する入口                                | Secure Enclave の sudo 鍵 (Secretive、署名ごとに Touch ID)。tailnet の利用者 identity。AWS と Cloudflare の資格情報は持たず、mac-studio 経由でだけ届く (telemetry 送信用の Access token は例外) | 高。ここが落ちると他も落ちる |
+| mac-studio  | 認証情報を持つ開発機。自律 AI `ledger` が常駐                       | GitHub user token (ghtkn、8h)、AWS SSO、Cloudflare の wrangler OAuth と Access session、`~/.config/secrets/env.age` の secret、Claude / OpenAI の資格情報                                       | 高                           |
+| ms-a2       | 認証情報を持たない開発機。自律 AI `hikaevi`・CI job・実験を走らせる | 原則なし (例外は §4 F3)                                                                                                                                                                         | 低                           |
+| AWS (Fleet) | 端末管理と dotfiles 配布の制御面                                    | Fleet admin、enroll secret、MDM の APNs 証明書                                                                                                                                                  | 高。全 Mac に root で書ける  |
 
 **不変条件:** 信頼の低い区分から高い区分へは、書き込みもコード実行もさせない。ms-a2 から mac-studio・macbook-air・AWS の制御面へ向かう経路は、読み取りも含めて最小にする。
 
@@ -26,7 +26,7 @@ flowchart LR
     msa2["ms-a2<br/>認証情報なし開発機<br/>AI agent / CI job"]
   end
   gh[("GitHub<br/>dotfiles main / deploy")]
-  dns["DNS resolver<br/>(Cloudflare Gateway)"]
+  dns["DNS resolver<br/>NextDNS"]
 
   air -- "ssh (操作)" --> studio
   air -- "ssh (操作)" --> msa2
@@ -45,13 +45,14 @@ flowchart LR
 
 ## 3. 資産と脅威
 
-| 資産                       | 脅威 (STRIDE)            | 影響                                          |
-| -------------------------- | ------------------------ | --------------------------------------------- |
-| mac-studio の GitHub token | 漏洩 (I)、なりすまし (S) | 全 repo への push、release、secret の読み出し |
-| dotfiles `deploy` branch   | 改ざん (T)               | Fleet 経由で全 Mac に root で配られる         |
-| Fleet admin / API token    | 権限昇格 (E)             | 全 Mac での任意コード実行、MDM による消去     |
-| sudo 鍵 (Secretive)        | 署名の不正利用 (E)       | 署名を受け付ける全 host の root               |
-| DNS resolver の設定        | 改ざん (T)               | 遮断の解除、名前解決の乗っ取り                |
+| 資産                       | 脅威 (STRIDE)            | 影響                                           |
+| -------------------------- | ------------------------ | ---------------------------------------------- |
+| mac-studio の GitHub token | 漏洩 (I)、なりすまし (S) | 全 repo への push、release、secret の読み出し  |
+| dotfiles `deploy` branch   | 改ざん (T)               | Fleet 経由で全 Mac に root で配られる          |
+| Fleet admin / API token    | 権限昇格 (E)             | 全 Mac での任意コード実行、MDM による消去      |
+| sudo 鍵 (Secretive)        | 署名の不正利用 (E)       | 署名を受け付ける全 host の root                |
+| DNS resolver の設定        | 改ざん (T)               | 遮断の解除、名前解決の乗っ取り                 |
+| Cloudflare の login        | 漏洩 (I)、改ざん (T)     | Workers の差し替え、Access 保護下 app への到達 |
 
 ## 4. 検出した経路と対策
 
@@ -63,11 +64,19 @@ flowchart LR
 | F3  | ms-a2 の claude self-hosted runner が `/etc/claude-runner/env` に token を持つ                                                                                                                      | 「認証情報なし」の例外                                     | token の権限を runner 登録だけに絞り、失効手順を持つ。可能なら gh-runner と同じく broker 経由にする | 未対応                                                                   |
 | F4  | tailnet の ACL。ms-a2 は利用者と同じ identity で登録されており、既定 ACL では mac-studio・macbook-air の全 port と Tailscale SSH に届く                                                             | ACL がコード管理されていない                               | ms-a2 を `tag:untrusted-dev` にし、高区分への通信を拒否する ACL をコードで管理する                  | ACL 適用済み (テスト付き、`iac-tailscale`)。ms-a2 への tag 付与が未了    |
 
-## 5. CI runner の扱い
+## 5. Cloudflare の扱い
+
+AWS と同じ形にする。詳細は `docs/solutions/secrets/cloudflare-credentials.md`。
+
+- 変更経路: zone・Access・account member は `gh-intel/gh-intel.com` 等の IaC が main push から CI で apply する。CI の API token は AWS Secrets Manager にあり、GitHub OIDC でだけ取り出す
+- 端末: 長期 API token を置かない。wrangler の OAuth と cloudflared の Access session は mac-studio の host だけが使い、AI agent の sandbox からは読めない
+- macbook-air: `dotfiles.cloudflare.enable = false`。wrangler の login と otel 以外の Access token を activation で消す。flake check `thin-client-no-cloudflare` が回帰を止める
+
+## 6. CI runner の扱い
 
 ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret や OIDC を使うことは許容する。job ごとに使い捨ての環境で受け取り、終われば消えるため。禁止するのは、ホストに資格情報が最初から置かれている状態である。
 
-## 6. Fleet を AWS に置く設計方針
+## 7. Fleet を AWS に置く設計方針
 
 - 公開面: tailnet 内からだけ到達できるようにする (subnet router か Tailscale on ECS)。インターネットに公開しない
 - 実行: ECS Fargate。DB は Aurora MySQL Serverless v2 (0 ACU で自動停止)、Redis は ElastiCache
@@ -76,19 +85,20 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 - controller: 同じ VPC の Lambda か ECS scheduled task。`deploy` branch だけを読む。`deploy` への昇格は CI 緑かつ HikaruEgashira の approve (GitHub environment `deploy`) を要し、`deploy` branch は承認済みの promote job 以外から動かせない
 - 変更経路: iac-aws の main push から OIDC で apply する。ms-a2 の runner には、この state と role を触らせない
 
-## 7. 残るリスク
+## 8. 残るリスク
 
 - macbook-air が侵害されると、sudo 鍵の署名要求を Touch ID で通してしまう可能性がある。Touch ID の確認画面に要求元が出ないため、利用者は区別できない
 - GitHub の main を書き換えられる者 (mac-studio の token 保有者) が CI を通しても、HikaruEgashira の approve が無ければ配布されない。ただし approve は人の目視であり、承認者のアカウントが奪われればこの関門は無効になる
+- macbook-air の Access org session は telemetry の token 再発行のために残る。org の Access policy が許す他の app の token も発行できるので、policy 側で app ごとに利用者を絞る
 - Fleet の MDM を有効にすると、Fleet admin は端末を消去できる。admin は SSO と多要素認証で守る
 
-## 8. 権限ポリシー図
+## 9. 権限ポリシー図
 
-![主体・端末・AWS アカウントごとの権限](policy.png)
+![主体・端末・AWS・Cloudflare ごとの権限](policy.png)
 
 `uv run docs/security/policy_diagram.py` で再生成する。
 
-## 9. 端末の内部構成
+## 10. 端末の内部構成
 
 ![macbook-air の内部](device-macbook-air.png)
 

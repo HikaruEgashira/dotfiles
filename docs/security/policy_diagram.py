@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["diagrams==0.24.4"]
 # ///
-"""主体 (人間・AI)・端末・AWS アカウントごとの権限を図にする。
+"""主体 (人間・AI)・端末・AWS アカウント・Cloudflare ごとの権限を図にする。
 
 uv run docs/security/policy_diagram.py  →  docs/security/policy.png
 """
@@ -18,6 +18,7 @@ from diagrams.generic.device import Mobile
 from diagrams.generic.os import Ubuntu
 from diagrams.onprem.client import Client
 from diagrams.onprem.vcs import Github
+from diagrams.saas.cdn import Cloudflare
 
 OUT = Path(__file__).with_name("policy")
 
@@ -30,7 +31,7 @@ node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
 with Diagram(
-    "権限ポリシー: 人間 / AI / 端末 / AWS",
+    "権限ポリシー: 人間 / AI / 端末 / AWS / Cloudflare",
     filename=str(OUT),
     outformat="png",
     show=False,
@@ -48,6 +49,7 @@ with Diagram(
                 ai = Rack("Claude Code / Codex")
                 ledger = Rack("ledger")
                 broker = SingleSignOn("AWS 認証")
+                cflogin = SingleSignOn("Cloudflare login")
 
         with Cluster("信頼: 低"):
             with Cluster("ms-a2 tag:untrusted-dev"):
@@ -65,6 +67,9 @@ with Diagram(
             fleet = Organizations("Fleet 計画中\ntailnet 内からのみ")
         with Cluster("lab-seccamp26d2 931932531320"):
             lab = IAMRole("apply")
+
+    with Cluster("Cloudflare"):
+        cf = Cloudflare("gh-intel.com\nzone / Access / Workers")
 
     gh = Github("GitHub")
 
@@ -85,6 +90,10 @@ with Diagram(
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku
+    studio >> Edge(color=ALLOW) >> cflogin
+    cflogin >> Edge(color=ALLOW, xlabel="読み取り") >> cf
+    ai >> Edge(color=DENY, style="dashed", xlabel="✕ 読めない") >> cflogin
+    gh >> Edge(color=ROOT, xlabel="IaC CI") >> cf
     gh >> Edge(color=ALLOW, xlabel="配布 CI + approve") >> fleet
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio

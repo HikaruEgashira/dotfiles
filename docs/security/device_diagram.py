@@ -26,6 +26,7 @@ from diagrams.onprem.ci import GithubActions
 from diagrams.onprem.network import Envoy, Internet
 from diagrams.onprem.security import Vault
 from diagrams.onprem.vcs import Github
+from diagrams.saas.cdn import Cloudflare
 
 HERE = Path(__file__).parent
 
@@ -82,6 +83,9 @@ def mac(name, studio):
                     if studio:
                         broker = SingleSignOn("AWS broker")
                     secrets = SecretsManager("age secret\nssh 認証鍵")
+                    access = Vault("Access token")
+                    if studio:
+                        wrangler = Vault("wrangler login")
                 hub = Envoy("gypxy hub")
                 otel = Telemetry("telemetry collector")
 
@@ -90,6 +94,7 @@ def mac(name, studio):
         github = Github("GitHub")
         aws = IAMRole("AWS") if studio else None
         collector = Internet("gh-intel.com")
+        cloudflare = Cloudflare("Cloudflare")
 
         flow(operator, sudo, "署名" if studio else "Touch ID")
         if not studio:
@@ -104,6 +109,10 @@ def mac(name, studio):
             flow(agent, broker, "資格情報")
         flow(agent, otel)
         deny(agent, secrets, "読めない")
+        deny(agent, access, "読めない")
+        if studio:
+            deny(agent, wrangler, "読めない")
+            flow(wrangler, cloudflare, "読み取り")
         if studio:
             flow(ledger, ghtkn)
             flow(ledger, broker)
@@ -115,6 +124,7 @@ def mac(name, studio):
         flow(ghtkn, github, "API")
         if studio:
             flow(broker, aws, "一時資格情報")
+        flow(access, otel, "token")
         flow(otel, collector, "telemetry")
 
 

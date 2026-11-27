@@ -63,6 +63,10 @@ let
     "${home}/.aws/cli"
     "${home}/.aws/credentials"
     "${home}/.aws/login"
+    # Cloudflare: Access の org session / app token と wrangler の OAuth は host 専用。collector の token も同様
+    "${home}/.cloudflared"
+    "${home}/.config/.wrangler/config"
+    "${home}/.local/state/claude-otel/token"
   ];
   # ~/.cache/hikaevi/*.json は hikaevi[bot] の installation token で、sandbox の gh wrapper が使う前提なので deny しない
 
