@@ -19,6 +19,7 @@ let
         OTEL_METRIC_EXPORT_INTERVAL = "10000";
       };
       syncClaudeAiSkills = false;
+      language = "japanese";
     }
   );
   dir = "/Library/Application Support/ClaudeCode";
