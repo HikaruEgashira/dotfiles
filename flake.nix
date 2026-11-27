@@ -715,6 +715,18 @@
                 orcaBrowser.enable = true;
               };
             }
+            (
+              { lib, ... }:
+              {
+                # 開発機に readonly の ghtkn を置くと GitHub へ書けなくなるため Mac Studio では拒否する
+                home.activation.refuseMacStudio = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+                  if [ "$(/usr/sbin/scutil --get LocalHostName 2>/dev/null)" = Mac-Studio ]; then
+                    echo "homeConfigurations.hikae is the macbook-air thin client; use homeConfigurations.\"hikae@mac-studio\" on Mac-Studio" >&2
+                    exit 1
+                  fi
+                '';
+              }
+            )
           ];
         };
         "hikae@mac-studio" = mkStudioHome;

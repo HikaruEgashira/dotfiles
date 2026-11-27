@@ -285,7 +285,7 @@ host の `SSH_AUTH_SOCK` は認証 agent を指す。git は `gpg.ssh.program` �
 3. `signingPubKey` を新公開鍵に書き換えて merge し、Home Manager を適用して署名 agent に再ロードする:
 
    ```bash
-   nix run .#homeConfigurations.hikae.activationPackage
+   nix run .#homeConfigurations.hikae.activationPackage  # Mac Studio は '.#homeConfigurations."hikae@mac-studio".activationPackage'
    launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-agent
    launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-sign-add
    # linux (WSL): home-manager switch --flake .#hikae@wsl && systemctl --user restart ssh-sign-agent
