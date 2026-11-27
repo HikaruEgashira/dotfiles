@@ -79,7 +79,8 @@ def mac(name, studio):
                 nixstore = Disk("Nix store")
                 with Cluster("資格情報"):
                     ghtkn = Vault("ghtkn\n" + ("書き込み可" if studio else "読み取り専用"))
-                    broker = SingleSignOn("AWS broker")
+                    if studio:
+                        broker = SingleSignOn("AWS broker")
                     secrets = SecretsManager("age secret\nssh 認証鍵")
                 hub = Envoy("gypxy hub")
                 otel = Telemetry("telemetry collector")
@@ -87,7 +88,7 @@ def mac(name, studio):
         dns = DNS("NextDNS")
         tel = Internet("telemetry 送信先")
         github = Github("GitHub")
-        aws = IAMRole("AWS")
+        aws = IAMRole("AWS") if studio else None
         collector = Internet("gh-intel.com")
 
         flow(operator, sudo, "署名" if studio else "Touch ID")
@@ -99,7 +100,8 @@ def mac(name, studio):
         flow(sync, nixstore)
 
         flow(agent, ghtkn, "token")
-        flow(agent, broker, "資格情報")
+        if studio:
+            flow(agent, broker, "資格情報")
         flow(agent, otel)
         deny(agent, secrets, "読めない")
         if studio:
@@ -111,7 +113,8 @@ def mac(name, studio):
         flow(ghtkn, hub)
         flow(hub, github, "git")
         flow(ghtkn, github, "API")
-        flow(broker, aws, "一時資格情報")
+        if studio:
+            flow(broker, aws, "一時資格情報")
         flow(otel, collector, "telemetry")
 
 
