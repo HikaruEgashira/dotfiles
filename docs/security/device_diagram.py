@@ -13,8 +13,8 @@ from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.management import Organizations
 from diagrams.aws.security import SecretsManager, SingleSignOn
 from diagrams.generic.compute import Rack
-from diagrams.generic.os import IOS, LinuxGeneral
-from diagrams.onprem.client import User
+from diagrams.generic.os import LinuxGeneral
+from diagrams.onprem.client import Client, User
 from diagrams.onprem.security import Vault
 from diagrams.onprem.vcs import Github
 
@@ -41,7 +41,7 @@ with Diagram(
     fleet = Organizations("Fleet (計画)")
 
     with Cluster("macbook-air (信頼: 高)"):
-        air_os = IOS("nix-darwin")
+        air_os = Client("macOS\nnix-darwin")
         air_home = User("home-manager")
         air_key = Vault("sudo 鍵\n(Secretive)")
         air_tok = Vault("ghtkn token\n(読み取り専用)")
@@ -49,7 +49,7 @@ with Diagram(
         air_hub = Rack("gypxy hub")
 
     with Cluster("mac-studio (信頼: 高)"):
-        studio_os = IOS("nix-darwin")
+        studio_os = Client("macOS\nnix-darwin")
         studio_home = User("home-manager")
         with Cluster("AI agent sandbox"):
             agent = Rack("Claude Code / Codex")
