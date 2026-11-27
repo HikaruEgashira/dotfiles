@@ -249,7 +249,7 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `system.activationScripts.wifiDnsFromDhcp` (`modules/darwin/security.nix`) が activation ごとに空へ戻すので手で触らない。
 
-### 3.5 Fleet による端末管理
+### 3.6 Fleet による端末管理
 
 Fleet server は他から分離した AWS アカウント `device-fleet` に置く (構築前)。ms-a2 には置かない。設計と理由は `docs/security/threat-model.md` §5。dotfiles 側の部品は配布の仕組みとして残してある: CI の `promote` job が CI 緑の main を、HikaruEgashira が GitHub environment `deploy` で approve した後にだけ `deploy` branch へ fast-forward し (`deploy` branch は ruleset で promote job 以外の更新を拒否する)、`scripts/fleet-controller.py` が `deploy` を読んで `scripts/fleet/dotfiles-apply.sh` を Fleet 経由で各 Mac に root で流す。
 
