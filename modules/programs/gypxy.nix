@@ -35,6 +35,9 @@ let
       audit_file = "${stateDir}/audit.jsonl";
       resolve_actor = true;
     };
+    # gh-intel が出す例外の許可 (X-Gh-Intel-Permit) を検証する公開鍵。値は https://gh-intel.com/api/permit-keys が返す
+    # (gh-intel docs/specs/pep-posture.md §6、KMS alias/gh-intel-permit)。鍵を回したらここも替える
+    posture.permit_keys = [ "spljO4qzLhxFA/WUK7dEmZta86io58zehFQHwfsYqWU=" ];
     policy.deny = [
       {
         operation = "repos/delete";
