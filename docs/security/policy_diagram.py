@@ -73,9 +73,9 @@ with Diagram(
     air >> Edge(color=ALLOW, style="dotted", xlabel="判断") >> ledger
     air >> Edge(color=ALLOW, style="dotted", xlabel="判断") >> hikaevi
 
-    ai >> Edge(color=ALLOW, xlabel="CI") >> gh
-    ledger >> Edge(color=ALLOW, xlabel="CI") >> gh
-    hikaevi >> Edge(color=ALLOW, xlabel="CI") >> gh
+    ai >> Edge(color=ALLOW, xlabel="開発") >> gh
+    ledger >> Edge(color=ALLOW, xlabel="開発") >> gh
+    hikaevi >> Edge(color=ALLOW, xlabel="開発") >> gh
     ai >> Edge(color=ALLOW) >> broker
     ledger >> Edge(color=ALLOW) >> broker
     broker >> Edge(color=ALLOW) >> ro
@@ -83,9 +83,9 @@ with Diagram(
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku
-    gh >> Edge(color=ALLOW, xlabel="CD") >> fleet
-    fleet >> Edge(color=ROOT, style="bold", xlabel="CD") >> air
-    fleet >> Edge(color=ROOT, style="bold", xlabel="CD") >> studio
+    gh >> Edge(color=ALLOW, xlabel="配布") >> fleet
+    fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
+    fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio
 
     for dst, why in [(studio, "書込禁止"), (broker, "到達禁止"), (fleet, "到達禁止")]:
         msa2 >> Edge(color=DENY, style="dashed", xlabel=f"✕ {why}") >> dst
