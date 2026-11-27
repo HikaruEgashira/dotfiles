@@ -9,15 +9,15 @@ hikae's development environment, declared so that any machine can be rebuilt fro
 - **Least privilege by trust tier.** Machines, humans, AI agents, and AWS accounts each get only the access their role needs. A machine assumed compromised can never write to a trusted one. See the [threat model](docs/security/threat-model.md) and [policy diagram](docs/security/policy.png).
 - **No standing secrets.** Credentials are short-lived and brokered; secrets are encrypted at rest and handed only to the repository that needs them.
 - **Self-maintaining.** Inputs update weekly behind a CI gate, machines pull `main` daily, and audits report drift instead of letting it accumulate.
-- **Safe for agents.** AI agents work inside sandboxes with shared, centrally managed instructions, and can carry changes through to release without holding long-lived credentials.
+- **Safe for agents.** Interactive agents act on a human's request. Autonomous agents (`ledger` on mac-studio, `hikaevi` on ms-a2) run without instructions and involve a human only for decisions. Both work inside sandboxes, share centrally managed instructions, and hold no long-lived credentials.
 
 ## Machines
 
-| Machine     | Role                                                   |
-| ----------- | ------------------------------------------------------ |
-| macbook-air | Thin client; the entry point a human operates          |
-| mac-studio  | Development machine that holds credentials             |
-| ms-a2       | Credential-free machine for AI agents, CI, experiments |
+| Machine     | Role                                                                                |
+| ----------- | ----------------------------------------------------------------------------------- |
+| macbook-air | Thin client; the entry point a human operates                                       |
+| mac-studio  | Development machine that holds credentials                                          |
+| ms-a2       | Credential-free machine for CI and experiments; runs the autonomous agent `hikaevi` |
 
 ## Where to go next
 

@@ -40,7 +40,10 @@ with Diagram(
 ):
     with Cluster("主体"):
         human = User("人間 (hikae)\nTouch ID・SSO・ghauth\n不可逆操作の承認")
-        ai = Rack("AI agent\nClaude Code / Codex\nsandbox 内で実行")
+        ai = Rack("対話 AI\nClaude Code / Codex\n人間の指示で動く")
+        with Cluster("自律 AI (人間は decision だけ介入)"):
+            ledger = Rack("ledger\nmac-studio で常駐\n指示なしで動く")
+            hikaevi = Rack("hikaevi\nms-a2 で常駐\nIssue → PR → 本番検証")
 
     with Cluster("信頼: 高"):
         air = Mobile("macbook-air\nシンクライアント\nsudo 鍵 (Secure Enclave)")
@@ -70,6 +73,11 @@ with Diagram(
 
     ai >> Edge(color=ALLOW, label="commit / push / PR / merge\napply・deploy (範囲内)") >> studio
     ai >> Edge(color=ALLOW, label="実験・CI job (使い捨て secret)") >> msa2
+    human >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> ledger
+    human >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> hikaevi
+    ledger >> Edge(color=ALLOW, label="sandbox で実行\nbroker 経由の資格情報") >> studio
+    hikaevi >> Edge(color=ALLOW, label="sandbox で実行\n資格情報なし") >> msa2
+    hikaevi >> Edge(color=ALLOW, label="PR (bot、CI 緑で merge)") >> gh
 
     studio >> Edge(color=ALLOW, label="push (ghtkn)") >> gh
     studio >> Edge(color=ALLOW, label="credential_process") >> broker
