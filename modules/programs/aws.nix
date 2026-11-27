@@ -44,22 +44,24 @@ let
   };
 in
 {
-  options.dotfiles.aws.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-    description = "AWS の SSO 設定と credential broker を置く。シンクライアントは false にし、AWS には mac-studio 経由でだけ届く";
-  };
-  options.dotfiles.aws.readSocket = lib.mkOption {
-    type = lib.types.str;
-    readOnly = true;
-    default = "${config.xdg.cacheHome}/aws-cred/agent.sock";
-    description = "read 系 profile だけを返す broker。ai-sandbox が許可する";
-  };
-  options.dotfiles.aws.adminSocket = lib.mkOption {
-    type = lib.types.str;
-    readOnly = true;
-    default = "${config.xdg.cacheHome}/aws-cred-admin/agent.sock";
-    description = "特権 profile を返す broker。sandbox からは接続も書き込みもさせない";
+  options.dotfiles.aws = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "AWS の SSO 設定と credential broker を置く。シンクライアントは false にし、AWS には mac-studio 経由でだけ届く";
+    };
+    readSocket = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = "${config.xdg.cacheHome}/aws-cred/agent.sock";
+      description = "read 系 profile だけを返す broker。ai-sandbox が許可する";
+    };
+    adminSocket = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = "${config.xdg.cacheHome}/aws-cred-admin/agent.sock";
+      description = "特権 profile を返す broker。sandbox からは接続も書き込みもさせない";
+    };
   };
 
   config = lib.mkMerge [

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091,SC2329
+# shellcheck disable=SC1091,SC2034,SC2329
 # dotfiles-sync の xdg_drift 記録が audit の成否と取り違えないことを固定する
 set -euo pipefail
 
