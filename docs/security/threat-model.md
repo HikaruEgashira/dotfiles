@@ -80,3 +80,9 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 - macbook-air が侵害されると、sudo 鍵の署名要求を Touch ID で通してしまう可能性がある。Touch ID の確認画面に要求元が出ないため、利用者は区別できない
 - GitHub の main を書き換えられる者 (mac-studio の token 保有者) は、CI を通れば全 Mac に配布できる。CI は改ざん検知ではなく品質の関門にすぎない
 - Fleet の MDM を有効にすると、Fleet admin は端末を消去できる。admin は SSO と多要素認証で守る
+
+## 8. 権限ポリシー図
+
+![主体・端末・AWS アカウントごとの権限](policy.png)
+
+`uv run docs/security/policy_diagram.py` で再生成する。
