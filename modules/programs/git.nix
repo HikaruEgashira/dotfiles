@@ -80,6 +80,8 @@ in
       # leading "" resets the accumulated helper list per host so only ghtkn
       # is consulted.
       credential = {
+        # nix の git の etc/gitconfig が既定にする osxkeychain を消し、どの host でも ghtkn 以外の helper を使わない
+        helper = [ "" ];
         # ghtkn git-credential はリポジトリ owner で app を選ぶため path を渡す (無いと毎回 WRN が出る)
         useHttpPath = true;
         "https://github.com".helper = [
@@ -93,16 +95,20 @@ in
       };
 
       # SSH transport is banned; all GitHub URLs are rewritten to HTTPS
-      url = {
-        "https://github.com/".insteadOf = [
-          "git@github.com:"
-          "ssh://git@github.com/"
-        ];
-        "https://gist.github.com/".insteadOf = [
-          "git@gist.github.com:"
-          "ssh://git@gist.github.com/"
-        ];
-      };
+      # gypxy client が有効な間は gypxy.nix が SSH 形式も hub へ直接書き換える (insteadOf は連鎖しない)
+      url =
+        lib.optionalAttrs (!config.programs.gypxy.client.enable) {
+          "https://github.com/".insteadOf = [
+            "git@github.com:"
+            "ssh://git@github.com/"
+          ];
+        }
+        // {
+          "https://gist.github.com/".insteadOf = [
+            "git@gist.github.com:"
+            "ssh://git@gist.github.com/"
+          ];
+        };
 
       alias = {
         st = "status -sb";
