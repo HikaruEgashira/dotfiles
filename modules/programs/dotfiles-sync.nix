@@ -40,47 +40,36 @@ let
     }
     trap write_metric EXIT
 
-    cd "$HOME/dotfiles"
-    head_before=$(git rev-parse HEAD 2>/dev/null || echo "")
-    head_after="$head_before"
-
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-    if [ "$branch" != "main" ]; then
-      echo "skip: not on main (current=$branch)"
-      outcome="skip-not-main"
-      exit 0
-    fi
-
-    if ! git diff --quiet HEAD --; then
-      echo "skip: dirty working tree"
-      outcome="skip-dirty"
-      exit 0
-    fi
-
-    git fetch --quiet origin main
-    if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-      git pull --ff-only --quiet origin main
-      head_after=$(git rev-parse HEAD)
-    fi
+    # ~/dotfiles は sandbox から書けるので、checkout の内容・ref・.git/config を一切使わない。
+    # origin の main の SHA を取り、その commit を github: で固定して build する
+    head_before=$(cat "${metricsDir}/applied" 2>/dev/null || echo "")
+    sha=$(git ls-remote https://github.com/HikaruEgashira/dotfiles refs/heads/main | cut -f1)
+    case "$sha" in
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) ;;
+      *) echo "skip: cannot resolve origin main"; outcome="skip-no-origin"; exit 0 ;;
+    esac
+    head_after="$sha"
+    flake="github:HikaruEgashira/dotfiles/$sha"
 
     # OS 層は root が要るので build して未適用を記録するだけ。ユーザー層は root 不要なのでここで適用する
     case "$(/usr/sbin/scutil --get LocalHostName 2>/dev/null)" in
       Mac-Studio) host=mac-studio; homeHost=hikae@mac-studio ;;
       *) host=hikae; homeHost=hikae ;;
     esac
-    built=$(nix build --no-link --print-out-paths ".#darwinConfigurations.$host.system")
+    built=$(nix build --no-link --print-out-paths "$flake#darwinConfigurations.$host.system")
     current=$(readlink -f /run/current-system 2>/dev/null || echo "")
     if [ "$built" != "$current" ]; then
       pending="yes"
     else
       pending="no"
     fi
-    home=$(nix build --no-link --print-out-paths ".#homeConfigurations.$homeHost.activationPackage")
+    home=$(nix build --no-link --print-out-paths "$flake#homeConfigurations.\"$homeHost\".activationPackage")
     "$home/activate" >/dev/null
+    echo "$sha" >"${metricsDir}/applied"
     outcome="applied"
 
     # 報告のみ: drift があっても同期の成否は変えない (unknown は audit 自体の実行失敗)
-    audit_verdict=$(nix run ".#xdg-audit" 2>/dev/null | grep -o 'drift=[01]' | cut -d= -f2 | tail -n1 || true)
+    audit_verdict=$(nix run "$flake#xdg-audit" 2>/dev/null | grep -o 'drift=[01]' | cut -d= -f2 | tail -n1 || true)
     if [ "$audit_verdict" = "1" ]; then
       xdg_drift="drift"
     elif [ "$audit_verdict" = "0" ]; then
@@ -90,7 +79,7 @@ let
     fi
 
     # 宣言外の launchd agent が常駐していれば drift として記録する (runner 登録等の検出)
-    if nix run ".#launchd-audit" >/dev/null 2>&1; then
+    if nix run "$flake#launchd-audit" >/dev/null 2>&1; then
       launchd_drift="none"
     else
       launchd_drift="drift"

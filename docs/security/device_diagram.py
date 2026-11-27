@@ -76,12 +76,13 @@ def mac(name, studio):
                     agent = Rack("Claude Code / Codex")
                 if studio:
                     ledger = Rack("ledger")
-                sync = Datasync("dotfiles-sync")
+                sync = Datasync("dotfiles-sync\norigin main を SHA 固定")
                 nixstore = Disk("Nix store")
                 with Cluster("資格情報"):
                     ghtkn = Vault("ghtkn\n" + ("書き込み可" if studio else "読み取り専用"))
                     if studio:
-                        broker = SingleSignOn("AWS broker")
+                        broker = SingleSignOn("AWS broker\nread 系")
+                        adminbroker = SingleSignOn("AWS broker\n特権")
                     secrets = SecretsManager("age secret\nssh 認証鍵")
                     access = Vault("Access token")
                     if studio:
@@ -107,6 +108,7 @@ def mac(name, studio):
         flow(agent, ghtkn, "token")
         if studio:
             flow(agent, broker, "資格情報")
+            deny(agent, adminbroker, "接続できない")
         flow(agent, otel)
         deny(agent, secrets, "読めない")
         deny(agent, access, "読めない")
@@ -116,6 +118,7 @@ def mac(name, studio):
         if studio:
             flow(ledger, ghtkn)
             flow(ledger, broker)
+            flow(ledger, adminbroker)
 
         flow(resolver, dns, "暗号化 DNS")
         deny(dns, tel, "名前を返さない")
@@ -124,6 +127,7 @@ def mac(name, studio):
         flow(ghtkn, github, "API")
         if studio:
             flow(broker, aws, "一時資格情報")
+            flow(adminbroker, aws, "一時資格情報")
         flow(access, otel, "token")
         flow(otel, collector, "telemetry")
 

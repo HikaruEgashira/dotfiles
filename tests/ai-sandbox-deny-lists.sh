@@ -100,7 +100,17 @@ printf '%s\n' 'ok: ai-sandbox denies credential stores and persistence without b
 
 # ghtkn / ssh agent / aws broker の socket だけを通す。allowAllUnixSockets は docker.sock 等まで開くため使わない
 grep -Fq 'ghtkn/agent.sock' "$source_nix"
-grep -Fq 'aws-cred/agent.sock' "$source_nix"
+grep -Fq 'config.dotfiles.aws.readSocket' "$source_nix"
+grep -Fq '(builtins.dirOf config.dotfiles.aws.adminSocket)' "$source_nix"
+if grep -Fq 'adminSocket' <(sed -n '/unixSockets = \[/,/\];/p' "$source_nix"); then
+  printf '%s\n' 'FAIL: the privileged aws broker socket is reachable from the sandbox' >&2
+  exit 1
+fi
+# sandbox 外で無人実行される git config と常駐 agent の script を書かせない
+for p in '/.config/git"' '/.gitconfig"' '/dotfiles/.git/hooks"' 'ledger/scripts"' 'ledger/app"'; do
+  grep -Fq "$p" "$source_nix"
+done
+grep -Fq '++ hostExecuted;' "$source_nix"
 grep -Fq 'allowUnixSockets = unixSockets;' "$source_nix"
 # shellcheck disable=SC2016
 grep -Fq 'unix_sockets=${unixSocketsToml}' "$source_nix"

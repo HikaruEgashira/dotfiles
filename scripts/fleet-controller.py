@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reconcile Fleet with the dotfiles main branch using only Fleet Free APIs.
+"""Reconcile Fleet with the dotfiles deploy branch using only Fleet Free APIs.
 
 Fleet Free has no policy-triggered scripts, so this loop does it: read the deploy
 branch (CI fast-forwards it to each green main commit), keep a policy that checks each Mac's applied commit,
@@ -21,7 +21,7 @@ import urllib.request
 import uuid
 
 REPO = "HikaruEgashira/dotfiles"
-POLICY_NAME = "dotfiles: applied CI-green main"
+POLICY_NAME = "dotfiles: applied approved deploy"
 SCRIPT_NAME = "dotfiles-apply.sh"
 DNS_PROFILE_NAME = "Encrypted DNS"
 MAX_ATTEMPTS = 3

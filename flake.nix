@@ -114,6 +114,12 @@
                   ./home.nix
                   ./hosts/linux/home.nix
                 ];
+                # 信頼区分が低いので書き込み可能な GitHub token と AWS / Cloudflare の資格情報を置かない
+                dotfiles = {
+                  ghtkn.readonly = true;
+                  aws.enable = false;
+                  cloudflare.enable = false;
+                };
               };
             };
           }
@@ -769,6 +775,14 @@
             assert !(air.home.file ? ".aws/config");
             assert !(air.launchd.agents ? aws-cred-agent);
             msA2.pkgs.writeText "thin-client-no-aws" "ok";
+          ms-a2-no-write-credentials =
+            let
+              hm = msA2.config.home-manager.users.hikae;
+            in
+            assert hm.dotfiles.ghtkn.readonly;
+            assert !(hm.home.file ? ".aws/config");
+            assert !hm.dotfiles.cloudflare.enable;
+            msA2.pkgs.writeText "ms-a2-no-write-credentials" "ok";
           thin-client-no-cloudflare =
             let
               air = self.homeConfigurations.hikae.config;

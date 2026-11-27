@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091,SC2034,SC2329
+# shellcheck disable=SC1091,SC2016,SC2034,SC2329
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -8,13 +8,19 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 awk '
-  index($0, "branch=$(git symbolic-ref --short HEAD") { active = 1 }
+  index($0, "head_before=$(cat") { active = 1 }
   active { print }
   active && index($0, "# 報告のみ") { exit }
-' "$source_nix" >"$tmp/body"
+' "$source_nix" | sed "s#\${metricsDir}#$tmp/metrics#g" >"$tmp/body"
 [ -s "$tmp/body" ]
+mkdir -p "$tmp/metrics"
 
-# ユーザー層の build 結果。activate の実行回数で適用を数える
+# ~/dotfiles の checkout は sandbox から書けるので、sync は checkout の git を一切実行しない
+if grep -Eq 'git (-C|fetch|pull|diff|symbolic-ref|merge)|cd "\$HOME/dotfiles"|"\.#' "$tmp/body"; then
+  printf '%s\n' 'FAIL: dotfiles-sync reads the writable ~/dotfiles checkout' >&2
+  exit 1
+fi
+
 mkdir -p "$tmp/home"
 cat >"$tmp/home/activate" <<'EOF'
 #!/bin/sh
@@ -22,117 +28,46 @@ printf 'activate\n' >>"$SYNC_ACTIVATE_LOG"
 EOF
 chmod +x "$tmp/home/activate"
 
+sha=0123456789abcdef0123456789abcdef01234567
+
 run_sync() {
-  local name=$1
-  local branch=$2
-  local dirty=$3
-  local fail_first=$4
-  local current=$5
-  local git_log="$tmp/$name.git.log"
-  local nix_log="$tmp/$name.nix.log"
-  local first_marker="$tmp/$name.first"
-  local pending_out="$tmp/$name.pending"
+  local name=$1 remote=$2 current=$3
   (
     set -eu
-    export SYNC_BRANCH=$branch
-    export SYNC_DIRTY=$dirty
-    export SYNC_FAIL_FIRST=$fail_first
-    export SYNC_CURRENT=$current
-    export SYNC_GIT_LOG=$git_log
-    export SYNC_NIX_LOG=$nix_log
-    export SYNC_FIRST_MARKER=$first_marker
-    export SYNC_HOME=$tmp/home
-    export SYNC_ACTIVATE_LOG=$tmp/$name.activate.log
-    head_before=same
-    head_after=$head_before
+    export SYNC_REMOTE=$remote SYNC_HOME=$tmp/home SYNC_ACTIVATE_LOG=$tmp/$name.activate.log
+    export SYNC_NIX_LOG=$tmp/$name.nix.log SYNC_CURRENT=$current
     outcome=error
     pending=unknown
-
     git() {
-      printf '%s\n' "$*" >>"$SYNC_GIT_LOG"
-      case "$1" in
-      symbolic-ref) printf '%s\n' "$SYNC_BRANCH" ;;
-      diff) [ "$SYNC_DIRTY" -eq 0 ] ;;
-      fetch | pull) ;;
-      rev-parse) printf '%s\n' same ;;
+      case "$*" in
+      "ls-remote https://github.com/HikaruEgashira/dotfiles refs/heads/main") printf '%s\trefs/heads/main\n' "$SYNC_REMOTE" ;;
       *) return 1 ;;
       esac
     }
-
     nix() {
       printf '%s\n' "$*" >>"$SYNC_NIX_LOG"
-      if [ "$SYNC_FAIL_FIRST" -eq 1 ] && [ ! -e "$SYNC_FIRST_MARKER" ]; then
-        : >"$SYNC_FIRST_MARKER"
-        return 1
-      fi
       case "$*" in
       *homeConfigurations*) printf '%s\n' "$SYNC_HOME" ;;
-      *) printf '%s\n' "/nix/store/built-system" ;;
+      *) printf '%s\n' /nix/store/built-system ;;
       esac
     }
-
-    readlink() {
-      printf '%s\n' "$SYNC_CURRENT"
-    }
-
+    readlink() { printf '%s\n' "$SYNC_CURRENT"; }
     source "$tmp/body"
-    printf '%s' "$pending" >"$pending_out"
+    printf '%s' "$pending" >"$tmp/$name.pending"
   )
 }
 
-set +e
-run_sync retry main 0 1 /nix/store/built-system
-first_status=$?
-set -e
-if [ "$first_status" -eq 0 ]; then
-  printf '%s\n' 'FAIL: first build failure was hidden' >&2
-  exit 1
-fi
-set +e
-run_sync retry main 0 1 /nix/store/built-system
-second_status=$?
-set -e
-if [ "$second_status" -ne 0 ]; then
-  printf '%s\n' 'FAIL: same-HEAD retry did not build' >&2
-  exit 1
-fi
-# 1 回目は OS 層の build で失敗、2 回目は OS 層とユーザー層を build してユーザー層だけ適用する
-[ "$(grep -c '^' "$tmp/retry.nix.log")" -eq 3 ]
-[ "$(grep -c '^' "$tmp/retry.activate.log")" -eq 1 ]
-[ "$(cat "$tmp/retry.pending")" = no ]
-if grep -q '^pull ' "$tmp/retry.git.log"; then
-  printf '%s\n' 'FAIL: same-HEAD retry pulled unnecessarily' >&2
-  exit 1
-fi
+run_sync ok "$sha" /nix/store/built-system
+grep -q "github:HikaruEgashira/dotfiles/$sha#darwinConfigurations" "$tmp/ok.nix.log"
+grep -q "github:HikaruEgashira/dotfiles/$sha#homeConfigurations" "$tmp/ok.nix.log"
+[ "$(grep -c '^' "$tmp/ok.activate.log")" -eq 1 ]
+[ "$(cat "$tmp/ok.pending")" = no ]
+[ "$(cat "$tmp/metrics/applied")" = "$sha" ]
 
-set +e
-run_sync stale main 0 0 /nix/store/old-system
-stale_status=$?
-set -e
-if [ "$stale_status" -ne 0 ]; then
-  printf '%s\n' 'FAIL: stale generation check failed' >&2
-  exit 1
-fi
+run_sync stale "$sha" /nix/store/old-system
 [ "$(cat "$tmp/stale.pending")" = yes ]
 
-set +e
-run_sync dirty main 1 0 /nix/store/built-system
-dirty_status=$?
-set -e
-if [ "$dirty_status" -ne 0 ]; then
-  printf '%s\n' 'FAIL: dirty tree guard failed' >&2
-  exit 1
-fi
-[ ! -e "$tmp/dirty.nix.log" ]
+run_sync noorigin "" /nix/store/built-system | grep -q 'skip: cannot resolve origin main'
+[ ! -e "$tmp/noorigin.nix.log" ]
 
-set +e
-run_sync nonmain feature 0 0 /nix/store/built-system
-nonmain_status=$?
-set -e
-if [ "$nonmain_status" -ne 0 ]; then
-  printf '%s\n' 'FAIL: non-main guard failed' >&2
-  exit 1
-fi
-[ ! -e "$tmp/nonmain.nix.log" ]
-
-printf '%s\n' 'ok: failed clean-main build retries; dirty and non-main trees skip; pending follows the live generation'
+printf '%s\n' 'ok: dotfiles-sync builds the pinned origin main commit and never the local checkout'

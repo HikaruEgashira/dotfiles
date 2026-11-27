@@ -143,7 +143,7 @@ jobs:
           echo "OK: drvPath stable across evaluations"
           echo "  $h1"
 
-  # CI を通った main だけを deploy に進める。Fleet controller (hosts/ms-a2/fleet.nix) はこの ref だけを端末へ配る
+  # CI を通った main だけを deploy に進める。Fleet controller (scripts/fleet-controller.py、AWS device-fleet) はこの ref だけを端末へ配る
   promote:
     needs: [fetchurl-provenance, validate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

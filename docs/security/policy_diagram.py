@@ -48,7 +48,8 @@ with Diagram(
                 studio = Client("開発機\n認証情報あり")
                 ai = Rack("Claude Code / Codex")
                 ledger = Rack("ledger")
-                broker = SingleSignOn("AWS 認証")
+                broker = SingleSignOn("AWS 認証\nread 系")
+                adminbroker = SingleSignOn("AWS 認証\n特権 (sandbox 外のみ)")
                 cflogin = SingleSignOn("Cloudflare login")
 
         with Cluster("信頼: 低"):
@@ -86,7 +87,10 @@ with Diagram(
     ai >> Edge(color=ALLOW) >> broker
     ledger >> Edge(color=ALLOW) >> broker
     broker >> Edge(color=ALLOW) >> ro
-    broker >> Edge(color=ROOT) >> admin
+    studio >> Edge(color=ALLOW, xlabel="host の terminal") >> adminbroker
+    ledger >> Edge(color=ALLOW) >> adminbroker
+    ai >> Edge(color=DENY, style="dashed", xlabel="✕ 接続できない") >> adminbroker
+    adminbroker >> Edge(color=ROOT) >> admin
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku

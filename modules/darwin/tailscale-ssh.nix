@@ -2,7 +2,8 @@
 { lib, pkgs, ... }:
 
 let
-  ts = "${pkgs.tailscale}/bin/tailscale";
+  # socket を省くと CLI は GUI 版の daemon に繋がり、OSS 側の state も --ssh も GUI 版に向いてしまう
+  ts = "${pkgs.tailscale}/bin/tailscale --socket=/var/run/tailscaled.socket";
   jq = "${pkgs.jq}/bin/jq";
   gui = "/Applications/Tailscale.app";
   state = "${ts} status --json 2>/dev/null | ${jq} -r '.BackendState // empty'";
