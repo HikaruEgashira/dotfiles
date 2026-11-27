@@ -23,6 +23,7 @@ let
   sourceProfiles = [
     "sso-readonly"
     "sso-admin"
+    "sisaku-security-readonly-sso"
     "iac-aws-apply-chain"
     "artex-microvm-chain"
     "seccamp-lab-apply-chain"
@@ -77,6 +78,17 @@ in
     sso_session = hikae
     sso_account_id = 951872725222
     sso_role_name = AdministratorAccess
+
+    # sisaku-security (gh-intel 本番) の Identity Center ReadOnlyAccess。secret・SSM・kms:Decrypt は permission set が拒否する。
+    [profile sisaku-security-readonly-sso]
+    region = ap-northeast-1
+    sso_session = hikae
+    sso_account_id = 034111987897
+    sso_role_name = ReadOnlyAccess
+
+    [profile sisaku-security-readonly]
+    region = ap-northeast-1
+    credential_process = ${client} sisaku-security-readonly-sso
 
     # `default` = Identity Center ReadOnlyAccess permission set (長期 AKIA なし)。
     [default]
