@@ -25,7 +25,7 @@ ALLOW = "darkgreen"
 ROOT = "firebrick"
 DENY = "gray"
 
-graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.7", "ranksep": "1.4", "splines": "spline"}
+graph = {"rankdir": "LR", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.7", "ranksep": "1.4", "splines": "line", "forcelabels": "true"}
 node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
@@ -66,16 +66,16 @@ with Diagram(
 
     gh = Github("GitHub")
 
-    human >> Edge(color=ALLOW, label="操作") >> air
-    air >> Edge(color=ALLOW, label="操作") >> studio
-    air >> Edge(color=ALLOW, label="操作") >> msa2
-    air >> Edge(color=ALLOW, style="dotted", label="依頼") >> ai
-    air >> Edge(color=ALLOW, style="dotted", label="判断") >> ledger
-    air >> Edge(color=ALLOW, style="dotted", label="判断") >> hikaevi
+    human >> Edge(color=ALLOW, xlabel="操作") >> air
+    air >> Edge(color=ALLOW, xlabel="操作") >> studio
+    air >> Edge(color=ALLOW, xlabel="操作") >> msa2
+    air >> Edge(color=ALLOW, style="dotted", xlabel="依頼") >> ai
+    air >> Edge(color=ALLOW, style="dotted", xlabel="判断") >> ledger
+    air >> Edge(color=ALLOW, style="dotted", xlabel="判断") >> hikaevi
 
-    ai >> Edge(color=ALLOW, label="CI") >> gh
-    ledger >> Edge(color=ALLOW, label="CI") >> gh
-    hikaevi >> Edge(color=ALLOW, label="CI") >> gh
+    ai >> Edge(color=ALLOW, xlabel="CI") >> gh
+    ledger >> Edge(color=ALLOW, xlabel="CI") >> gh
+    hikaevi >> Edge(color=ALLOW, xlabel="CI") >> gh
     ai >> Edge(color=ALLOW) >> broker
     ledger >> Edge(color=ALLOW) >> broker
     broker >> Edge(color=ALLOW) >> ro
@@ -83,9 +83,9 @@ with Diagram(
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku
-    gh >> Edge(color=ALLOW, label="CD") >> fleet
-    fleet >> Edge(color=ROOT, style="bold", label="CD") >> air
-    fleet >> Edge(color=ROOT, style="bold", label="CD") >> studio
+    gh >> Edge(color=ALLOW, xlabel="CD") >> fleet
+    fleet >> Edge(color=ROOT, style="bold", xlabel="CD") >> air
+    fleet >> Edge(color=ROOT, style="bold", xlabel="CD") >> studio
 
     for dst, why in [(studio, "書込禁止"), (broker, "到達禁止"), (fleet, "到達禁止")]:
-        msa2 >> Edge(color=DENY, style="dashed", label=f"✕ {why}") >> dst
+        msa2 >> Edge(color=DENY, style="dashed", xlabel=f"✕ {why}") >> dst
