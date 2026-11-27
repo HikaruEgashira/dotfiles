@@ -42,4 +42,11 @@ case "$text" in
   exit 1
   ;;
 esac
+case "$text" in
+*"-config /nix/store/"*"-gypxy-checked.json"*) ;;
+*)
+  echo "FAIL: hub config is not validated by the pinned gypxy -check at build time" >&2
+  exit 1
+  ;;
+esac
 echo "ok: hub runs $pkg/bin/gypxy (gypxy $version, $hash)"

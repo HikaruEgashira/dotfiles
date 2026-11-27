@@ -45,8 +45,17 @@ let
       listen = "127.0.0.1:${toString adminPort}";
       token_file = "${stateDir}/admin-token";
     };
+    posture.permit_keys = [ "spljO4qzLhxFA/WUK7dEmZta86io58zehFQHwfsYqWU=" ];
     log_level = "info";
   };
+
+  # 固定した版が読めない設定では build を落とし、activation は前の generation の hub を動かし続ける
+  checkedConfig = pkgs.runCommand "gypxy-checked.json" { nativeBuildInputs = [ pkgs.jq ]; } ''
+    (umask 077; echo check >"$TMPDIR/admin-token")
+    jq --arg t "$TMPDIR/admin-token" '.admin.token_file = $t' ${hubConfig} >"$TMPDIR/gypxy.json"
+    ${lib.getExe cfg.package} -check -config "$TMPDIR/gypxy.json"
+    cp ${hubConfig} $out
+  '';
 
   run = pkgs.writeShellScript "gypxy-run" ''
     set -eu
@@ -54,7 +63,7 @@ let
     ${pkgs.coreutils}/bin/install -d -m 0700 ${stateDir}
     [ -s ${stateDir}/admin-token ] || ${pkgs.openssl}/bin/openssl rand -hex 32 >${stateDir}/admin-token
     export PATH=${lib.makeBinPath [ pkgs.git ]}:$PATH
-    exec ${lib.getExe cfg.package} -config ${hubConfig}
+    exec ${lib.getExe cfg.package} -config ${checkedConfig}
   '';
 in
 {

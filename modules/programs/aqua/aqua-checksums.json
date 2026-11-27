@@ -21,6 +21,36 @@
       "algorithm": "sha256"
     },
     {
+      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.4.0/gypxy_v0.4.0_darwin_amd64.tar.gz",
+      "checksum": "0A6D677398E91A7DBD8675BFB19744E61509E582DEDC6BAC1655C3FDDA480676",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.4.0/gypxy_v0.4.0_darwin_arm64.tar.gz",
+      "checksum": "95532764DA7AF0EC9F37C33210725E30C4F50EEAB2D4E53B8F4E81631A16A010",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.4.0/gypxy_v0.4.0_linux_amd64.tar.gz",
+      "checksum": "E6E655F8135AF765B58BE431638F181E42D5939F03EF955BD14FB26351CFE269",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_amd64.tar.gz",
+      "checksum": "DD3107CACC022332428BC05995B1A4CF4D5FCDFFDCF04F7B8047FD580E183A73",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_arm64.tar.gz",
+      "checksum": "4816E02BF8579B3D08AA5442014A06F646F8C963B8C1CE80C33C3ACCF2950F48",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_linux_amd64.tar.gz",
+      "checksum": "6DA250932DB1CC6FAE8B8F44185ACACB6E6FFC16DBAFB90B1A37A25AD3AD21DF",
+      "algorithm": "sha256"
+    },
+    {
       "id": "github_release/github.com/googleworkspace/cli/v0.22.5/google-workspace-cli-aarch64-apple-darwin.tar.gz",
       "checksum": "1D2A9FFD5BC9B2C2C4B48630DAF082FAD13D9E57D741988A2C248EED562F7DAC",
       "algorithm": "sha256"
@@ -58,36 +88,6 @@
     {
       "id": "github_release/github.com/pingdotgg/t3code/v0.1.7/t3-0.1.7-linux-x64.tar.gz",
       "checksum": "C089892BF7922E2E73C6F44A5D1EA125C99F70E378C18361CBBED2FBA1920E6C",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.1.3/gypxy_v0.1.3_darwin_amd64.tar.gz",
-      "checksum": "4C41CDE756D06C56DAE73BA2F4C02D9F91926E6A0B9D3F103C89D6448707C85C",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.1.3/gypxy_v0.1.3_darwin_arm64.tar.gz",
-      "checksum": "B65B085FA304D47D6CF0949DFF2C7B2849377CBFEE9217CDF5047865A71E97CC",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/gh-intel/gypxy/v0.1.3/gypxy_v0.1.3_linux_amd64.tar.gz",
-      "checksum": "679926CB4E1E81F9686AE7947FF85CB5DD2088541F173371A44CC8B57361CA42",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_amd64.tar.gz",
-      "checksum": "DD3107CACC022332428BC05995B1A4CF4D5FCDFFDCF04F7B8047FD580E183A73",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_darwin_arm64.tar.gz",
-      "checksum": "4816E02BF8579B3D08AA5442014A06F646F8C963B8C1CE80C33C3ACCF2950F48",
-      "algorithm": "sha256"
-    },
-    {
-      "id": "github_release/github.com/gh-intel/sisakulint/v0.3.8/sisakulint_0.3.8_linux_amd64.tar.gz",
-      "checksum": "6DA250932DB1CC6FAE8B8F44185ACACB6E6FFC16DBAFB90B1A37A25AD3AD21DF",
       "algorithm": "sha256"
     },
     {
