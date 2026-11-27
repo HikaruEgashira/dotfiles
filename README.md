@@ -6,10 +6,13 @@ hikae's development environment, declared so that any machine can be rebuilt fro
 
 - **Reproducible.** Every package, setting, and background service is declared in a Nix flake. A new or wiped machine reaches the same state from one command; nothing is configured by hand.
 - **Verifiable supply chain.** Software comes only from binary caches, checksummed releases, or signed upstream installers. Nothing is built from source locally, so what runs is what was reviewed.
+- **Gated distribution.** Fleet, isolated in its own AWS account, pushes only what passed CI and the owner approved.
 - **Least privilege by trust tier.** Machines, humans, AI agents, and AWS accounts each get only the access their role needs. A machine assumed compromised can never write to a trusted one. See the [threat model](docs/security/threat-model.md) and [policy diagram](docs/security/policy.png).
 - **No standing secrets.** Credentials are short-lived and brokered; secrets are encrypted at rest and handed only to the repository that needs them.
 - **Self-maintaining.** Inputs update weekly behind a CI gate, machines pull `main` daily, and audits report drift instead of letting it accumulate.
 - **Safe for agents.** Interactive agents act on a human's request. Autonomous agents (`ledger` on mac-studio, `hikaevi` on ms-a2) run without instructions and involve a human only for decisions. Agents share centrally managed instructions and hold no long-lived credentials.
+
+![Permission policy across humans, agents, machines, and AWS](docs/security/policy.png)
 
 ## Machines
 

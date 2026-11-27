@@ -72,7 +72,7 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 - 公開面: tailnet 内からだけ到達できるようにする (subnet router か Tailscale on ECS)。インターネットに公開しない
 - 実行: ECS Fargate。DB は Aurora MySQL Serverless v2 (0 ACU で自動停止)、Redis は ElastiCache
 - 秘密: DB パスワード、`server_private_key`、admin 資格情報、enroll secret は Secrets Manager。端末と repo には置かない
-- アカウント: Fleet は専用の AWS アカウント `device-fleet` に置き、main など他のアカウントと分離する
+- アカウント: Fleet は専用の AWS アカウント `device-fleet` (607106784884) に置き、main など他のアカウントと分離する
 - controller: 同じ VPC の Lambda か ECS scheduled task。`deploy` branch だけを読む。`deploy` への昇格は CI 緑かつ HikaruEgashira の approve (GitHub environment `deploy`) を要し、`deploy` branch は承認済みの promote job 以外から動かせない
 - 変更経路: iac-aws の main push から OIDC で apply する。ms-a2 の runner には、この state と role を触らせない
 
@@ -87,3 +87,9 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 ![主体・端末・AWS アカウントごとの権限](policy.png)
 
 `uv run docs/security/policy_diagram.py` で再生成する。
+
+## 9. 端末の内部構成
+
+![端末ごとの層・agent sandbox・資格情報・常駐・更新元](device.png)
+
+`uv run docs/security/device_diagram.py` で再生成する。
