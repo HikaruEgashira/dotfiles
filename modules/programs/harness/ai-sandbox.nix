@@ -67,6 +67,8 @@ let
     "${home}/.cloudflared"
     "${home}/.config/.wrangler/config"
     "${home}/.local/state/claude-otel/token"
+    # 特権 AWS profile の broker。socket の差し替えも接続もさせない
+    (builtins.dirOf config.dotfiles.aws.adminSocket)
   ];
   # ~/.cache/hikaevi/*.json は hikaevi[bot] の installation token で、sandbox の gh wrapper が使う前提なので deny しない
 
@@ -77,7 +79,7 @@ let
   unixSockets = [
     "${config.xdg.cacheHome}/ghtkn/agent.sock"
     sshAuthSock
-    "${config.xdg.cacheHome}/aws-cred/agent.sock"
+    config.dotfiles.aws.readSocket
   ];
   unixSocketsToml = "{${lib.concatMapStringsSep "," (p: ''"${p}"="allow"'') unixSockets}}";
 
@@ -120,6 +122,17 @@ let
     "${home}/.local/share/aquaproj-aqua"
     "${home}/.nix-profile"
     "${home}/.spicetify"
+  ]
+  ++ hostExecuted;
+
+  # sandbox 外で無人実行されるもの。git config は core.fsmonitor 等で任意コードを実行でき、
+  # ledger の launchd agent は checkout 上の script をそのまま実行する
+  hostExecuted = [
+    "${home}/.config/git"
+    "${home}/.gitconfig"
+    "${home}/dotfiles/.git/hooks"
+    "${home}/ghq/github.com/HikaruEgashira/ledger/scripts"
+    "${home}/ghq/github.com/HikaruEgashira/ledger/app"
   ];
 
   # codex は 1 path 1 verdict なので、自分が読む設定は write だけ deny できない
@@ -136,7 +149,8 @@ let
     "${home}/.local/share/aquaproj-aqua"
     "${home}/.nix-profile"
     "${home}/.spicetify"
-  ];
+  ]
+  ++ hostExecuted;
   codexPersistence = lib.filter (
     p: !builtins.elem p codexReadable && !builtins.elem p codexReadOnly
   ) persistence;

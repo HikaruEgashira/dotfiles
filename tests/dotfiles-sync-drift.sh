@@ -20,6 +20,7 @@ run_case() {
   (
     set -eu
     xdg_drift="not-run"
+    flake=github:HikaruEgashira/dotfiles/x
     nix() {
       case "$verdict" in
       none)

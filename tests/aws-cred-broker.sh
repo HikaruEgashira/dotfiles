@@ -6,13 +6,22 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 broker="$root/modules/programs/aws/broker.py"
 aws_nix="$root/modules/programs/aws.nix"
 
-# sandbox 向け profile は broker client だけを使い、SSO token store を読む source profile は host 専用に分ける
-grep -Fq 'Label = "dev.egahika.aws-cred-agent";' "$aws_nix"
-for p in sso-readonly sso-admin sisaku-security-readonly-sso iac-aws-apply-chain artex-microvm-chain seccamp-lab-apply-chain; do
+# read 系 profile は sandbox が届く broker、特権 profile は sandbox が届かない別 socket の broker だけが返す
+grep -Fq 'label = "dev.egahika.aws-cred-agent";' "$aws_nix"
+grep -Fq 'label = "dev.egahika.aws-cred-admin-agent";' "$aws_nix"
+for p in sso-readonly sisaku-security-readonly-sso; do
   # shellcheck disable=SC2016 # Match the literal Nix interpolation.
   grep -Fq 'credential_process = ${client} '"$p" "$aws_nix"
-  grep -Fq "\"$p\"" "$aws_nix"
 done
+for p in sso-admin iac-aws-apply-chain artex-microvm-chain seccamp-lab-apply-chain; do
+  # shellcheck disable=SC2016
+  grep -Fq 'credential_process = ${adminClient} '"$p" "$aws_nix"
+done
+read_profiles=$(awk '/socket = readSocket;/{a=1} a&&/\];/{exit} a' "$aws_nix")
+if printf '%s\n' "$read_profiles" | grep -Eq 'sso-admin|-chain"'; then
+  printf '%s\n' 'FAIL: the sandbox-reachable broker serves a privileged profile' >&2
+  exit 1
+fi
 # chain の source は host 専用 profile に限り、broker client を source にして socket を再帰させない
 if grep -E '^\s*source_profile' "$aws_nix" | grep -vqE '= (sso-admin|seccamp-lab-org)$'; then
   printf '%s\n' 'FAIL: a role chain sources a broker-backed profile' >&2
@@ -88,12 +97,14 @@ printf '%s\n' 'ok: broker serves allowlisted profiles only and propagates aws fa
 
 # live: 有効な SSO session と常駐 agent がある host でだけ実行する
 if [ "${AWS_CRED_BROKER_LIVE:-}" = 1 ]; then
-  for p in default hikae-admin-sso iac-aws-apply seccamp-lab-apply; do
+  for p in default sisaku-security-readonly hikae-admin-sso iac-aws-apply seccamp-lab-apply; do
     aws sts get-caller-identity --profile "$p" --query Arn --output text
   done
-  if ~/.local/bin/aws-cred-client iac-aws-apply 2>/dev/null; then
-    printf '%s\n' 'FAIL: live broker serves a sandbox-facing profile' >&2
-    exit 1
-  fi
+  for p in iac-aws-apply sso-admin iac-aws-apply-chain; do
+    if ~/.local/bin/aws-cred-client "$p" >/dev/null 2>&1; then
+      printf '%s\n' "FAIL: the sandbox-reachable broker serves $p" >&2
+      exit 1
+    fi
+  done
   printf '%s\n' 'ok: live broker resolves every sandbox profile and rejects names outside the allowlist'
 fi
