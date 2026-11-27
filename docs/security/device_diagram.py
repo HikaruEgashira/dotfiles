@@ -148,4 +148,6 @@ with diagram("ms-a2"):
     flow(runner, job, "起動")
     deny(job, tpm, "読めない")
     flow(cenv, crunner, "起動時に渡す")
-    flow(hub, github, "git")
+    flow(hub, github, "gh-intel の git")
+    flow(crunner, github, "git / API")
+    flow(job, github, "git / API")
