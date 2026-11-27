@@ -90,6 +90,10 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 
 ## 9. 端末の内部構成
 
-![端末の内部: OS 層・ユーザー層・agent sandbox・資格情報・常駐](device.png)
+![macbook-air の内部](device-macbook-air.png)
+
+![mac-studio の内部](device-mac-studio.png)
+
+![ms-a2 の内部](device-ms-a2.png)
 
 `uv run docs/security/device_diagram.py` で再生成する。
