@@ -52,6 +52,10 @@ in
 
   config = lib.mkIf (cfg.enable && pkgs.stdenv.isDarwin) {
     home.activation.orcaUrlHandler = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      # osacompile は application id を解決できないと失敗し、以降の activation (launchd agent 等) を止める
+      if [ ! -x ${lib.escapeShellArg orcaCli} ]; then
+        echo "orcaUrlHandler: Orca.app is not installed; skipping" >&2
+      else
       app=${lib.escapeShellArg appDir}
       stamp="$app/Contents/Resources/.source"
       if [ "$(cat "$stamp" 2>/dev/null)" != ${script} ]; then
@@ -71,6 +75,7 @@ in
           run ${pkgs.duti}/bin/duti -s ${bundleId} "$scheme"
         fi
       done
+      fi
     '';
   };
 }
