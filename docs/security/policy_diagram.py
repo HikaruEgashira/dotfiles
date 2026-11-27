@@ -15,6 +15,7 @@ from diagrams.aws.management import Organizations
 from diagrams.aws.security import IAMRole, SingleSignOn
 from diagrams.generic.compute import Rack
 from diagrams.generic.device import Mobile
+from diagrams.generic.network import VPN
 from diagrams.generic.os import Ubuntu
 from diagrams.onprem.client import Client
 from diagrams.onprem.vcs import Github
@@ -60,12 +61,13 @@ with Diagram(
             apply = IAMRole("apply")
         with Cluster("sisaku-security 034111987897"):
             sisaku = IAMRole("ReadOnly")
-        with Cluster("device-fleet"):
+        with Cluster("device-fleet 607106784884"):
             fleet = Organizations("Fleet (計画)")
         with Cluster("lab-seccamp26d2 931932531320"):
             lab = IAMRole("apply")
 
     gh = Github("GitHub")
+    tailnet = VPN("tailnet\n(ACL: iac-tailscale)")
 
     human >> Edge(color=ALLOW, xlabel="操作") >> air
     air >> Edge(color=ALLOW, xlabel="操作") >> studio
@@ -87,6 +89,11 @@ with Diagram(
     gh >> Edge(color=ALLOW, xlabel="配布 (CI + approve)") >> fleet
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio
+
+    for host in (air, studio):
+        host >> Edge(color=ALLOW, style="dotted", dir="both") >> tailnet
+    msa2 >> Edge(color=DENY, style="dotted", xlabel="tag:untrusted-dev") >> tailnet
+    tailnet >> Edge(color=ALLOW, xlabel="tailnet 内だけ") >> fleet
 
     for dst, why in [(studio, "書込禁止"), (broker, "到達禁止"), (fleet, "到達禁止")]:
         msa2 >> Edge(color=DENY, style="dashed", xlabel=f"✕ {why}") >> dst
