@@ -16,7 +16,7 @@ Nix flake + nix-darwin + home-manager で aarch64-darwin の環境を宣言管�
 | tool の telemetry 分類と DNS denylist | `lib/telemetry-ledger.json` (`docs/operations.md` §4.10) |
 | 端末の信頼区分と脅威モデル | `docs/security/threat-model.md`。ms-a2 (認証情報なし) から高区分への書き込み経路を作らない |
 | 端末管理 (Fleet、dotfiles の配布、MDM profile) | `scripts/fleet-controller.py` (`docs/operations.md` §3.5、server は AWS) |
-| 運用手順 | 索引 `docs/playbooks.md`、本文 `docs/operations.md` / `docs/launchd.md` |
+| 運用手順 | `docs/operations.md` / `docs/launchd.md` |
 | 設計 / ADR | `docs/ideation/`, `docs/solutions/` |
 
 ## コマンド

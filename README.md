@@ -25,6 +25,5 @@ hikae's development environment, declared so that any machine can be rebuilt fro
 ## Where to go next
 
 - [AGENTS.md](AGENTS.md) — where each kind of change belongs and repository conventions
-- [docs/playbooks.md](docs/playbooks.md) — index of operational procedures
-- [docs/operations.md](docs/operations.md) — install, daily operation, troubleshooting, recovery
+- [docs/operations.md](docs/operations.md) — operational procedures: install, daily operation, troubleshooting, recovery
 - [docs/security/](docs/security/) — trust tiers and threat model
