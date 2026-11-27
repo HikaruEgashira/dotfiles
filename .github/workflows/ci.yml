@@ -147,6 +147,8 @@ jobs:
   promote:
     needs: [fetchurl-provenance, validate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # deploy は全 Mac に root で配られるため、HikaruEgashira の approve を待つ
+    environment: deploy
     timeout-minutes: 5
     runs-on: ubuntu-24.04
     permissions:
