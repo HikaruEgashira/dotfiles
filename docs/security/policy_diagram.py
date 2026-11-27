@@ -73,10 +73,9 @@ with Diagram(
     air >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> ledger
     air >> Edge(color=ALLOW, style="dotted", label="decision のみ") >> hikaevi
 
-    ai >> Edge(color=ALLOW, label="commit / push / PR / merge") >> gh
-    ledger >> Edge(color=ALLOW, label="PR") >> gh
-    hikaevi >> Edge(color=ALLOW, label="PR (bot)") >> gh
-    studio >> Edge(color=ALLOW, label="push") >> gh
+    ai >> Edge(color=ALLOW, label="開発") >> gh
+    ledger >> Edge(color=ALLOW, label="開発") >> gh
+    hikaevi >> Edge(color=ALLOW, label="開発") >> gh
     ai >> Edge(color=ALLOW) >> broker
     ledger >> Edge(color=ALLOW) >> broker
     broker >> Edge(color=ALLOW, label="既定") >> ro
