@@ -755,7 +755,7 @@
           "xdg-entries-guards" = xdgGuardCheckFor "aarch64-linux";
         };
         x86_64-linux = {
-          # ms-a2 は侵害前提の host なので、手元の sudo 鍵を信頼させない (docs/security/threat-model.md F1)
+          # ms-a2 は信頼区分が低いので、手元の sudo 鍵を信頼させない (docs/security/threat-model.md F1)
           ms-a2-no-sudo-agent =
             assert !(msA2.config.environment.etc ? "ssh/sudo_authorized_keys");
             assert !msA2.config.security.pam.sshAgentAuth.enable;

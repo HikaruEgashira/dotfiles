@@ -188,7 +188,7 @@ grep -E 'pam_tid|pam_reattach' /etc/pam.d/sudo_local
 
 ### 3.1.1 リモート sudo を手元 Mac の Touch ID で通す
 
-mac-studio の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。ms-a2 には鍵を転送せず、sudo はパスワードで通す (侵害前提の host に署名を要求させないため。`docs/security/threat-model.md` F1)。署名のたびに macbook-air で Touch ID を求める。
+mac-studio の sudo は、macbook-air の Secure Enclave にある鍵で署名して通す。ms-a2 には鍵を転送せず、sudo はパスワードで通す (信頼の低い host に署名を要求させないため。`docs/security/threat-model.md` F1)。署名のたびに macbook-air で Touch ID を求める。
 
 | 層                 | 設定                                                                   | module                                                       |
 | ------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------ |

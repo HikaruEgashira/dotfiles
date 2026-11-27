@@ -38,7 +38,7 @@ with Diagram(
     node_attr=node,
     edge_attr=edge,
 ):
-    with Cluster("tailnet (ACL: iac-tailscale)"):
+    with Cluster("tailnet"):
         with Cluster("信頼: 高"):
             with Cluster("macbook-air"):
                 human = User("人間")
@@ -49,8 +49,8 @@ with Diagram(
                 ledger = Rack("ledger")
                 broker = SingleSignOn("AWS 認証")
 
-        with Cluster("信頼: 低 (侵害前提)"):
-            with Cluster("ms-a2 (tag:untrusted-dev)"):
+        with Cluster("信頼: 低"):
+            with Cluster("ms-a2 tag:untrusted-dev"):
                 msa2 = Ubuntu("開発機\n認証情報なし")
                 hikaevi = Rack("hikaevi")
 
@@ -62,7 +62,7 @@ with Diagram(
         with Cluster("sisaku-security 034111987897"):
             sisaku = IAMRole("ReadOnly")
         with Cluster("device-fleet 607106784884"):
-            fleet = Organizations("Fleet (計画)\ntailnet 内からのみ")
+            fleet = Organizations("Fleet 計画中\ntailnet 内からのみ")
         with Cluster("lab-seccamp26d2 931932531320"):
             lab = IAMRole("apply")
 
@@ -85,7 +85,7 @@ with Diagram(
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku
-    gh >> Edge(color=ALLOW, xlabel="配布 (CI + approve)") >> fleet
+    gh >> Edge(color=ALLOW, xlabel="配布 CI + approve") >> fleet
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio
 

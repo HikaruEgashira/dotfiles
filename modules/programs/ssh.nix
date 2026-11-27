@@ -143,7 +143,7 @@ in
           StrictHostKeyChecking = "accept-new";
         };
         # 転送するのは Secretive の agent だけにし、ファイル鍵の agent は remote の root から使わせない。
-        # ms-a2 には転送しない: 侵害前提の host の root に、mac-studio の sudo を通す署名を要求させない
+        # ms-a2 には転送しない: 信頼区分の低い host の root に、mac-studio の sudo を通す署名を要求させない
         "mac-studio" = lib.mkIf config.dotfiles.ssh.sudoAgentForward {
           ForwardAgent = secretiveSocket;
         };

@@ -39,31 +39,31 @@ with Diagram(
     node_attr=node,
     edge_attr=edge,
 ):
-    with Cluster("macOS (macbook-air / mac-studio)"):
-        with Cluster("OS 層 (nix-darwin, root)"):
+    with Cluster("macbook-air / mac-studio"):
+        with Cluster("OS 層 nix-darwin"):
             fw = Firewall("受信遮断\nDNS 暗号化")
             sudo = Vault("sudo\nSecretive 鍵 → Touch ID")
             managed = Rack("AI CLI の強制設定\ntelemetry 停止")
-            tsd = Rack("tailscaled\n(SSH は tailnet ACL)")
+            tsd = Rack("tailscaled\nSSH は tailnet ACL")
             apps = Rack("署名検証済み app")
 
-        with Cluster("ユーザー層 (home-manager)"):
-            pkgs = Rack("package\n(cache と checksum のみ)")
-            with Cluster("常駐 (loopback のみ)"):
+        with Cluster("ユーザー層 home-manager"):
+            pkgs = Rack("package\ncache と checksum のみ")
+            with Cluster("常駐 loopback のみ"):
                 sync = Rack("dotfiles-sync")
                 hub = Rack("gypxy hub")
                 otel = Rack("telemetry collector")
                 artex = Rack("ARTEX / Postgres")
-                ledger = Rack("ledger (studio)")
+                ledger = Rack("ledger\nstudio のみ")
 
             with Cluster("資格情報"):
-                gh = Vault("ghtkn\nGitHub App の token\n(studio: 書込 / air: 読取)")
+                gh = Vault("ghtkn\nstudio は書込・air は読取")
                 aws = SingleSignOn("AWS broker")
-                age = SecretsManager("secret (age)\nrepo ごとに渡す")
+                age = SecretsManager("age secret\nrepo ごとに渡す")
                 auth = Vault("ssh 認証鍵")
                 sign = Vault("署名鍵")
 
-            with Cluster("AI agent sandbox (読みは許可・書きは $HOME)"):
+            with Cluster("AI agent sandbox"):
                 agent = Rack("Claude Code / Codex")
 
     agent >> Edge(color=ALLOW, xlabel="仲介") >> gh
@@ -76,17 +76,17 @@ with Diagram(
     sync >> Edge(color=ALLOW, xlabel="適用") >> pkgs
     hub >> Edge(color=ALLOW) >> gh
 
-    with Cluster("ms-a2 (NixOS, 侵害前提)"):
+    with Cluster("ms-a2 NixOS"):
         with Cluster("OS 層"):
             disk = Vault("ディスク暗号化")
             net = Firewall("sshd なし\ntailnet ACL のみ")
         with Cluster("job ごとの使い捨て環境"):
-            job = Rack("CI job\n(専用 netns)")
-        runner = Rack("CI runner\n(token なし)")
+            job = Rack("CI job\n専用 netns")
+        runner = Rack("CI runner\ntoken なし")
         tpm = Vault("TPM 鍵")
-        crunner = Rack("claude runner\n(専用ユーザー)")
-        cenv = Vault("runner token\n(root のみ読める)")
-        mhub = Rack("gypxy hub\n(loopback)")
+        crunner = Rack("claude runner\n専用ユーザー")
+        cenv = Vault("runner token\nroot のみ読める")
+        mhub = Rack("gypxy hub")
         hikaevi = Rack("hikaevi")
 
     runner >> Edge(color=ALLOW, xlabel="起動") >> job
