@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["diagrams==0.24.4"]
 # ///
-"""端末ごとの内部構成を 1 端末 1 枚で (OS 層・ユーザー層・agent sandbox・資格情報・常駐) を図にする。
+"""端末ごとに、内部のプロセス・データと外部とのデータの流れを 1 枚ずつ描く。
 
 uv run docs/security/device_diagram.py  →  docs/security/device-<端末>.png
 """
@@ -10,27 +10,39 @@ uv run docs/security/device_diagram.py  →  docs/security/device-<端末>.png
 from pathlib import Path
 
 from diagrams import Cluster, Diagram, Edge
-from diagrams.aws.security import SecretsManager, SingleSignOn
+from diagrams.aws.compute import Lambda
+from diagrams.aws.general import Disk, SslPadlock, User
+from diagrams.aws.migration import Datasync
+from diagrams.aws.security import IAMRole, SecretsManager, SingleSignOn
+from diagrams.gcp.network import DNS
 from diagrams.generic.compute import Rack
-from diagrams.aws.security import IAMRole
-from diagrams.generic.network import Firewall
-from diagrams.onprem.network import Internet, Powerdns
-from diagrams.onprem.vcs import Github
-from diagrams.onprem.client import Client
+from diagrams.generic.device import Mobile
+from diagrams.generic.network import VPN
+from diagrams.ibm.compute import Key
+from diagrams.k8s.podconfig import Secret
+from diagrams.oci.connectivity import DNS as Resolver
+from diagrams.oci.monitoring import Telemetry
+from diagrams.onprem.ci import GithubActions
+from diagrams.onprem.network import Envoy, Internet
 from diagrams.onprem.security import Vault
+from diagrams.onprem.vcs import Github
 
 HERE = Path(__file__).parent
 
 ALLOW = "darkgreen"
 DENY = "gray"
 
-graph = {"rankdir": "TB", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.4", "ranksep": "1.0", "splines": "ortho", "forcelabels": "true"}
+graph = {"rankdir": "TB", "fontname": "Hiragino Sans", "fontsize": "20", "pad": "0.5", "nodesep": "0.6", "ranksep": "0.9", "splines": "ortho", "forcelabels": "true"}
 node = {"fontname": "Hiragino Sans", "fontsize": "12"}
 edge = {"fontname": "Hiragino Sans", "fontsize": "11"}
 
 
-def deny(src, dst):
-    src >> Edge(color=DENY, style="dashed", xlabel="✕") >> dst
+def flow(src, dst, label=""):
+    src >> Edge(color=ALLOW, xlabel=label) >> dst
+
+
+def deny(src, dst, label):
+    src >> Edge(color=DENY, style="dashed", xlabel=f"✕ {label}") >> dst
 
 
 def diagram(name):
@@ -45,97 +57,94 @@ def diagram(name):
     )
 
 
-def outside(studio):
-    with Cluster("外界"):
-        o = {
-            "lan": Internet("LAN"),
-            "dns": Powerdns("NextDNS\ntelemetry denylist"),
-            "tel": Internet("telemetry 送信先"),
-            "gh": Github("GitHub"),
-            "aws": IAMRole("AWS"),
-            "cache": Internet("Nix cache\n上流 release"),
-            "collector": Internet("gh-intel.com\ncollector"),
-        }
-        if studio is None:
-            o = {k: o[k] for k in ("lan", "dns", "tel", "gh", "aws")}
-    return o
-
-
-def mac(name, sudo_label, gh_label, studio):
+def mac(name, studio):
     with diagram(name):
-        o = outside(studio)
-        with Cluster("OS 層 nix-darwin"):
-            fw = Firewall("受信遮断")
-            resolver = Rack("DNS\n暗号化して問い合わせ")
-            Vault(sudo_label)
-            Rack("AI CLI の強制設定\ntelemetry 停止")
-            Rack("tailscaled\nSSH は tailnet ACL")
-            Rack("署名検証済み app")
+        operator = Mobile("macbook-air") if studio else User("人間")
+        lan = Internet("LAN")
+        cache = Internet("Nix cache\n上流 release")
 
-        with Cluster("ユーザー層 home-manager"):
-            pkgs = Rack("package\ncache と checksum のみ")
-            with Cluster("常駐 loopback のみ"):
-                sync = Rack("dotfiles-sync")
-                hub = Rack("gypxy hub")
-                otel = Rack("telemetry collector")
-                artex = Rack("ARTEX / Postgres")
+        with Cluster(name):
+            with Cluster("root"):
+                sudo = SslPadlock("sudo")
+                resolver = Resolver("名前解決")
+                if not studio:
+                    key = Vault("Secretive 鍵")
+
+            with Cluster("ユーザー"):
+                with Cluster("AI agent sandbox"):
+                    agent = Rack("Claude Code / Codex")
                 if studio:
                     ledger = Rack("ledger")
-                    Rack("CLIProxyAPI")
+                sync = Datasync("dotfiles-sync")
+                nixstore = Disk("Nix store")
+                with Cluster("資格情報"):
+                    ghtkn = Vault("ghtkn\n" + ("書き込み可" if studio else "読み取り専用"))
+                    broker = SingleSignOn("AWS broker")
+                    secrets = SecretsManager("age secret\nssh 認証鍵")
+                hub = Envoy("gypxy hub")
+                otel = Telemetry("telemetry collector")
 
-            with Cluster("資格情報"):
-                gh = Vault(gh_label)
-                aws = SingleSignOn("AWS broker")
-                age = SecretsManager("age secret\nrepo ごとに渡す")
-                auth = Vault("ssh 認証鍵")
-                sign = Vault("署名鍵")
+        dns = DNS("NextDNS")
+        tel = Internet("telemetry 送信先")
+        github = Github("GitHub")
+        aws = IAMRole("AWS")
+        collector = Internet("gh-intel.com")
 
-            with Cluster("AI agent sandbox"):
-                agent = Rack("Claude Code / Codex")
+        flow(operator, sudo, "署名" if studio else "Touch ID")
+        if not studio:
+            flow(key, sudo, "署名")
+        deny(lan, hub, "loopback のみ")
+        deny(lan, otel, "loopback のみ")
+        flow(cache, sync, "検証済み package")
+        flow(sync, nixstore)
 
-        deny(o["lan"], fw)
-        resolver >> Edge(color=ALLOW) >> o["dns"]
-        deny(o["dns"], o["tel"])
-        hub >> Edge(color=ALLOW) >> o["gh"]
-        gh >> Edge(color=ALLOW) >> o["gh"]
-        aws >> Edge(color=ALLOW) >> o["aws"]
-        o["cache"] >> Edge(color=ALLOW, xlabel="検証して取得") >> pkgs
-        otel >> Edge(color=ALLOW) >> o["collector"]
-
-        agent >> Edge(color=ALLOW, xlabel="仲介") >> gh
-        agent >> Edge(color=ALLOW, xlabel="仲介") >> aws
-        agent >> Edge(color=ALLOW) >> sign
-        agent >> Edge(color=ALLOW) >> otel
-        for dst in (age, auth, artex):
-            deny(agent, dst)
+        flow(agent, ghtkn, "token")
+        flow(agent, broker, "資格情報")
+        flow(agent, otel)
+        deny(agent, secrets, "読めない")
         if studio:
-            ledger >> Edge(color=ALLOW) >> aws
-        sync >> Edge(color=ALLOW, xlabel="適用") >> pkgs
-        hub >> Edge(color=ALLOW) >> gh
+            flow(ledger, ghtkn)
+            flow(ledger, broker)
+
+        flow(resolver, dns, "暗号化 DNS")
+        deny(dns, tel, "名前を返さない")
+        flow(ghtkn, hub)
+        flow(hub, github, "git")
+        flow(ghtkn, github, "API")
+        flow(broker, aws, "一時資格情報")
+        flow(otel, collector, "telemetry")
 
 
-mac("macbook-air", "sudo 鍵\nSecretive → Touch ID", "ghtkn\n読み取り専用", studio=False)
-mac("mac-studio", "sudo\nair の鍵で署名", "ghtkn\n書き込み可", studio=True)
+mac("macbook-air", studio=False)
+mac("mac-studio", studio=True)
 
 with diagram("ms-a2"):
-    o = outside(None)
-    with Cluster("OS 層 NixOS"):
-        Vault("ディスク暗号化")
-        net = Firewall("sshd なし\ntailnet ACL のみ")
-    with Cluster("job ごとの使い捨て環境"):
-        job = Rack("CI job\n専用 netns")
-    runner = Rack("CI runner\ntoken なし")
-    tpm = Vault("TPM 鍵")
-    crunner = Rack("claude runner\n専用ユーザー")
-    cenv = Vault("runner token\nroot のみ読める")
-    mhub = Rack("gypxy hub")
-    Rack("hikaevi")
+    lan = Internet("LAN")
+    tailnet = Internet("tailnet")
 
-    deny(o["lan"], net)
-    runner >> Edge(color=ALLOW, xlabel="起動") >> job
-    runner >> Edge(color=ALLOW) >> tpm
-    tpm >> Edge(color=ALLOW, xlabel="署名で認証") >> o["aws"]
-    o["aws"] >> Edge(color=ALLOW, xlabel="token を発行") >> o["gh"]
-    mhub >> Edge(color=ALLOW) >> o["gh"]
-    deny(crunner, cenv)
-    deny(job, tpm)
+    with Cluster("ms-a2"):
+        with Cluster("root"):
+            tsd = VPN("tailscaled")
+            runner = GithubActions("CI runner")
+            tpm = Key("TPM 鍵")
+            cenv = Secret("runner token")
+        with Cluster("job ごとの使い捨て環境"):
+            job = Rack("CI job")
+        with Cluster("claude-runner ユーザー"):
+            crunner = Rack("claude runner")
+        with Cluster("ユーザー"):
+            hub = Envoy("gypxy hub")
+
+    broker = Lambda("AWS local-broker")
+    github = Github("GitHub")
+
+    deny(lan, tsd, "sshd なし")
+    flow(tailnet, tsd, "ACL で許可した SSH")
+    deny(lan, hub, "loopback のみ")
+    flow(tpm, runner, "署名")
+    flow(runner, broker, "署名した要求")
+    flow(broker, github, "runner 登録")
+    flow(runner, job)
+    deny(job, tpm, "読めない")
+    flow(cenv, crunner, "起動時に渡す")
+    flow(hub, github, "git")
