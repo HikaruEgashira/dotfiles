@@ -54,6 +54,9 @@ let
     "${home}/.local/share/ghtkn"
     # socket は許可するが、暗号化 token store は sandbox に読ませない
     "${config.xdg.cacheHome}/ghtkn/agent"
+    # ops App (workflows / actions write) の agent。socket・token store・key ごと sandbox から隠す
+    (builtins.dirOf config.dotfiles.ghtkn.opsSocket)
+    "${config.xdg.dataHome}/ghtkn-ops"
     "${home}/.local/share/artex/local.env"
     "${home}/.local/share/artex/artex-secrets"
     # プラグイン名が可変なため、秘密を含まない設定も含めてディレクトリ全体を拒否する。
@@ -112,6 +115,7 @@ let
     "${home}/.config/opencode/opencode.json"
     "${home}/.config/ai-sandbox"
     "${home}/.config/claude/sandbox.json"
+    "${config.xdg.configHome}/ghtkn-ops"
     # host 側 (aws-cred-agent / 通常 terminal / claude-sandbox wrapper) が sandbox 外で読む・実行するもの。
     # ~/.aws/config の credential_process や置換された binary が host で実行されるのを防ぐ
     "${home}/.aws"
@@ -235,7 +239,8 @@ let
     ${aquaEnv}
     export SSH_AUTH_SOCK=${lib.escapeShellArg sshAuthSock}
     # export した PAT や text backend を sandbox に継承させず、常に agent socket 経由に固定する
-    unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR
+    unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR GHTKN_CONFIG GHTKN_AGENT_SOCKET GHTKN_AGENT_TOKEN_DIR GHTKN_AGENT_KEY
+    export GHTKN_APP=${lib.escapeShellArg config.home.sessionVariables.GHTKN_APP}
     exec "$real" --settings ${lib.escapeShellArg "${config.xdg.configHome}/claude/sandbox.json"} "$@"
   '';
 

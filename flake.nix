@@ -787,11 +787,34 @@
             assert !(air.home.file ? ".aws/config");
             assert !(air.launchd.agents ? aws-cred-agent);
             msA2.pkgs.writeText "thin-client-no-aws" "ok";
+          # 書き込み App (ghtkn-hikae / ops) はシンクライアントに置かず、ops agent は sandbox から届かない (threat-model F7)
+          ghtkn-app-tiers =
+            let
+              air = self.homeConfigurations.hikae.config;
+              studio = self.homeConfigurations."hikae@mac-studio".config;
+              airYaml = air.xdg.configFile."ghtkn/ghtkn.yaml".text;
+              studioYaml = studio.xdg.configFile."ghtkn/ghtkn.yaml".text;
+              sandbox = (builtins.fromJSON studio.home.file.".config/claude/sandbox.json".text).sandbox;
+              opsDir = builtins.dirOf studio.dotfiles.ghtkn.opsSocket;
+              hasInfix = nixpkgs.lib.hasInfix;
+            in
+            assert air.dotfiles.ghtkn.readonly && !air.dotfiles.ghtkn.ops.enable;
+            assert !(air.launchd.agents ? ghtkn-ops-agent);
+            assert !(hasInfix "Iv23li4HDmrucWZqsdP4" airYaml) && !(hasInfix "Iv23li38Or76gNJho0xE" airYaml);
+            assert studio.dotfiles.ghtkn.ops.enable && studio.launchd.agents ? ghtkn-ops-agent;
+            assert !(hasInfix "Iv23li38Or76gNJho0xE" studioYaml);
+            assert !(builtins.elem studio.dotfiles.ghtkn.opsSocket sandbox.network.allowUnixSockets);
+            assert !(builtins.any (p: hasInfix "ghtkn-ops" p) sandbox.network.allowUnixSockets);
+            assert builtins.elem opsDir sandbox.filesystem.denyRead;
+            assert builtins.elem opsDir sandbox.filesystem.denyWrite;
+            msA2.pkgs.writeText "ghtkn-app-tiers" "ok";
           ms-a2-no-write-credentials =
             let
               hm = msA2.config.home-manager.users.hikae;
             in
             assert hm.dotfiles.ghtkn.readonly;
+            assert !hm.dotfiles.ghtkn.ops.enable;
+            assert !(hm.xdg.configFile ? "ghtkn-ops/ghtkn.yaml");
             assert !(hm.home.file ? ".aws/config");
             assert !hm.dotfiles.cloudflare.enable;
             msA2.pkgs.writeText "ms-a2-no-write-credentials" "ok";

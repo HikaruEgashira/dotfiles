@@ -79,7 +79,9 @@ def mac(name, studio):
                 sync = Datasync("dotfiles-sync\norigin main を SHA 固定")
                 nixstore = Disk("Nix store")
                 with Cluster("資格情報"):
-                    ghtkn = Vault("ghtkn\n" + ("書き込み可" if studio else "読み取り専用"))
+                    ghtkn = Vault("ghtkn\n" + ("開発用 (ghtkn-hikae)" if studio else "読み取り専用"))
+                    if studio:
+                        opsghtkn = Vault("ghtkn ops\nworkflows / actions")
                     if studio:
                         broker = SingleSignOn("AWS broker\nread 系")
                         adminbroker = SingleSignOn("AWS broker\n特権")
@@ -109,6 +111,9 @@ def mac(name, studio):
         if studio:
             flow(agent, broker, "資格情報")
             deny(agent, adminbroker, "接続できない")
+            deny(agent, opsghtkn, "接続できない")
+            flow(operator, opsghtkn, "ghops")
+            flow(opsghtkn, hub)
         flow(agent, otel)
         deny(agent, secrets, "読めない")
         deny(agent, access, "読めない")

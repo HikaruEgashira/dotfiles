@@ -305,6 +305,28 @@ host の `SSH_AUTH_SOCK` は認証 agent を指す。git は `gpg.ssh.program` �
 
 `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519` で作り直し、各 host の `~/.ssh/authorized_keys` を差し替え、`launchctl kickstart -k gui/$(id -u)/dev.egahika.ssh-add` で再ロードする。認証鍵は署名に使わないので git 設定は変えない。
 
+### 3.4.1 GitHub の権限階層と ops App (module: `modules/programs/ghtkn.nix`)
+
+GitHub への権限は強い順に 4 段に分ける。上の段の操作を下の段の token で代行しない。
+
+| 段  | 主体                                        | 使う場所                                       | 権限                                                                                                 |
+| --- | ------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 1   | iac-github (CI、OIDC + AWS Secrets Manager) | GitHub-hosted runner                           | repo 設定・ruleset・environment・secret などの管理系すべて                                           |
+| 2   | GitHub App `ghtkn-hikae-ops`                | mac-studio の host terminal だけ。`ghops` 経由 | contents / workflows / actions / actions_variables / pull_requests write                             |
+| 3   | GitHub App `ghtkn-hikae`                    | 既定。sandbox の AI agent も使う               | contents / pull_requests / issues / merge_queues / projects write。actions・checks・statuses は read |
+| 4   | GitHub App `ghtkn-hikae-readonly`           | macbook-air、ms-a2                             | read のみ                                                                                            |
+
+ops App は既定の agent (`~/.cache/ghtkn/agent.sock`) とは別の launchd agent `dev.egahika.ghtkn-ops-agent` が持つ。socket・token store は `~/.cache/ghtkn-ops/`、key は `~/.local/share/ghtkn-ops/`、config は `~/.config/ghtkn-ops/ghtkn.yaml` で、ai-sandbox はこれらを deny する。既定の `ghtkn.yaml` には ops App を載せない。
+
+```bash
+ghops ghauth                         # ops agent の unlock と device flow (初回と 8h 失効時)
+ghops git push                       # .github/workflows を含む push
+ghops gh workflow run ci.yml         # workflow の dispatch / rerun
+ghops gh run rerun <id>
+```
+
+`ghops` は `GHTKN_CONFIG` / `GHTKN_AGENT_SOCKET` / `GHTKN_APP=HikaruEgashira/ghtkn-hikae-ops` を設定し、`GH_TOKEN` を外して引数のコマンドを実行する。sandbox の中では socket に届かないので失敗する。`ghtkn-hikae` で workflow ファイルを含む push をすると GitHub が `refusing to allow a GitHub App to create or update workflow ... without workflows permission` で拒否するので、そのときだけ `ghops` を付ける。
+
 ### 3.5 macOS 自動アップデートを固定する
 
 `modules/darwin/system.nix` の activation script が `/Library/Preferences/com.apple.SoftwareUpdate` を宣言管理する (`system.defaults.CustomSystemPreferences` は root の `~/Library/Preferences` に書くだけで実効値に届かないため使わない)。手で `sudo defaults write` する必要は無い。check と download は自動、macOS 本体の install は手動 (再起動を伴うため、§7.1 の月次 window で適用する)。

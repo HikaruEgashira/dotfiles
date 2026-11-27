@@ -11,7 +11,7 @@ fi
 # 常駐 (darwin: launchd / linux: systemd) が落ちていても auth を止めない
 if ! ghtkn info 2>/dev/null | jq -e '.agent.running' >/dev/null; then
   if command -v launchctl >/dev/null; then
-    launchctl kickstart "gui/$UID/dev.egahika.ghtkn-agent" 2>/dev/null || true
+    launchctl kickstart "gui/$UID/${GHTKN_AGENT_LABEL:-dev.egahika.ghtkn-agent}" 2>/dev/null || true
   else
     systemctl --user start ghtkn-agent 2>/dev/null || true
   fi

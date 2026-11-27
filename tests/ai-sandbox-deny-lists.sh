@@ -145,7 +145,14 @@ printf '%s\n' 'ok: codex proxy allows github domains and gh falls back to a toke
 # shellcheck disable=SC2016
 grep -Fq '"${config.xdg.cacheHome}/ghtkn/agent"' "$source_nix"
 
-printf '%s\n' 'ok: ghtkn encrypted token store stays out of the sandbox'
+# workflows / actions write を持つ ops agent は socket の親 dir ごと deny し、許可 socket に載せない
+grep -Fq '(builtins.dirOf config.dotfiles.ghtkn.opsSocket)' "$source_nix"
+if grep -Fq 'ghtkn-ops' <(sed -n '/unixSockets = \[/,/\];/p' "$source_nix") || grep -Fq 'opsSocket' <(sed -n '/unixSockets = \[/,/\];/p' "$source_nix"); then
+  printf '%s\n' 'FAIL: the ghtkn ops agent socket is reachable from the sandbox' >&2
+  exit 1
+fi
+
+printf '%s\n' 'ok: ghtkn encrypted token store and ops agent stay out of the sandbox'
 
 # export した PAT / text backend を claude sandbox に継承させず、token 取得経路を agent socket に固定する
 grep -Fq 'unset GHTKN_GITHUB_TOKEN GHTKN_BACKEND GHTKN_TEXT_BACKEND_DIR' "$source_nix"
