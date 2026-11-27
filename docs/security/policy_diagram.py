@@ -58,9 +58,10 @@ with Diagram(
             ro = IAMRole("ReadOnly")
             admin = IAMRole("Admin")
             apply = IAMRole("apply")
-            fleet = Organizations("Fleet (計画)")
         with Cluster("sisaku-security 034111987897"):
             sisaku = IAMRole("ReadOnly")
+        with Cluster("device-fleet"):
+            fleet = Organizations("Fleet (計画)")
         with Cluster("lab-seccamp26d2 931932531320"):
             lab = IAMRole("apply")
 
@@ -83,7 +84,7 @@ with Diagram(
     admin >> Edge(color=ROOT) >> apply
     admin >> Edge(color=ROOT) >> lab
     broker >> Edge(color=ALLOW) >> sisaku
-    gh >> Edge(color=ALLOW, xlabel="配布") >> fleet
+    gh >> Edge(color=ALLOW, xlabel="配布 (CI + approve)") >> fleet
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> air
     fleet >> Edge(color=ROOT, style="bold", xlabel="管理") >> studio
 

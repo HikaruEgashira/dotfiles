@@ -19,7 +19,7 @@ flowchart LR
     air["macbook-air<br/>シンクライアント<br/>sudo 鍵 (Secure Enclave)"]
     studio["mac-studio<br/>認証情報を持つ開発機"]
   end
-  subgraph cloud["AWS (制御面)"]
+  subgraph cloud["AWS device-fleet アカウント (制御面)"]
     fleet["Fleet server<br/>+ controller"]
   end
   subgraph low["信頼: 低 (侵害前提)"]
@@ -31,7 +31,7 @@ flowchart LR
   air -- "ssh (操作)" --> studio
   air -- "ssh (操作)" --> msa2
   studio -- "push (認証済み)" --> gh
-  gh -- "CI 緑の commit だけ deploy へ" --> gh
+  gh -- "CI 緑 + HikaruEgashira の approve で deploy へ" --> gh
   fleet -- "deploy を読む" --> gh
   fleet == "root script / MDM profile" ==> air
   fleet == "root script / MDM profile" ==> studio
@@ -72,13 +72,14 @@ ms-a2 の self-hosted runner (`hikae-<N>vcpu-ubuntu-2404`) の job が secret �
 - 公開面: tailnet 内からだけ到達できるようにする (subnet router か Tailscale on ECS)。インターネットに公開しない
 - 実行: ECS Fargate。DB は Aurora MySQL Serverless v2 (0 ACU で自動停止)、Redis は ElastiCache
 - 秘密: DB パスワード、`server_private_key`、admin 資格情報、enroll secret は Secrets Manager。端末と repo には置かない
-- controller: 同じ VPC の Lambda か ECS scheduled task。`deploy` branch だけを読む。`deploy` は CI 緑の main だけが fast-forward する
+- アカウント: Fleet は専用の AWS アカウント `device-fleet` に置き、main など他のアカウントと分離する
+- controller: 同じ VPC の Lambda か ECS scheduled task。`deploy` branch だけを読む。`deploy` への昇格は CI 緑かつ HikaruEgashira の approve (GitHub environment `deploy`) を要し、`deploy` branch は承認済みの promote job 以外から動かせない
 - 変更経路: iac-aws の main push から OIDC で apply する。ms-a2 の runner には、この state と role を触らせない
 
 ## 7. 残るリスク
 
 - macbook-air が侵害されると、sudo 鍵の署名要求を Touch ID で通してしまう可能性がある。Touch ID の確認画面に要求元が出ないため、利用者は区別できない
-- GitHub の main を書き換えられる者 (mac-studio の token 保有者) は、CI を通れば全 Mac に配布できる。CI は改ざん検知ではなく品質の関門にすぎない
+- GitHub の main を書き換えられる者 (mac-studio の token 保有者) が CI を通しても、HikaruEgashira の approve が無ければ配布されない。ただし approve は人の目視であり、承認者のアカウントが奪われればこの関門は無効になる
 - Fleet の MDM を有効にすると、Fleet admin は端末を消去できる。admin は SSO と多要素認証で守る
 
 ## 8. 権限ポリシー図
