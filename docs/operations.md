@@ -409,7 +409,7 @@ lsof -nP -iTCP:8317 -sTCP:LISTEN   # 127.0.0.1 のみ
 
 ### 3.9 Tailnet Lock と exit node
 
-Tailnet Lock は有効で、信頼する署名鍵は mac-studio だけである。ms-a2 は低区分なので署名鍵にしない。署名のない node は tailnet に参加しても他の node から見えない。そのため、Tailscale の制御面が侵害されても、勝手に node を足して通信を傍受することはできない。
+Tailnet Lock は有効で、信頼する署名鍵は mac-studio と macbook-air である。ms-a2 は低区分なので署名鍵にしない。署名のない node は tailnet に参加しても他の node から見えない。そのため、Tailscale の制御面が侵害されても、勝手に node を足して通信を傍受することはできない。
 
 - 解除用の secret: 1 つは mac-studio の Secure Enclave 宛てに age で暗号化して `~/.config/secrets/tailnet-lock-disablement.age` に置く。復号は `age -d -i ~/.config/secrets/age-se.txt` で、Touch ID が要る。もう 1 つは Tailscale support に預けている (`--gen-disablement-for-support`)。解除する場合は `tailscale lock disable <secret>` を使う。
 - 新しい node の追加: 参加させたあと mac-studio で `tailscale lock status` を実行し、locked out の一覧から node key を確認して `tailscale lock sign <nodekey:...>` で署名する。Fleet の ECS node (`tag:fleet`) は `TS_AUTH_ONCE` で初回に一度だけ参加するので、初回だけ署名すればよい。

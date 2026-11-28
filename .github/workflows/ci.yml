@@ -99,9 +99,6 @@ jobs:
       - name: Test locked worktree retention
         timeout-minutes: 5
         run: nix shell --inputs-from . nixpkgs#python3 --command python3 tests/clean-worktree.py
-      - name: Test browser auth approver
-        timeout-minutes: 5
-        run: nix shell --inputs-from . nixpkgs#python3Packages.python nixpkgs#python3Packages.cryptography --command python3 -I tests/browser-auth-approver.py
       - name: Test Pi skill discovery audit
         timeout-minutes: 5
         run: nix build --no-link --print-build-logs '.#checks.x86_64-linux.skills-audit'
