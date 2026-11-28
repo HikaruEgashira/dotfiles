@@ -14,6 +14,7 @@
     ./modules/programs/nvim/default.nix
     ./modules/programs/zsh.nix
     ./modules/programs/bitwarden.nix
+    ./modules/programs/browser-auth
     ./modules/programs/direnv.nix
     ./modules/programs/tmux.nix
     ./modules/programs/ghostty.nix

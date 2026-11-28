@@ -70,6 +70,7 @@
         modules = [
           {
             programs.cliproxyapi.hub.enable = true;
+            dotfiles.browserAuth.bridge.enable = true;
           }
         ];
       };
@@ -719,6 +720,7 @@
                 aws.enable = false;
                 cloudflare.enable = false;
                 orcaBrowser.enable = true;
+                browserAuth.approver.enable = true;
               };
             }
             (
@@ -827,6 +829,16 @@
             assert air.home.activation ? purgeCloudflareSession;
             assert studio.dotfiles.cloudflare.enable;
             msA2.pkgs.writeText "thin-client-no-cloudflare" "ok";
+          # vault を開くのはシンクライアントだけ。開発機には拡張だけを置く (threat-model F13)
+          browser-auth-tiers =
+            let
+              air = self.homeConfigurations.hikae.config;
+              studio = self.homeConfigurations."hikae@mac-studio".config;
+            in
+            assert air.launchd.agents ? browser-auth-approver;
+            assert !(studio.launchd.agents ? browser-auth-approver);
+            assert studio.dotfiles.browserAuth.bridge.enable && !air.dotfiles.browserAuth.bridge.enable;
+            msA2.pkgs.writeText "browser-auth-tiers" "ok";
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           telemetry-scan = telemetryScanCheckFor "x86_64-linux";
