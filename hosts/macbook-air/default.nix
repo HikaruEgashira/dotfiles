@@ -10,6 +10,7 @@ _:
     ../../modules/darwin/t3code.nix
     ../../modules/darwin/telemetry.nix
     ../../modules/darwin/tailscale-ssh.nix
+    ../../modules/darwin/fleet.nix
   ];
   dotfiles.secretive = true;
 }
