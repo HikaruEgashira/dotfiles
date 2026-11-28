@@ -2,6 +2,10 @@
 
 Fleet server は他から分離した AWS アカウント `device-fleet` に置き、`https://fleet.tailc30b81.ts.net` で tailnet 内にだけ公開する (iac-aws `projects/device-fleet`)。ms-a2 には置かない。設計と理由は `docs/security/threat-model.md` §5。dotfiles 側の部品は配布の仕組みとして残してある: CI の `promote` job が CI 緑の main を、HikaruEgashira が GitHub environment `deploy` で approve した後にだけ `deploy` branch へ fast-forward し (`deploy` branch は iac-github の ruleset で deploy key 以外の更新を拒否する。deploy key の秘密鍵は AWS Secrets Manager `dotfiles/deploy-key` にあり、promote job が sub を `environment:deploy` に固定した OIDC role `dotfiles-deploy` で取得する)、`scripts/fleet-controller.py` が `deploy` を読んで `scripts/fleet/dotfiles-apply.sh` を Fleet 経由で各 Mac に root で流す。
 
+## tailnet への参加
+
+Fleet の task は tailscale sidecar で `tag:fleet` として tailnet に入る。鍵は Fleet 専用の Tailscale OAuth client (scope `auth_keys` write、tag `tag:fleet` のみ) で、Secrets Manager `device-fleet/tailscale-oauth` に置く。`iac-tailscale/oauth` は `policy_file` を持つので device-fleet に渡さない。作り直す時は管理画面 (Settings > OAuth clients) で発行し、device-fleet の `AdministratorAccess` (Identity Center) で `put-secret-value` してから `aws ecs update-service --cluster device-fleet --service fleet --force-new-deployment` で入れ替える。management account の `OrganizationAccountAccessRole` は SCP で secret を書けない。
+
 ## 端末の登録
 
 server 構築後に使う。URL と secret 名は iac-aws `projects/device-fleet` の output が正。人が触るのはスマホだけで、それ以外は自動で進む。
