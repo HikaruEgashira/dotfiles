@@ -416,6 +416,30 @@ Tailnet Lock は有効で、信頼する署名鍵は mac-studio だけである�
 - 署名鍵の追加: 追加する端末で `tailscale lock status` を実行して `tlpub:` 鍵を確認し、mac-studio で `tailscale lock add <tlpub:...>` を実行する。macbook-air は追加予定 (未了)。
 - exit node: mac-studio が広告し、`iac-tailscale` の `autoApprovers.exitNode` (`autogroup:member`) が承認する。スマホと macbook-air は外出先で `tailscale set --exit-node=mac-studio --exit-node-allow-lan-access` を使う。
 
+### 3.10 mac-studio のブラウザ認証をスマホ承認で通す (module: `modules/programs/browser-auth`)
+
+mac-studio の Chrome で `dotfiles.browserAuth.sites` のサイトにログインするとき、資格情報を macbook-air の Bitwarden から受け取る。vault と passkey の秘密鍵は air から出ない。mac-studio に届くのは、スマホで承認した 1 件のパスワード (と TOTP) か、passkey の署名だけ。
+
+```text
+Chrome 拡張 (mac-studio) --POST /v1/request--> approver (macbook-air, tailscale serve :8443)
+                                                 |-- ntfy 通知 --> スマホ
+スマホ --GET/POST /a/<id> (tailnet)-------------> approver --> bw で検索・署名して応答
+```
+
+- passkey: ページの `navigator.credentials.get()` を拡張が横取りする。approver は origin と rpId を照合してから、Bitwarden の `fido2Credentials` の鍵で assertion を作る。conditional mediation (autofill UI) は横取りしない。該当する passkey が無ければ Chrome の通常の処理に戻す
+- パスワード: 拡張のボタンか `Alt+Shift+L` で、そのタブの origin に対する要求を出す
+- 承認ページには要求元の host、サイトの origin、候補のアカウントが出る。90 秒で期限切れ。ntfy にはサイト名を載せない
+- 要求元は `approver.requesters` の tag なしの同一利用者 host、承認はスマホ (OS が android / iOS) の同一利用者だけ。どちらも `tailscale whois` で確かめる
+- サイトを増やすには `sites` に登録可能ドメインを足す。approver と拡張の content script の範囲が同時に変わる
+- 監査ログは air の `~/.local/state/browser-auth/audit.jsonl`。資格情報は書かない
+
+初回だけ必要な手順:
+
+1. macbook-air で `bw login` 済みかつ `bw-touchid-enroll` 済みであること。approver は最初の要求で 1 回 Touch ID を求め、その後 12 時間 session を保つ
+2. macbook-air の `~/.local/state/browser-auth/ntfy-topic` の topic を、スマホの ntfy アプリで購読する
+3. mac-studio の Chrome で `chrome://extensions` の Developer mode を有効にし、Load unpacked で `~/.local/share/browser-auth/extension` を読み込む
+4. スマホから air の承認ページに届くよう、iac-tailscale の grant (`posture` なしの member → macbook-air の tcp:8443) が適用されていること
+
 ## 4. トラブルシュート
 
 ### 共有 skill の名前衝突
