@@ -13,6 +13,9 @@ _:
     ../../modules/darwin/sudo-agent-auth.nix
   ];
 
+  # 外出先のスマホと macbook-air の通信を自宅回線から出す。低区分の ms-a2 は経由させない
+  dotfiles.tailscaleExitNode = true;
+
   networking = {
     hostName = "Mac-Studio";
     localHostName = "Mac-Studio";

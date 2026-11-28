@@ -1,5 +1,10 @@
 # GUI 版 (macsys) は Tailscale SSH server を持たないため OSS の tailscaled に置き換える
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # socket を省くと CLI は GUI 版の daemon に繋がり、OSS 側の state も --ssh も GUI 版に向いてしまう
@@ -31,35 +36,39 @@ let
   '';
 in
 {
-  dotfiles.tailscaleGui = false;
-  services.tailscale.enable = true;
+  options.dotfiles.tailscaleExitNode = lib.mkEnableOption "exit node の広告";
 
-  launchd.daemons = {
-    tailscaled.command = lib.mkForce "${daemon}";
-    tailscaled.serviceConfig.KeepAlive = true;
-    tailscale-gui-retire.serviceConfig = {
-      Label = "dev.egahika.tailscale-gui-retire";
-      ProgramArguments = [ "${retire}" ];
-      RunAtLoad = true;
-      StartInterval = 60;
-      StandardOutPath = "/var/log/tailscale-gui-retire.log";
-      StandardErrorPath = "/var/log/tailscale-gui-retire.log";
+  config = {
+    dotfiles.tailscaleGui = false;
+    services.tailscale.enable = true;
+
+    launchd.daemons = {
+      tailscaled.command = lib.mkForce "${daemon}";
+      tailscaled.serviceConfig.KeepAlive = true;
+      tailscale-gui-retire.serviceConfig = {
+        Label = "dev.egahika.tailscale-gui-retire";
+        ProgramArguments = [ "${retire}" ];
+        RunAtLoad = true;
+        StartInterval = 60;
+        StandardOutPath = "/var/log/tailscale-gui-retire.log";
+        StandardErrorPath = "/var/log/tailscale-gui-retire.log";
+      };
     };
-  };
 
-  # 未ログインなら login を開始して承認 URL を出すだけにし、承認後の収束は retire daemon に任せる
-  system.activationScripts.postActivation.text = lib.mkAfter ''
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-      [ -n "$(${state})" ] && break
-      sleep 1
-    done
-    case "$(${state})" in
-      Running) ${ts} set --ssh ;;
-      *)
-        ${ts} login --ssh --timeout=10s >/dev/null 2>&1 || true
-        url=$(${ts} status --json 2>/dev/null | ${jq} -r '.AuthURL // empty')
-        echo "tailscale: approve this device at ''${url:-<no AuthURL; see tailscale status>}" >&2
-        ;;
-    esac
-  '';
+    # 未ログインなら login を開始して承認 URL を出すだけにし、承認後の収束は retire daemon に任せる
+    system.activationScripts.postActivation.text = lib.mkAfter ''
+      for _ in 1 2 3 4 5 6 7 8 9 10; do
+        [ -n "$(${state})" ] && break
+        sleep 1
+      done
+      case "$(${state})" in
+        Running) ${ts} set --ssh --advertise-exit-node=${lib.boolToString config.dotfiles.tailscaleExitNode} ;;
+        *)
+          ${ts} login --ssh --timeout=10s >/dev/null 2>&1 || true
+          url=$(${ts} status --json 2>/dev/null | ${jq} -r '.AuthURL // empty')
+          echo "tailscale: approve this device at ''${url:-<no AuthURL; see tailscale status>}" >&2
+          ;;
+      esac
+    '';
+  };
 }
