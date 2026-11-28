@@ -29,11 +29,11 @@ nix run ~/dotfiles#launchd-audit                        # 野良 agent の検知
 | `dev.egahika.disk-maintenance`        | home-manager (`modules/programs/disk-maintenance.nix`) | 6h 毎 + login   | 空き率連動の容量回収 + ghq clone 棚卸し (dry-run)                              |
 | `dev.egahika.claude-otel-collector`   | home-manager (`modules/programs/claude-otel.nix`)      | 常駐            | Claude Code の telemetry を `127.0.0.1:4318` で受け、ディスクの queue から再送 |
 | `dev.egahika.claude-otel-refresh`     | home-manager (`modules/programs/claude-otel.nix`)      | 30 分毎 + login | otel.gh-intel.com の Access token を更新、期限 3 日前に承認を求める            |
-| `dev.egahika.opencode-service-health` | home-manager (`modules/programs/opencode.nix`)         | 毎日 09:05      | stale service の preflight (`port 49374`)                                      |
-| `dev.egahika.pi-extensions-update`    | home-manager (`modules/programs/pi.nix`)               | 毎日 09:10      | npm extension の pin 前進 + git extension 更新                                 |
+| `dev.egahika.opencode-service-health` | home-manager (`modules/programs/harness/opencode.nix`) | 毎日 09:05      | stale service の preflight (`port 49374`)                                      |
+| `dev.egahika.pi-extensions-update`    | home-manager (`modules/programs/harness/pi.nix`)       | 毎日 09:10      | npm extension の pin 前進 + git extension 更新                                 |
 | `dev.egahika.nuphy-kvm-switch`        | home-manager (`modules/programs/nuphy-kvm.nix`)        | 常駐            | Mac-Studio のみ。NuPhy の接続先に DELL の HDMI 入力を追従させる                |
 | `dev.egahika.nuphy-snap`              | home-manager (`modules/programs/nuphy-kvm.nix`)        | 常駐            | Caps レイヤのパッド/ヒント hotkey。Accessibility 許可が必要                    |
-| `com.claude.caffeinate`               | home-manager (`modules/programs/claude.nix`)           | 常駐            | claude 実行中だけ sleep 抑止                                                   |
+| `com.claude.caffeinate`               | home-manager (`modules/programs/harness/claude.nix`)   | 常駐            | claude 実行中だけ sleep 抑止                                                   |
 | `com.atlassian.twg.upkeep`            | **twg 自己管理** (`twg upkeep enable`)                 | 12 分間隔       | OAuth refresh + upgrade check                                                  |
 | `dev.egahika.cliproxyapi`             | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐            | LLM provider proxy、`127.0.0.1:8317` のみ                                      |
 | `dev.egahika.cliproxyapi-serve`       | home-manager (`modules/programs/cliproxyapi.nix`)      | 常駐            | Mac Studio: tailnet HTTPS :8317                                                |
@@ -84,13 +84,13 @@ linux host では launchd の代わりに Home Manager が systemd user service 
 
 残骸・重複。`scripts/launchd-cleanup.sh` を通常ユーザで実行して削除する（内部で必要な箇所だけ `sudo` を呼ぶ。冪等）。
 
-| 対象                                                                              | 理由                                                                      | 状態 (2026-11-03) |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------- |
-| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       | 削除済み          |
-| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           | 削除済み          |
-| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    | 削除済み          |
-| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               | 削除済み          |
-| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック | 削除済み          |
+| 対象                                                                              | 理由                                                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `com.google.keystone.{agent,xpcservice}`                                          | plist が空 dict の死骸。`/Library/Google/GoogleSoftwareUpdate` も空       |
+| `com.cloudflare.1dot1...warp.daemon` + `com.cloudflare.warp.updater` + login item | WARP を完全削除                                                           |
+| `com.cloudflare.cloudflared` daemon                                               | token ファイル欠落で起動失敗。CLI は nix (`pkgs.cloudflared`) で足りる    |
+| `net.tunnelblick.tunnelblick{,.launcher}` + app                                   | VPN プロファイルが空。`openvpn` は nix 管理                               |
+| watchman agent + `pkgs.watchman`                                                  | 唯一の利用者 pleno-live が dormant。Metro は内蔵 watcher にフォールバック |
 
 ## 検知
 

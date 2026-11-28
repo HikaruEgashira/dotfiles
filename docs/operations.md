@@ -1,6 +1,6 @@
 # Operations Cookbook
 
-`~/dotfiles` の運用レシピ集。「どう書くか」は `AGENTS.md`、「なぜそう設計したか」は `docs/ideation/` と各 PR description。本ドキュメントは「どう操作するか」のみを扱い、手順はここにだけ書く。使い捨ての調査ログや日付つきの監査結果は `docs/ideation/` (gitignore) に置く。
+`~/dotfiles` の運用レシピ集。「どう書くか」は `AGENTS.md`、「なぜそう設計したか」は `docs/solutions/` と各 PR description。本ドキュメントは「どう操作するか」だけを扱う。日付つきの調査ログや監査結果はここに書かない。
 
 ## 1. 日常運用
 
@@ -16,7 +16,7 @@
 | inputs 更新      | `cd ~/dotfiles && nix run .#update`                | 全 inputs を latest に bump + substitutable gate (1.3)。`-- --activate` で適用。週次 GH Actions は同じ gate を通した変更だけを main に直接 push。手動更新は検証後に commit / push する                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | cache 検査       | `cd ~/dotfiles && nix run .#substitutable-gate`    | 現 lock で darwin system + home activation の閉包に cache.nixos.org から取れない package が無いことを確認する (1.3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 容量 maintenance | `~/dotfiles/scripts/disk-maintenance.sh --dry-run` | tombstone (退役 tool の state、`~/ghq` 配下の `.pnpm-store`) は毎回消し、artex / containers / `Documents/Codex` の大きさを週次で `~/.local/state/disk-maintenance/sizes.tsv` に記録する。空き率が 10% 未満のときだけ nix GC (30d より古い世代込み) → optimise → キャッシュ (artex `import/` 含む) → Codex 旧 release → artex deploy 世代 (`backups/` `deploy-staging/` の新しい 2 つ以外) → ゴミ箱 → podman (未使用 image/container、30 日起動の無い VM) の順に回収して目標に届いた時点で止まる。launchd は 6h 毎 + login 時。実削除は `--dry-run` を外す。手元に要らない大物は `--archive PATH` で S3 へ (7.2) |
-| ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示し、どちらかがある clone は `--allow-unpushed` を付けない限り保護する。定期実行も dry-run のみ。詳細と明示削除手順は 7.4                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ghq clone 棚卸し | `~/dotfiles/scripts/ghq-clean.py --dry-run`        | clone root と upstream 無し branch / local-only commit を表示し、どちらかがある clone は `--allow-unpushed` を付けない限り保護する。定期実行も dry-run のみ。詳細と明示削除手順は 7.3                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 同期実績         | `tail -n5 ~/.cache/dotfiles-sync/metrics.jsonl`    | `outcome / wall_s / head_before / head_after / xdg_drift / pending`。`pending=yes` は「OS 層の build は通ったが未適用」を意味する (ユーザー層は sync が適用済み)。適用は `nix run .#switch`                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 clean な `main` は `origin/main` と同じでも build を毎回実行し、失敗時は次回に再試行する。適用は root が要るため自動化せず、`pending=yes` を残すだけに留める。
@@ -66,7 +66,7 @@ inputs を bump した lock が「ローカル source build 禁止」を守っ�
 
 本機の `/nix/store` に既にある path は dry-run に出ないため、評価は空の chroot store (`~/.cache/substitutable-gate/store`、`SUBSTITUTABLE_GATE_STORE` で変更) で行い、CI runner と同じ判定にする。初回は flake inputs の source (約 700MB) をそこへ copy するので 1 分前後かかる。
 
-allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。2026-11-03 時点: registry の上流 binary (dagger / herdr / pleno-dlp / say-hook / oh-my-pi)、Cica font。
+allowlist は「cache に無いと分かっていて持っているもの」の台帳で、各行に理由と Issue を書く。
 
 | 実行場所                           | 対象                                             | 備考                                                                                                                |
 | ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
@@ -247,11 +247,7 @@ dscacheutil -q host -a name whoami.akamai.net      # → NextDNS node (ISP 61.12
 
 UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway に引き込むため、DNS を固定している端末 (Google Cast 等) も NextDNS に乗る。迂回経路として残るのは端末自身の DoT (853) / DoH のみで、DoT は UCG firewall で LAN→WAN tcp/853 を drop すれば塞げる。Tailscale は tailnet 設定で同じ NextDNS DoH を global resolver にしてあるので、有効化しても経路は変わらない (`clientName: tailscale` で観測)。
 
-解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。Wi-Fi service の静的 DNS は `system.activationScripts.wifiDnsFromDhcp` (`modules/darwin/security.nix`) が activation ごとに空へ戻すので手で触らない。
-
-### 3.6 Fleet による端末管理
-
-`docs/fleet.md` を参照。
+解除: System Settings > General > Device Management から `NextDNS (<profile-id>)` を削除。
 
 ### 3.4 SSH 鍵の役割分担とローテーション
 
@@ -338,6 +334,10 @@ defaults read /Library/Preferences/com.apple.SoftwareUpdate | grep -E 'Automatic
 # AutomaticCheckEnabled = 1, AutomaticDownload = 1, AutomaticallyInstallMacOSUpdates = 0, CriticalUpdateInstall = 1
 ```
 
+### 3.6 Fleet による端末管理
+
+`docs/fleet.md` を参照。
+
 ### 3.7 ARTEX をローカル専用で常駐させる (module: `modules/programs/artex.nix`)
 
 ARTEX は loopback (`127.0.0.1:8787` / `:8788`) でしか待ち受けない。ARTEX は Tailscale に公開しない。Mac Studio の CLIProxyAPI だけを Tailscale Serve で公開する (§3.8)。ALF blockall は維持する。MacBook Air と Mac Studio は Tailscale SSH を受けるため GUI 版ではなく nix-darwin の OSS tailscaled を使う (`modules/darwin/tailscale-ssh.nix`)。GUI 版が残る host では OSS tailscaled を userspace で並走させて login URL を activation が出力し、承認されて Running になってから `dev.egahika.tailscale-gui-retire` が GUI 版を外し tailscaled を utun に切り替える。SSH は tailscaled の netstack が終端するので ALF の影響を受けず、認可は tailnet ACL の ssh rule で行う。binary・data・secrets (`local.env`) は `~/.local/share/artex` に置く stateful なファイルで、宣言管理するのは launchd の起動条件だけ。binary を差し替えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.artex` で再起動する。
@@ -368,7 +368,7 @@ tailscale serve status # Mac Studio は :8317 のみ
 
 ### 3.8 CLIProxyAPI で LLM provider を束ねる (module: `modules/programs/cliproxyapi.nix`)
 
-Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture を使う。upstream と model の一覧は module が宣言し、秘密の正史は `~/.config/secrets/env.age`。起動時に Secure Enclave の identity で復号し、runtime config と `client-key` を 0600 で原子的に生成する。vault 未移行の端末だけ `~/.local/share/cliproxyapi/secrets.env` を読む。
+Codex / opencode は `http://127.0.0.1:8317/v1` の CLIProxyAPI を経由して ChatGPT (Codex OAuth)・Aparture を使う。upstream と model の一覧は module が宣言し、秘密の正史は `~/.config/secrets/env.age`。起動時に Secure Enclave の identity で復号し、runtime config と `client-key` を 0600 で原子的に生成する。env.age が無い端末だけ `~/.local/share/cliproxyapi/secrets.env` を読む。
 
 | キー                     | 用途                                                                                                                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -409,11 +409,11 @@ lsof -nP -iTCP:8317 -sTCP:LISTEN   # 127.0.0.1 のみ
 
 ### 3.9 Tailnet Lock と exit node
 
-Tailnet Lock は有効で、信頼する署名鍵は mac-studio だけである。ms-a2 は低区分なので署名鍵にしない。署名のない node は tailnet に参加しても他の node から見えない。そのため、Tailscale の制御面が侵害されても、勝手に node を足して通信を傍受することはできない。
+Tailnet Lock は有効で、信頼する署名鍵は mac-studio と macbook-air である。ms-a2 は低区分なので署名鍵にしない。署名のない node は tailnet に参加しても他の node から見えない。そのため、Tailscale の制御面が侵害されても、勝手に node を足して通信を傍受することはできない。
 
 - 解除用の secret: 1 つは mac-studio の Secure Enclave 宛てに age で暗号化して `~/.config/secrets/tailnet-lock-disablement.age` に置く。復号は `age -d -i ~/.config/secrets/age-se.txt` で、Touch ID が要る。もう 1 つは Tailscale support に預けている (`--gen-disablement-for-support`)。解除する場合は `tailscale lock disable <secret>` を使う。
 - 新しい node の追加: 参加させたあと mac-studio で `tailscale lock status` を実行し、locked out の一覧から node key を確認して `tailscale lock sign <nodekey:...>` で署名する。Fleet の ECS node (`tag:fleet`) は `TS_AUTH_ONCE` で初回に一度だけ参加するので、初回だけ署名すればよい。
-- 署名鍵の追加: 追加する端末で `tailscale lock status` を実行して `tlpub:` 鍵を確認し、mac-studio で `tailscale lock add <tlpub:...>` を実行する。macbook-air は追加予定 (未了)。
+- 署名鍵の追加: 追加する端末で `tailscale lock status` を実行して `tlpub:` 鍵を確認し、mac-studio で `tailscale lock add <tlpub:...>` を実行する。
 - exit node: mac-studio が広告し、`iac-tailscale` の `autoApprovers.exitNode` (`autogroup:member`) が承認する。スマホと macbook-air は外出先で `tailscale set --exit-node=mac-studio --exit-node-allow-lan-access` を使う。
 
 ### 3.10 mac-studio のブラウザ認証をスマホ承認で通す (module: `modules/programs/browser-auth`)
@@ -443,14 +443,6 @@ Chrome 拡張 (mac-studio) --POST /v1/request--> approver (macbook-air, tailscal
 
 ## 4. トラブルシュート
 
-### 共有 skill の名前衝突
-
-`nix run .#skills-audit` は `~/.agents/skills` を Pi の loader で読み、採用された skill と diagnostics を JSON で返す。diagnostics がある場合は終了コード 1。別のディレクトリは `nix run .#skills-audit -- /path/to/skills` で指定する。Pi の個人設定やプロジェクト設定は読み込まないため、対象外の探索先を含む起動時 diagnostics は別途確認する。
-
-`~/.agents/skills` は 1 階層だけにする。Pi と Codex は配下を再帰探索するため、`synced/<bucket>/` のような第二の skill root を置くと、同名 skill が毎回 collision になる。claude.ai の skill 同期は managed settings (`modules/darwin/claude-code.nix`) の `syncClaudeAiSkills: false` で無効化してあり、同期 skill は `~/.agents/skills` へ実体で持つ。以前の正本 `~/.claude/skills/synced/<bucket>/` は無効化時に `.trash` へ退避される。同期を戻す場合は再ダウンロード後に実体を置き直す。
-
-衝突したら `collision.winnerPath` と `collision.loserPath` を確認し、負けた側の nested な複製を `~/.agents/skills/.trash/<timestamp>/` へ退避する。削除はしない。Pi は dot directory を探索しない。同じ実体への symlink は重複として数えない。退避後に監査を再実行し、diagnostics が空で、期待する `skills[].filePath` が選ばれたことを確認する。復旧時は退避先から元のパスへ戻す。
-
 ### 4.1 switch が失敗した
 
 1. eval で `infinite recursion` → 直近の module 編集を疑う。`git diff HEAD~1` で範囲を絞る。
@@ -467,20 +459,13 @@ Chrome 拡張 (mac-studio) --POST /v1/request--> approver (macbook-air, tailscal
 | `Eval determinism gate`               | `builtins.currentTime` / IFD など impurity が混入した。当該 commit を切り戻し          |
 | `Build MEL`                           | MEL essential pkg のいずれかが破損。nixpkgs を一時 pin or 該当 pkg を MEL から外す ADR |
 
-### 4.3 `git push` が `Device not configured` で fail する
+### 4.3 共有 skill の名前衝突
 
-`~/.gitconfig` の credential.helper が削除済み package manager の path に hardcode された旧症状 (PR #15 で修正済)。再発したら:
+`nix run .#skills-audit` は `~/.agents/skills` を Pi の loader で読み、採用された skill と diagnostics を JSON で返す。diagnostics がある場合は終了コード 1。別のディレクトリは `nix run .#skills-audit -- /path/to/skills` で指定する。Pi の個人設定やプロジェクト設定は読み込まないため、対象外の探索先を含む起動時 diagnostics は別途確認する。
 
-```bash
-nix run ~/dotfiles#switch
-```
+`~/.agents/skills` は 1 階層だけにする。Pi と Codex は配下を再帰探索するため、`synced/<bucket>/` のような第二の skill root を置くと、同名 skill が毎回 collision になる。claude.ai の skill 同期は managed settings (`modules/darwin/claude-code.nix`) の `syncClaudeAiSkills: false` で無効化してあり、同期 skill は `~/.agents/skills` へ実体で持つ。
 
-で `home.activation.purgeStaleGhCredentialHelper` が走り、HM-managed `~/.config/git/config` の helper を再生する。それでも直らない場合:
-
-```bash
-git config --file ~/.gitconfig --unset-all credential.https://github.com.helper
-git config --file ~/.gitconfig --unset-all credential.https://gist.github.com.helper
-```
+衝突したら `collision.winnerPath` と `collision.loserPath` を確認し、負けた側の nested な複製を `~/.agents/skills/.trash/<timestamp>/` へ退避する。削除はしない。Pi は dot directory を探索しない。同じ実体への symlink は重複として数えない。退避後に監査を再実行し、diagnostics が空で、期待する `skills[].filePath` が選ばれたことを確認する。復旧時は退避先から元のパスへ戻す。
 
 ### 4.4 dotfiles-sync が動いていない
 
@@ -505,11 +490,9 @@ opencode service restart && opencode service status
 
 判定: `~/.local/share/opencode/log/opencode.log` に `Managed service port 49374 ... already in use` が連続していたらこれ。`opencode service status` が `stopped` でも port が埋まっていれば orphan 確定。
 
-upstream (`sst/opencode`) への issue は当面立てない。preflight が interactive の主経路を自己修復し、上流の恒久修正 (stale `service.json` を検知して orphan を落とす) は調査コストが大きいため。再発が続くか非 interactive 経路で実害が出たら起票する。
-
 ### 4.6 secret を rotate する
 
-`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-se.txt` が復号鍵の参照 (0600)。鍵本体はこの Mac の Secure Enclave にあり (`age-plugin-se`, access control `none`)、file を複製しても他の機械では復号できない。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。同じディレクトリの `.env.keys` / `.env` (dotenvx 由来) は読む実装が無い。未使用なので削除してよい。
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-se.txt` が復号鍵の参照 (0600)。鍵本体はこの Mac の Secure Enclave にあり (`age-plugin-se`, access control `none`)、file を複製しても他の機械では復号できない。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。
 
 ```bash
 cd ~/.config/secrets
@@ -580,7 +563,7 @@ ghq get <owner>/gh-<name>
 nix run ~/dotfiles#audit
 ```
 
-symlink 型の clone は `ghq-clean.py` が `gh extension target` として保護する (7.4)。
+symlink 型の clone は `ghq-clean.py` が `gh extension target` として保護する (7.3)。
 
 ### 4.9 AWS の SSO session を張り直す / broker が応答しない
 
@@ -703,21 +686,21 @@ ghauth                                # unlock と必要なら device flow
 
 ## 7. 容量
 
-ディスクは 229G の APFS コンテナ。2026-10-25 の棚卸しで 212G 使用 (空き 17G) だったものを、下記で空き 60G 超まで戻した。再び詰まったら ladder が `report_candidates` で候補を出す。
+ディスクの回収は `scripts/disk-maintenance.sh` の ladder が担う。再び詰まったら ladder が `report_candidates` で候補を出す。
 
-| 回収経路                            | 対象                                                                                                                                                                                                 | 2026-10-25 の回収量                       |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| ladder (6h 毎、空き 10% 未満で発火) | nix GC (世代込み) / 再取得できる cache (artex `import/` の 30 日超を含む) / Codex 旧 release / artex deploy 世代 (新しい 2 つ以外) / ゴミ箱 / podman の未使用 image・container と 30 日起動の無い VM | 数百 MB〜数 GB                            |
-| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise。sandbox fallback の `~/ghq/**/.pnpm-store`                                                                                                       | 20G                                       |
-| 手動 / `--podman-machine NAME`      | 停止済み VM、project 毎の provider 複製                                                                                                                                                              | 17G                                       |
-| `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (Codex 作業 dir、旧 workspace)                                                                                                                                    | 13G (S3 へ)                               |
-| OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`) + Chrome `code_sign_clone`                                                                                                                         | 25G (2026-10-25 適用済み、再発防止は 7.1) |
+| 回収経路                            | 対象                                                                                                                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ladder (6h 毎、空き 10% 未満で発火) | nix GC (世代込み) / 再取得できる cache (artex `import/` の 30 日超を含む) / Codex 旧 release / artex deploy 世代 (新しい 2 つ以外) / ゴミ箱 / podman の未使用 image・container と 30 日起動の無い VM |
+| tombstone (毎回、空き率に関係なく)  | 退役 tool の state: `~/go`, `~/Library/pnpm`, mise。sandbox fallback の `~/ghq/**/.pnpm-store`                                                                                                       |
+| 手動 / `--podman-machine NAME`      | 停止済み VM、project 毎の provider 複製                                                                                                                                                              |
+| `--archive PATH`                    | 唯一のコピーだが手元に要らないもの (Codex 作業 dir、旧 workspace)。7.2                                                                                                                               |
+| OS (sudo)                           | 適用待ち macOS 更新 (Preboot `cryptex1/proposed`)。7.1                                                                                                                                               |
 
-artex の `pg/` と `~/.local/share/containers` (podman machine の VM disk) は消さない。代わりに `sizes.tsv` に `日付<TAB>artex<TAB>containers<TAB>Documents/Codex` (KiB) を 7 日毎に追記し、前回記録より増えた項目を毎回の log に `増加:` として出す。VM disk の回収は `--podman-machine NAME` のまま。
+artex の `pg/` と `~/.local/share/containers` (podman machine の VM disk) は消さない。代わりに `sizes.tsv` に `日付<TAB>artex<TAB>containers<TAB>Documents/Codex` (KiB) を 7 日毎に追記し、前回記録より増えた項目を毎回の log に `増加:` として出す。
 
-`disk-maintenance.sh` の nix 段は `nix-collect-garbage --delete-older-than 30d` 1 本で、`~/.local/state/nix/profiles/*` (home-manager / profile / channels) の古い generation を消してから未参照 path を回収する。
+nix 段は `nix-collect-garbage --delete-older-than 30d` 1 本で、`~/.local/state/nix/profiles/*` の古い generation を消してから未参照 path を回収する。
 
-過去にはこのコマンドが `--dry-run` でも CloudStorage 配下の `proc` で `Resource deadlock avoided` (EDEADLK)、別の実行では `~/Library/Application Support/AddressBook` の `Operation not permitted` (EPERM) で終了したため、`nix-env --delete-generations` + `nix store gc` の 2 段に分けていた。2026-11-03 に Nix 2.34.9 で `--dry-run` と実 GC (13375 path, 362.5 MiB) の両方が同じ profile 構成で成功したので 1 本に戻した。再発したら 2 段に戻し、失敗した path をここに追記する。
+`--dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち 30 日より古いものを archive 候補として表示する。`~/ghq/**/packages/*/.local` は目標未達時の候補に出すだけで、削除は repo 側に任せる。
 
 ### 7.1 macOS 更新の月次適用 (sudo が要る、ladder の対象外)
 
@@ -748,19 +731,7 @@ aws s3 cp s3://hikae-archive-951872725222/<key> ./                 # 戻す (GLA
 
 upload 後に `head-object` の `ContentLength` と `x-amz-meta-sha256` を手元の値と照合してからローカルを消す。転送中の破損は CLI の full-object checksum が弾く。SSO セッションが要るので launchd からは走らせず、ladder は候補を report に出すだけに留める。
 
-### 7.3 判断が要るもの (2026-10-25 時点で残したもの)
-
-| 対象                                          | 大きさ | 扱い                                                                            |
-| --------------------------------------------- | ------ | ------------------------------------------------------------------------------- |
-| `jev-kitchen/{.venv-train,train/laya-jp-out}` | 1.9G   | 学習中の venv と出力。`uv sync` で戻るが作業中なので残す                        |
-| `~/Documents/Codex/<date>`                    | 3G     | 30 日を過ぎた date folder は dry-run に表示。個別確認後 `--archive PATH` で退避 |
-| `gh-intel/packages/{web-qa,identity}/.local`  | 2.6G   | repo の gitignore 対象。repo 側の clean 手順 (#168)                             |
-| `~/.cache/incident-2026-10-25-actions-runner` | 456M   | runner 事故 (#150) の証跡。post-mortem 後に消す                                 |
-| `/private/var/db/{diagnostics,uuidtext}`      | 1.7G   | unified log。`sudo log erase --all` で消えるが調査用に残す                      |
-
-`disk-maintenance.sh --dry-run` は空き率が目標以上でも、`Documents/Codex/YYYY-MM-DD` のうち30日より古いものを archive 候補として表示する。自動退避・削除はしない。`~/ghq/**/packages/*/.local` (HOME を package dir に差し替えた検証の残骸) は目標未達時の候補に出すだけで、削除は repo 側の gitignore / clean 手順に任せる。`~/ghq` 配下の `.pnpm-store` は store の再 fetch で戻るので tombstone として毎回消す。`modules/programs/harness/ai-sandbox.nix` は `$HOME` を writable に含めるため `~/.local/share/pnpm` はその範囲内で、fallback が起きる実行時原因は未確認。
-
-### 7.4 ghq clone / branch の棚卸し
+### 7.3 ghq clone / branch の棚卸し
 
 `ghq-clean.py` は `~/ghq/github.com/<owner>/<repo>` 直下の `.git` directory を clone root として扱い、linked worktree (`.git` file) は既存 `clean-worktree.sh` の管理対象として数を分けて表示する。候補は remote が archived、または最新 local ref commit と GitHub `pushedAt` の新しい方が既定14日以上前の clone。dirty な clone と linked worktree を持つ clone は保護する。`~/.local/share/gh/extensions` の symlink が指す clone も保護する (ローカル開発中の gh extension は binary を repo 内に持つため、clone を消すと extension が起動しなくなる)。gh extension directory を読めない場合は全 clone を `unknown` として削除候補にしない。remote ref から到達できない commit (local-only commit) を持つ clone と upstream の無い branch を持つ clone も既定で保護し、理由に `local_only_commits=N` / `upstreamless_branches=N` を出す。push していない作業を含めて候補にしたい時だけ `--allow-unpushed` を付ける。
 

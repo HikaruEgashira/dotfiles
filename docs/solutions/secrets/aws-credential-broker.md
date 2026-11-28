@@ -21,6 +21,6 @@ claude / codex の sandbox には `~/.aws/config` だけを読ませ、`~/.aws/s
 
 ## 運用
 
-- login: `aws sso login --sso-session hikae` を sandbox 外で実行する。`docs/operations.md` §4.8。
-- 復旧: Phase 3 相当の deny (`modules/programs/harness/ai-sandbox.nix` の `.aws/*` 4 path と codex の `codexReadOnly` (`~/.aws` を read)。claude は `~/.aws` 全体を `persistence` で denyWrite し、sandbox から `~/.aws/config` を改ざんして broker に `credential_process` を実行させる経路を塞ぐ) を戻せば、broker を残したまま従来動作に戻る。
+- login: `aws sso login --sso-session hikae` を sandbox 外で実行する。`docs/operations.md` §4.9。
+- 切り戻し: deny (`modules/programs/harness/ai-sandbox.nix` の `.aws/*` 4 path と codex の `codexReadOnly` (`~/.aws` を read)。claude は `~/.aws` 全体を `persistence` で denyWrite し、sandbox から `~/.aws/config` を改ざんして broker に `credential_process` を実行させる経路を塞ぐ) を戻せば、broker を残したまま従来動作に戻る。
 - 固定: `tests/ai-sandbox-deny-lists.sh` が deny path と socket allowlist、`tests/aws-cred-broker.sh` が allowlist の拒否と失敗伝播、`nix run .#launchd-audit` が agent label を検査する。

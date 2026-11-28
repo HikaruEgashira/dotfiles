@@ -19,4 +19,3 @@
 
 - rotate / 編集手順は `docs/operations.md` §4.6。
 - SE 鍵は backup できない。機械の乗り換え時は平文を 1Password 等に退避してから新機械で keygen し直す。
-- 旧 `age-key.txt` と `env.age.x25519.bak` は移行確認後に削除する。残したままでは「持ち出せる鍵」が残る。
