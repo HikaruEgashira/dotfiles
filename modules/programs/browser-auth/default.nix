@@ -88,7 +88,7 @@ in
     bridge.enable = lib.mkEnableOption "the Chrome extension that forwards login requests to the approver";
   };
 
-  config = lib.mkIf pkgs.stdenv.isDarwin (
+  config = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (
     lib.mkMerge [
       (lib.mkIf cfg.approver.enable {
         launchd.agents.browser-auth-approver = {

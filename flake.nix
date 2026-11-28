@@ -839,16 +839,6 @@
             assert !(studio.launchd.agents ? browser-auth-approver);
             assert studio.dotfiles.browserAuth.bridge.enable && !air.dotfiles.browserAuth.bridge.enable;
             msA2.pkgs.writeText "browser-auth-tiers" "ok";
-          browser-auth-approver =
-            msA2.pkgs.runCommand "browser-auth-approver"
-              { nativeBuildInputs = [ (msA2.pkgs.python3.withPackages (ps: [ ps.cryptography ])) ]; }
-              ''
-                mkdir -p modules/programs/browser-auth tests
-                cp ${./modules/programs/browser-auth/approver.py} modules/programs/browser-auth/approver.py
-                cp ${./tests/browser-auth-approver.py} tests/browser-auth-approver.py
-                python3 -I tests/browser-auth-approver.py
-                touch "$out"
-              '';
           launchd-audit = launchdAuditCheckFor "x86_64-linux";
           skills-audit = skillsAuditCheckFor "x86_64-linux";
           telemetry-scan = telemetryScanCheckFor "x86_64-linux";
