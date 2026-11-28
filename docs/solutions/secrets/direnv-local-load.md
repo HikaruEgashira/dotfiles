@@ -15,7 +15,7 @@
 
 ## 不採用
 
-- agenix / ragenix / sops-nix: activation 時にグローバル配布するモデルで、局所化と逆行する。詳細は `ragenix-adoption.md`。
+- agenix / ragenix / sops-nix: activation 時にグローバル配布するモデルで、局所化と逆行する。ragenix は加えて上流の更新が止まっている。secret を宣言管理し直すなら sops-nix を先に評価する。
 - 1Password 等への age 鍵の移管: 鍵の取得経路が対話認証を伴い、本決定と独立に評価できるため分離した。
 
 ## 影響

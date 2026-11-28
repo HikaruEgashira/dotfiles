@@ -7,7 +7,7 @@
 ## 構成
 
 - 入口は `hosts/macbook-air/default.nix`、実装は `modules/darwin/*`。2 台目はホスト module を足して `darwinConfigurations` に追加する。
-- 適用は `nix run .#switch` (= `sudo darwin-rebuild switch --flake .#hikae`)。root が要るため 09:00 の `dotfiles-sync` は build 検証と `pending` 記録までに留める。
+- 適用は `nix run .#switch` (ユーザー層を activate し、OS 層に差分があるときだけ `sudo darwin-rebuild switch`)。TTY も `SUDO_ASKPASS` / `SWITCH_SUDO_STDIN=1` も無い非対話実行では OS 層を pending として報告するだけなので、端末から再実行する。root が要るため 09:00 の `dotfiles-sync` は build 検証と `pending` 記録までに留める。
 - system extension を含む app は `modules/darwin/native-apps.nix` が上流 pkg の hash・installer 署名・app 署名を検証する。
 - firewall は `networking.applicationFirewall` で設定し、activation 末尾で `socketfilterfw` の実効値を読み戻して失敗させる。
 
@@ -26,4 +26,3 @@
 ## 代替
 
 - Determinate Nix を維持する場合は `nix.enable = false` が必要で、`nix.settings` / nix-daemon 管理を失う。
-- secrets は nix-darwin 採用で activation フックが使えるようになったため、`docs/solutions/secrets/ragenix-adoption.md` の判断を sops-nix 中心に更新した。
