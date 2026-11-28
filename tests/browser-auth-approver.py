@@ -79,8 +79,20 @@ import tempfile
 
 tmp = tempfile.mkdtemp()
 args = SimpleNamespace(site=sites, requester=["mac-studio"], base_url="https://air", state_dir=tmp)
+app = ap.Approver(args, FakeVault(), peers.__getitem__)
+sub = app.subscribe()
 urls = []
-app = ap.Approver(args, FakeVault(), peers.__getitem__, urls.append)
+
+
+def pump():
+    while True:
+        kind, data = sub.get()
+        if kind == "approval":
+            assert data["body"] == "mac-studio → https://github.com" and data["expires"] > time.time()
+            urls.append(data["url"])
+
+
+threading.Thread(target=pump, daemon=True).start()
 app.self_user = SELF
 assert app.is_requester(peers["studio"]) == "mac-studio"
 assert not app.is_requester(peers["ms-a2"]) and not app.is_requester(peers["phone"])
@@ -121,4 +133,6 @@ assert app.request("mac-studio", {"kind": "passkey", "origin": "https://github.c
 
 log = (Path(tmp) / "audit.jsonl").read_text()
 assert "pw" not in log.replace("password", "")
+late = app.subscribe()
+assert late.empty()
 print("ok")
