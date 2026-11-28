@@ -251,7 +251,7 @@ UCG の Encrypted DNS は LAN 発の平文 53 を宛先に関わらず gateway �
 
 ### 3.6 Fleet による端末管理
 
-Fleet server は他から分離した AWS アカウント `device-fleet` に置く (構築前)。ms-a2 には置かない。設計と理由は `docs/security/threat-model.md` §5。dotfiles 側の部品は配布の仕組みとして残してある: CI の `promote` job が CI 緑の main を、HikaruEgashira が GitHub environment `deploy` で approve した後にだけ `deploy` branch へ fast-forward し (`deploy` branch は iac-github の ruleset で deploy key 以外の更新を拒否する。deploy key の秘密鍵は AWS Secrets Manager `dotfiles/deploy-key` にあり、promote job が sub を `environment:deploy` に固定した OIDC role `dotfiles-deploy` で取得する)、`scripts/fleet-controller.py` が `deploy` を読んで `scripts/fleet/dotfiles-apply.sh` を Fleet 経由で各 Mac に root で流す。
+`docs/fleet.md` を参照。
 
 ### 3.4 SSH 鍵の役割分担とローテーション
 
