@@ -492,7 +492,7 @@ opencode service restart && opencode service status
 
 ### 4.6 secret を rotate する
 
-`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-se.txt` が復号鍵の参照 (0600)。鍵本体はこの Mac の Secure Enclave にあり (`age-plugin-se`, access control `none`)、file を複製しても他の機械では復号できない。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` だけ (§2.6)。
+`~/.config/secrets/env.age` は age で暗号化した `KEY=value` 行、`~/.config/secrets/age-se.txt` が復号鍵の参照 (0600)。鍵本体はこの Mac の Secure Enclave にあり (`age-plugin-se`, access control `none`)、file を複製しても他の機械では復号できない。これが secret の唯一の正史で、シェル起動時には復号しない。読むのは `.envrc` の `use secrets` (§2.6) と、起動時に復号する CLIProxyAPI (§3.8) だけ。
 
 ```bash
 cd ~/.config/secrets
@@ -505,7 +505,7 @@ age -e -R <(age-plugin-se recipients -i age-se.txt) -o env.age "$plain"
 
 Mac を乗り換えたら新しい機械で `age-plugin-se keygen --access-control none -o age-se.txt` を作り、旧機械で復号した平文を新 recipient で暗号化し直す。SE の鍵は backup できないので、平文の退避先は 1Password 等の別系統にする。
 
-rotate 後は secret を使う repo で `direnv reload` する。direnv は `.envrc` の変更しか検知しないため、env.age の変更は手動 reload まで反映されない。
+rotate 後は secret を使う repo で `direnv reload` し、CLIProxyAPI のキーを変えたら `launchctl kickstart -k gui/$(id -u)/dev.egahika.cliproxyapi` で再起動する。direnv は `.envrc` の変更しか検知しないため、env.age の変更は手動 reload まで反映されない。
 
 Bitwarden CLI の unlock は別系統。`bw-touchid-enroll` が `--access-control any-biometry` の SE 鍵 `bw-se.txt` を作り、マスターパスワードを `bw-master.age` に暗号化する。`bwu` は Touch ID で復号して `bw unlock` に渡し、`BW_SESSION` を現在のシェルに export する。マスターパスワードを変えたら enroll し直す。
 
