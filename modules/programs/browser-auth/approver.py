@@ -9,9 +9,9 @@ import hashlib
 import html
 import json
 import os
+import queue
 import secrets
 import subprocess
-import sys
 import threading
 import time
 import urllib.request
@@ -24,6 +24,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
 APPROVAL_TIMEOUT = 90
+KEEPALIVE = 25
 MAX_PENDING = 4
 SESSION_TTL = 12 * 3600
 SYNC_INTERVAL = 600
@@ -151,17 +152,44 @@ class Pending:
 
 
 class Approver:
-    def __init__(self, args, vault: Vault, whois, notify):
+    def __init__(self, args, vault: Vault, whois):
         self.sites: list[str] = args.site
         self.requesters: set[str] = set(args.requester)
         self.base_url: str = args.base_url
         self.audit = Path(args.state_dir) / "audit.jsonl"
         self.vault = vault
         self.whois = whois
-        self.notify = notify
+        self.subscribers: list[queue.Queue] = []
         self.pending: dict[str, Pending] = {}
         self.lock = threading.Lock()
         self.self_user = None
+
+    def event(self, rid: str, p: "Pending") -> dict:
+        what = "passkey でログイン" if p.kind == "passkey" else "パスワードを入力"
+        return {
+            "id": rid,
+            "title": what,
+            "body": f"{p.requester} → {p.origin}",
+            "url": f"{self.base_url}/a/{rid}",
+            "expires": int(p.created + APPROVAL_TIMEOUT),
+        }
+
+    def broadcast(self, kind: str, data: dict) -> None:
+        # pending の登録と同じ lock の中で配る。subscribe の再送と重なって同じ要求が二重に届かないように
+        for q in self.subscribers:
+            q.put((kind, data))
+
+    def subscribe(self) -> queue.Queue:
+        q: queue.Queue = queue.Queue()
+        with self.lock:
+            self.subscribers.append(q)
+            for rid, p in self.pending.items():
+                q.put(("approval", self.event(rid, p)))
+        return q
+
+    def unsubscribe(self, q: queue.Queue) -> None:
+        with self.lock:
+            self.subscribers.remove(q)
 
     def log(self, **entry) -> None:
         entry["ts"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
@@ -218,13 +246,14 @@ class Approver:
             if len(self.pending) >= MAX_PENDING:
                 return 429, {"error": "too many pending"}
             p = self.pending[rid] = Pending(requester, kind, origin, choices)
+            self.broadcast("approval", self.event(rid, p))
         self.log(event="request", id=rid, requester=requester, kind=kind, origin=origin)
         try:
-            self.notify(f"{self.base_url}/a/{rid}")
             p.event.wait(APPROVAL_TIMEOUT)
         finally:
             with self.lock:
                 self.pending.pop(rid, None)
+                self.broadcast("resolved", {"id": rid})
         if p.choice is None:
             self.log(event="deny", id=rid, timeout=not p.event.is_set())
             return 403, {"error": "denied"}
@@ -307,7 +336,34 @@ def make_handler(app: Approver):
                 return self.send(200 if ok else 410, "<p>送信しました</p>" if ok else "<p>期限切れです</p>", "text/html")
             self.send(404, "{}")
 
+        def events(self):
+            q = app.subscribe()
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(b": ok\n\n")
+                self.wfile.flush()
+                while True:
+                    try:
+                        kind, data = q.get(timeout=KEEPALIVE)
+                        chunk = f"event: {kind}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+                    except queue.Empty:
+                        chunk = ": keepalive\n\n"
+                    self.wfile.write(chunk.encode())
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            finally:
+                app.unsubscribe(q)
+
         def do_GET(self):
+            if self.path == "/v1/events":
+                peer = app.peer(self.peer_ip())
+                if not (peer and app.is_phone(peer)):
+                    return self.send(403, "forbidden", "text/plain")
+                return self.events()
             if not self.path.startswith("/a/"):
                 return self.send(404, "{}")
             peer = app.peer(self.peer_ip())
@@ -331,36 +387,22 @@ def main() -> None:
     ap.add_argument("--state-dir", required=True)
     ap.add_argument("--tailscale", required=True)
     ap.add_argument("--bw", required=True)
-    ap.add_argument("--ntfy-server", default="https://ntfy.sh")
     ap.add_argument("unlock", nargs="+")
     args = ap.parse_args()
 
     state = Path(args.state_dir)
     state.mkdir(parents=True, exist_ok=True, mode=0o700)
-    topic_file = state / "ntfy-topic"
-    if not topic_file.exists():
-        topic_file.write_text("bwa-" + secrets.token_urlsafe(24) + "\n")
-        topic_file.chmod(0o600)
-    topic = topic_file.read_text().strip()
 
     def whois(ip: str) -> dict:
         out = subprocess.run([args.tailscale, "whois", "--json", ip], check=True, capture_output=True, text=True)
         return json.loads(out.stdout)
 
-    def notify(url: str) -> None:
-        # ntfy には site を載せず、承認ページ (tailnet の中) でだけ見せる
-        req = urllib.request.Request(
-            f"{args.ntfy_server}/{topic}",
-            data="mac-studio から認証の承認要求".encode(),
-            headers={"Title": "Bitwarden", "Click": url, "Priority": "high", "Tags": "key"},
-        )
-        urllib.request.urlopen(req, timeout=10).read()
-
-    app = Approver(args, Vault(args.bw, args.unlock), whois, notify)
+    app = Approver(args, Vault(args.bw, args.unlock), whois)
     status = json.loads(subprocess.run([args.tailscale, "status", "--json"], check=True, capture_output=True, text=True).stdout)
     app.self_user = status["Self"]["UserID"]
-    print(f"ntfy topic: {topic}", file=sys.stderr, flush=True)
-    ThreadingHTTPServer(("127.0.0.1", args.listen_port), make_handler(app)).serve_forever()
+    server = ThreadingHTTPServer(("127.0.0.1", args.listen_port), make_handler(app))
+    server.daemon_threads = True
+    server.serve_forever()
 
 
 if __name__ == "__main__":

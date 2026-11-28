@@ -422,13 +422,14 @@ mac-studio の Chrome で `dotfiles.browserAuth.sites` のサイトにログイ�
 
 ```text
 Chrome 拡張 (mac-studio) --POST /v1/request--> approver (macbook-air, tailscale serve :8443)
-                                                 |-- ntfy 通知 --> スマホ
+                                                 |-- SSE /v1/events (tailnet) --> スマホの承認アプリ
 スマホ --GET/POST /a/<id> (tailnet)-------------> approver --> bw で検索・署名して応答
 ```
 
 - passkey: ページの `navigator.credentials.get()` を拡張が横取りする。approver は origin と rpId を照合してから、Bitwarden の `fido2Credentials` の鍵で assertion を作る。conditional mediation (autofill UI) は横取りしない。該当する passkey が無ければ Chrome の通常の処理に戻す
 - パスワード: 拡張のボタンか `Alt+Shift+L` で、そのタブの origin に対する要求を出す
-- 承認ページには要求元の host、サイトの origin、候補のアカウントが出る。90 秒で期限切れ。ntfy にはサイト名を載せない
+- 承認ページには要求元の host、サイトの origin、候補のアカウントが出る。90 秒で期限切れ
+- 通知は第三者の push (ntfy, FCM) を通さない。スマホの承認アプリが tailnet 越しに `GET /v1/events` (Server-Sent Events) を購読し、`approval` (`id`, `title`, `body`, `url`, `expires`) と `resolved` (`id`) を受け取る。接続時には保留中の要求も流す
 - 要求元は `approver.requesters` の tag なしの同一利用者 host、承認はスマホ (OS が android / iOS) の同一利用者だけ。どちらも `tailscale whois` で確かめる
 - サイトを増やすには `sites` に登録可能ドメインを足す。approver と拡張の content script の範囲が同時に変わる
 - 監査ログは air の `~/.local/state/browser-auth/audit.jsonl`。資格情報は書かない
@@ -436,7 +437,7 @@ Chrome 拡張 (mac-studio) --POST /v1/request--> approver (macbook-air, tailscal
 初回だけ必要な手順:
 
 1. macbook-air で `bw login` 済みかつ `bw-touchid-enroll` 済みであること。approver は最初の要求で 1 回 Touch ID を求め、その後 12 時間 session を保つ
-2. macbook-air の `~/.local/state/browser-auth/ntfy-topic` の topic を、スマホの ntfy アプリで購読する
+2. スマホに承認アプリを入れ、購読先に `https://macbook-air.tailc30b81.ts.net:8443` を登録する
 3. mac-studio の Chrome で `chrome://extensions` の Developer mode を有効にし、Load unpacked で `~/.local/share/browser-auth/extension` を読み込む
 4. スマホから air の承認ページに届くよう、iac-tailscale の grant (`posture` なしの member → macbook-air の tcp:8443) が適用されていること
 
