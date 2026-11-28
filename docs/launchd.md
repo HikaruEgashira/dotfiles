@@ -62,11 +62,11 @@ GUI アプリが登録する background item は次のとおり（app 側が管�
 
 ## system domain (`/Library/LaunchDaemons`)
 
-| Label                    | 管理                     | 起動 | 備考                                      |
-| ------------------------ | ------------------------ | ---- | ----------------------------------------- |
-| `org.nixos.nix-daemon`   | nix-darwin               | 常駐 | Nix daemon                                |
-| `org.nixos.darwin-store` | `modules/darwin/nix.nix` | boot | System Keychain で Store を解除・マウント |
-| `org.nixos.fleet-enroll` | `modules/darwin/fleet.nix` | boot + 1h | 未登録の間だけ fleetd を作って入れる |
+| Label                    | 管理                       | 起動      | 備考                                      |
+| ------------------------ | -------------------------- | --------- | ----------------------------------------- |
+| `org.nixos.nix-daemon`   | nix-darwin                 | 常駐      | Nix daemon                                |
+| `org.nixos.darwin-store` | `modules/darwin/nix.nix`   | boot      | System Keychain で Store を解除・マウント |
+| `org.nixos.fleet-enroll` | `modules/darwin/fleet.nix` | boot + 1h | 未登録の間だけ fleetd を作って入れる      |
 
 Store の plist は `/nix` が未マウントでも読める通常ファイルとして配置する。Determinate の daemon / store / installer hook は使用しない。Cloudflare WARP / cloudflared daemon / Tunnelblick は下記「撤去」を参照。
 
